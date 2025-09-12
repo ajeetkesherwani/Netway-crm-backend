@@ -1,0 +1,31 @@
+const express = require('express');
+const router = express.Router();
+const { adminAuthenticate } = require('../../controllers/admin/auth/adminAuthenticate');
+const {
+    createRole,
+    getRoles,
+    getRoleById,
+    updateRole,
+    deleteRole,
+    toggleRoleStatus
+} = require('../../controllers/admin/Role/roleController');
+
+// Create new role
+router.post('/create', adminAuthenticate, createRole);
+
+// Get all roles
+router.get('/list', adminAuthenticate, getRoles);
+
+// Get single role by ID
+router.get('/:id', adminAuthenticate, getRoleById);
+
+// Update role
+router.patch('/update/:id', adminAuthenticate, updateRole);
+
+// Delete role
+router.delete('/delete/:id', adminAuthenticate, deleteRole);
+
+// Toggle role status
+router.patch('/toggle-status/:id', adminAuthenticate, toggleRoleStatus);
+
+module.exports = router;

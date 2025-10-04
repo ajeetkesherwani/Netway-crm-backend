@@ -6,6 +6,11 @@ const ticketSchema = new mongoose.Schema({
     ref: 'WebUser', // or 'User' if applicable
     required: true
   },
+  ticketNumber: {
+    type: String,
+    required: true
+  },
+
   personName: {
     type: String,
     required: true
@@ -20,7 +25,7 @@ const ticketSchema = new mongoose.Schema({
   address: {
     type: String
   },
-  cateogry: {
+  category: {
     type: String,
     required: true
   },
@@ -43,11 +48,12 @@ const ticketSchema = new mongoose.Schema({
     enum: ['Low', 'Medium', 'High', 'Critical'],
     required: true
   },
-  assigToId: {
+  assignToId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Staff' // or 'User' if it's an admin/staff
+    ref: "Staff",
+    default: null
   },
-  callDeration: {
+  callDescription: {
     type: Number, // in seconds or minutes — clarify as per your need
     default: 0
   },
@@ -56,15 +62,22 @@ const ticketSchema = new mongoose.Schema({
     default: false
   },
   productId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product' // or whatever your product model is named
+    type: String,
+    default: ""
   },
   price: {
     type: Number,
     default: 0
+  },
+  status: {
+    type: String,
+    enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned"],
+    default: "Open"
   }
 }, {
-  timestamps: true // Adds createdAt and updatedAt fields
+  timestamps: true
 });
 
-module.exports = mongoose.model('Ticket', ticketSchema);
+// const Ticket = mongoose.model('Ticket', ticketSchema);
+const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
+module.exports = Ticket;

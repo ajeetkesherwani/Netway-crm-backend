@@ -1,13 +1,55 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  password: String,
-  email: String,
-  phone: String,
-  role: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
-  staffData: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }, // Optional
-  // Add any shared fields here
+  generalInformation: {
+    title: { type: String, enum: ["M/s", "Mr", "Ms", "Mrs", "Miss"], default: "M/s" },
+    name: { type: String },
+    username: { type: String, unique: true },
+    password: { type: String },
+    email: { type: String },
+    phone: { type: String },
+    roleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
+    telephone: { type: String },
+    cafNo: { type: String },
+    gst: { type: String },
+    adharNo: { type: String },
+    address: { type: String },
+    pincode: { type: String },
+    state: { type: String, required: true },
+    country: { type: String },
+    district: { type: String },
+    retailerId: { type: mongoose.Schema.Types.ObjectId, ref: "Retailer", },
+    lcoId: { type: mongoose.Schema.Types.ObjectId, ref: "Lco" },
+    paymentMethod: { type: String, enum: ["Cash", "Online"], default: "Cash" },
+  },
+
+  networkInformation: {
+    networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL"] },
+    ipType: { type: String, enum: ["Static IP", "Dynamic IP Pool"] },
+    statisIp: {
+      nas: { type: [String], enum: [""], default: "" },
+      category: { type: String, enum: [""], default: "" }
+    },
+    dynamicIpPool: { type: String, enum: [""], default: "" }
+  },
+
+  additionalInformation: {
+    dob: { type: String },
+    description: { type: String },
+    notification: { type: Boolean, default: "false" },
+    addPlan: { type: Boolean, default: "false" },
+    addCharges: { type: Boolean, default: "false" },
+    description: { type: String }
+  },
+
+  document: {
+    documentType: { type: String, enum: ["ID proof", "Profile Id", "Adhar Card", "Insurence Paper", "Signature", "Other"], default: "Other" },
+    documentDetails: { type: String, enum: ["Licence", "Pancard", "Gst", "Address Proof", "Passport"], default: "Pancard" },
+    documentImage: { type: String, default: "" }
+  },
+  status: { type: Boolean, default: "false" }
 }, { timestamps: true });
 
-module.exports = mongoose.model('User', UserSchema);
+const User = mongoose.model("User", UserSchema);
+
+module.exports = User;

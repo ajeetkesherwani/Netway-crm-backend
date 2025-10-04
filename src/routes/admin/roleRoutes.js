@@ -10,6 +10,10 @@ const {
     toggleRoleStatus
 } = require('../../controllers/admin/Role/roleController');
 
+const {
+    updateRolePermissions
+} = require('../../controllers/admin/Role/updatePermission');
+
 // Create new role
 router.post('/create', adminAuthenticate, createRole);
 
@@ -27,5 +31,8 @@ router.delete('/delete/:id', adminAuthenticate, deleteRole);
 
 // Toggle role status
 router.patch('/toggle-status/:id', adminAuthenticate, toggleRoleStatus);
+
+//update permission
+router.patch("/permission/:id", adminAuthenticate, updateRolePermissions);
 
 module.exports = router;

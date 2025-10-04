@@ -4,12 +4,19 @@ const {
   adminAuthenticate,
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-const userController = require('../../controllers/admin/user/userController');
+const { 
+  createUser 
+} = require('../../controllers/admin/user/CreateUser');
 
-router.post('/create', adminAuthenticate,userController.createUser);
-router.get('/list', adminAuthenticate,userController.getAllUsers);
-router.get('/:id', adminAuthenticate,userController.getUserById);
-router.put('/:id', adminAuthenticate,userController.updateUser);
-router.delete('/delete/:id', adminAuthenticate,userController.deleteUser);
+const { 
+  getUserList 
+} = require('../../controllers/admin/user/getUser');
+const { getUserDetails } = require('../../controllers/admin/user/getUserDetails');
+
+
+
+router.post('/create', adminAuthenticate, createUser);
+router.get("/list", adminAuthenticate, getUserList);
+router.get("/:id", adminAuthenticate, getUserDetails);
 
 module.exports = router;

@@ -8,20 +8,21 @@ const {
 const {
   createPackage,
 } = require("../../controllers/admin/Package/createPackage");
-const {
-  getPackages,
-  getPackageById,
-  updatePackage,
-  togglePackageStatus
-} = require("../../controllers/admin/Package/packageController");
+
+const { 
+  getPackages 
+} = require("../../controllers/admin/Package/getPackages");
+
+const { 
+  getPackagesDetails
+} = require("../../controllers/admin/Package/getPackagesDetails");
 
 
 
 router.get("/list", adminAuthenticate, getPackages);
 router.post("/create",adminAuthenticate, createPackage);
-router.get("/:id", adminAuthenticate, getPackageById);
-router.patch("/:id", adminAuthenticate, updatePackage);
-router.patch("/toggle-status/:id", adminAuthenticate, togglePackageStatus);
+router.get("/:id", adminAuthenticate, getPackagesDetails); 
+
 module.exports = router;
 
 

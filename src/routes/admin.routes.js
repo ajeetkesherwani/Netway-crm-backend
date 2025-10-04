@@ -8,6 +8,19 @@ router.use("/role", require("./admin/roleRoutes"));
 router.use("/user", require("./admin/userRoutes"));
 router.use("/webUser", require("./admin/webUserRoutes"));
 router.use("/payment", require("./admin/paymentRoutes"));
+router.use("/staff", require("./admin/staffRoutes"));
+router.use("/retailer", require("./admin/retialerRoutes"));
+router.use("/lco", require("./admin/lcoRoutes"));
+router.use("/assignPackage", require("./admin/assignPackageRoutes"));
+router.use("/ticket", require("./admin/ticketRoutes"));
+router.use("/priceBook", require("./admin/priceBookRoutes"));
+router.use("/resellerWallet", require("./admin/resellerWalletRoutes"));
+router.use("/lcoWallet", require("./admin/lcoWalletRoutes"));
+router.use("/ticketAssign", require("./admin/ticketAssignRoutes"));
+router.use("/zone", require("./admin/ZoneRoutes"));
+router.use("/category", require("./admin/categoryRoutes"));
+router.use("/common", require("./admin/commonRoutes"));
+
 
 
 

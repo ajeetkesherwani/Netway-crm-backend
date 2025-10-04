@@ -17,8 +17,10 @@ const {
   vendorAccountVerification,
 } = require("../../controllers/admin/auth/vendorAccountVerification");
 
+
 //=============== CRM Auth ==========================//
 router.post("/login", login);
+
 //=============== CRM Auth ==========================//
 router.post(
   "/vendorAccountVerification",

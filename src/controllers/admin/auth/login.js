@@ -1,26 +1,48 @@
 const bcrypt = require("bcrypt");
-const Admin = require("../../../models/user");
+const Admin = require("../../../models/admin");
+const Reseller = require("../../../models/retailer");
+const Lco = require("../../../models/lco");
+const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
 
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  console.log(req.body);
-  console.log(email, password);
-  if (!email || !password)
+
+  if (!email || !password) {
     return next(new AppError("Email and password are required.", 400));
+  }
 
-  const admin = await Admin.findOne({ email }).populate("role");
+  let user = await Admin.findOne({ email }).populate("role");
+  let userType = "admin";
 
-  if (!admin) {
+  if (!user) {
+    user = await Reseller.findOne({ email }).populate("role");
+    userType = "reseller";
+  }
+
+  if (!user) {
+    user = await Lco.findOne({ email }).populate("role");
+    userType = "lco";
+  }
+
+  if (!user) {
+    user = await Staff.findOne({ email }).populate("role");
+    userType = "staff";
+  }
+
+  if (!user) {
     return next(new AppError("Invalid email or password.", 401));
   }
 
-  const isMatch = await bcrypt.compare(password, admin.password);
+  // Compare password
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     return next(new AppError("Invalid email or password.", 401));
   }
 
-  createToken(admin, 200, res); // ensures populated role is included in response
+  // Generate token
+  createToken(user, 200, res);
+
 });

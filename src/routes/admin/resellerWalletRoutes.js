@@ -16,10 +16,18 @@ const {
     getResellerWalletHistoryDetails
 } = require("../../controllers/admin/resellerWalletHistory/getResellerWalletDetails");
 
+const {
+    createResellerReverseBalance
+} = require("../../controllers/admin/resellerWalletHistory/createResellerReverseBalance");
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createResellerWallet);
 router.get("/list/:resellerId", adminAuthenticate, getResellerWalletHistory);
 router.get("/list/:resellerId/:walletId", adminAuthenticate, getResellerWalletHistoryDetails);
+
+
+router.post("/reverser-balance", adminAuthenticate, createResellerReverseBalance);
+
 
 module.exports = router;

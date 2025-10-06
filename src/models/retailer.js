@@ -43,7 +43,7 @@ const retailerSchema = new mongoose.Schema({
   status: { type: String, default: "false" },
   walletBalance: { type: Number, default: 0 },
   creditBalance: { type: Number, default: 0 },
-  employeeAssociation: {
+  employeeAssociation: [{
     type: {
       type: String,
       enum: ["Admin", "Manager", "Operator"],

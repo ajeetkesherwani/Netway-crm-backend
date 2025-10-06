@@ -1,8 +1,9 @@
 const TicketCategory = require("../../../models/ticketCategory");
 const AppError = require("../../../utils/AppError");
+const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 
-exports.deleteTicketCategory = (async (req, res, next) => {
+exports.deleteTicketCategory = catchAsync(async (req, res, next) => {
 
     const { categoryId } = req.params;
     if (!categoryId) return next(new AppError("categoryId is required", 400));

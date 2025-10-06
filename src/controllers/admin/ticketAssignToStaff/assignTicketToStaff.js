@@ -3,9 +3,11 @@ const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logTicketActivity = require("../../../utils/logTicketActivity");
 
 // Assign ticket
 exports.assignTicket = catchAsync(async (req, res, next) => {
+
     const { ticketId, staffId } = req.body;
 
     if (!ticketId) return next(new AppError("Ticket ID is required", 400));
@@ -36,8 +38,14 @@ exports.assignTicket = catchAsync(async (req, res, next) => {
 
     // Assign ticket
     ticket.assignToId = staff._id;
-    ticket.status = "assigned"
+    ticket.status = "Assigned"
     await ticket.save();
+
+    await logTicketActivity({
+        ticketId,
+        activityType: 0, // Reassign
+        performedBy: req.user._id
+    });
 
     // Populate staff 
     const populatedTicket = await Ticket.findById(ticket._id)

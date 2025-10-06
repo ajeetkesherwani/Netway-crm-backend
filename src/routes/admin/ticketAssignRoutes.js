@@ -8,10 +8,15 @@ const {
     assignTicket
 } = require("../../controllers/admin/ticketAssignToStaff/assignTIcketToStaff");
 
+const {
+    reAssignTicket
+} = require("../../controllers/admin/ticketAssignToStaff/reAssignTicket");
+
 
 const router = express.Router();
 
 router.post("/toStaff", adminAuthenticate, assignTicket);
+router.post("/toStaff/reAssign", adminAuthenticate, reAssignTicket);
 
 
 module.exports = router;

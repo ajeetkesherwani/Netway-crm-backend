@@ -10,13 +10,13 @@ const retailerSchema = new mongoose.Schema({
   },
   phoneNo: { type: Number, match: /^[0-9]{10}$/ },
   email: { type: String },
-  password: { type: String }, // keep for backward compatibility, not used for login now
-  resellerName: { type: String, required: true },
+  password: { type: String},
+  resellerName: { type: String},
   houseNo: { type: String },
   pincode: { type: String },
   area: { type: String },
   subArea: { type: String },
-  mobileNo: { type: Number, required: true },
+  mobileNo: { type: Number},
   fax: { type: String },
   messengerId: { type: String },
   dob: { type: String },
@@ -28,7 +28,7 @@ const retailerSchema = new mongoose.Schema({
   whatsAppNumber: { type: String },
   address: { type: String },
   taluka: { type: String },
-  state: { type: String, required: true },
+  state: { type: String},
   country: { type: String },
   website: { type: String },
   annversaryDate: { type: String },
@@ -39,17 +39,24 @@ const retailerSchema = new mongoose.Schema({
   supportEmail: { type: String },
   nas: { type: [String], default: [] },
   Description: { type: String },
-  role: { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
+  role: { type: mongoose.Schema.Types.ObjectId, ref: "Role"},
   status: { type: String, default: "false" },
   walletBalance: { type: Number, default: 0 },
   creditBalance: { type: Number, default: 0 },
-
-  employeeAssociation: [{
-    type: { type: String, enum: ["Admin", "Manager", "Operator"], default: "Admin" },
-    status: { type: String, enum: ["active", "Inactive"], default: "Inactive" },
-    employeeName: { type: String, required: true },
-    employeeUserName: { type: String, required: true },
-    password: { type: String, required: true },
+  employeeAssociation: {
+    type: {
+      type: String,
+      enum: ["Admin", "Manager", "Operator"],
+      default: "Admin"
+    },
+    status: {
+      type: String,
+      enum: ["active", "Inactive"],
+      default: "Inactive"   // ✅ FIXED: changed from array to string
+    },
+    employeeName: { type: String },
+    employeeUserName: { type: String },
+    password: { type: String },
     mobile: { type: Number },
     email: { type: String }
   }]

@@ -10,7 +10,6 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-
   personName: {
     type: String,
     required: true

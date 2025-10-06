@@ -17,7 +17,7 @@ const resellerWalletHistorySchema = new mongoose.Schema({
     },
     mode: {
         type: String,
-        enum: ["Cash", "Online", "Cheque", "Credit", "DD"],
+        enum: ["Cash", "Online", "Cheque", "Credit", "DD", "Reverse"],
         required: true
     },
     remark: {

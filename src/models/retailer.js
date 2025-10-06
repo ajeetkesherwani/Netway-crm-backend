@@ -10,7 +10,7 @@ const retailerSchema = new mongoose.Schema({
   },
   phoneNo: { type: Number, match: /^[0-9]{10}$/ },
   email: { type: String },
-  password: { type: String, required: true },
+  password: { type: String }, // keep for backward compatibility, not used for login now
   resellerName: { type: String, required: true },
   houseNo: { type: String },
   pincode: { type: String },
@@ -37,36 +37,41 @@ const retailerSchema = new mongoose.Schema({
   gstNo: { type: String },
   contactPersonName: { type: String },
   supportEmail: { type: String },
-  nas: { type: [String], default: [], },
+  nas: { type: [String], default: [] },
   Description: { type: String },
   role: { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
   status: { type: String, default: "false" },
   walletBalance: { type: Number, default: 0 },
   creditBalance: { type: Number, default: 0 },
-  employeeAssociation: {
+
+  employeeAssociation: [{
     type: { type: String, enum: ["Admin", "Manager", "Operator"], default: "Admin" },
-    status: { type: String, enum: ["active", "Inactive"], default: ["Inactive"] },
+    status: { type: String, enum: ["active", "Inactive"], default: "Inactive" },
     employeeName: { type: String, required: true },
     employeeUserName: { type: String, required: true },
     password: { type: String, required: true },
     mobile: { type: Number },
     email: { type: String }
-  }
+  }]
+
 }, { timestamps: true });
 
-
-// Before saving retailer
+// Hash employeeAssociation passwords before saving
 retailerSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+  if (this.isModified("employeeAssociation")) {
+    for (let emp of this.employeeAssociation) {
+      if (emp.isNew || emp.isModified("password")) {
+        emp.password = await bcrypt.hash(emp.password, 10);
+      }
+    }
+  }
   next();
 });
 
-// Method to compare passwords
-retailerSchema.methods.comparePassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+// Compare password for employeeAssociation login
+retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
+  return await bcrypt.compare(enteredPassword, empPassword);
 };
 
 const Retailer = mongoose.model("Retailer", retailerSchema);
-
 module.exports = Retailer;

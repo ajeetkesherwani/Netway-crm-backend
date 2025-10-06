@@ -20,6 +20,8 @@ router.use("/ticketAssign", require("./admin/ticketAssignRoutes"));
 router.use("/zone", require("./admin/ZoneRoutes"));
 router.use("/category", require("./admin/categoryRoutes"));
 router.use("/common", require("./admin/commonRoutes"));
+router.use("/ticketReply", require("./admin/ticketReplyRoutes"));
+router.use("/timeLine", require("./admin/timeLineRoutes"));
 
 
 

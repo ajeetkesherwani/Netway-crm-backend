@@ -5,12 +5,15 @@ const zoneSchema = new mongoose.Schema(
         zoneName: {
             type: String,
             required: true,
-            trim: true,
+            trim: true
         },
-        addedBy: {
+        createdBy: {
+            type: String
+        },
+        createdById: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Admin",
-        },
+            refPath: "createdBy"
+        }
     },
     { timestamps: true }
 );

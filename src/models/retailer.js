@@ -43,6 +43,15 @@ const retailerSchema = new mongoose.Schema({
   status: { type: String, default: "false" },
   walletBalance: { type: Number, default: 0 },
   creditBalance: { type: Number, default: 0 },
+  employeeAssociation: {
+    type: { type: String, enum: ["Admin", "Manager", "Operator"], default: "Admin" },
+    status: { type: String, enum: ["active", "Inactive"], default: ["Inactive"] },
+    employeeName: { type: String, required: true },
+    employeeUserName: { type: String, required: true },
+    password: { type: String, required: true },
+    mobile: { type: Number },
+    email: { type: String }
+  }
 }, { timestamps: true });
 
 

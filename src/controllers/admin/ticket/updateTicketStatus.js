@@ -2,6 +2,7 @@ const Ticket = require("../../../models/ticket");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logTicketActivity = require("../../../utils/logTicketActivity");
 
 exports.updateTicketStatus = catchAsync(async (req, res, next) => {
 
@@ -16,6 +17,12 @@ exports.updateTicketStatus = catchAsync(async (req, res, next) => {
     ticket.status = status || ticket.status;
 
     await ticket.save();
+
+    await logTicketActivity({
+        ticketId,
+        activityType: 1, // Status
+        performedBy: req.user._id
+    });
 
     successResponse(res, "Ticket status updated successfully", ticket);
 

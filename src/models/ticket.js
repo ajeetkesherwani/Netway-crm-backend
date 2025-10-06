@@ -26,8 +26,8 @@ const ticketSchema = new mongoose.Schema({
     type: String
   },
   category: {
-    type: String,
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category"
   },
   fileI: {
     type: String // URL or file path
@@ -73,7 +73,24 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned"],
     default: "Open"
-  }
+  },
+  reassign: [
+    {
+      staffId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Staff"
+      },
+      currentStatus: {
+        type: String,
+        enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned"],
+        default: "Open"
+      },
+      assignedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
 }, {
   timestamps: true
 });

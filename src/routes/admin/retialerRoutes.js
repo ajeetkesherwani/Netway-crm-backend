@@ -24,6 +24,7 @@ const {
     getRetailerDetails 
 } = require("../../controllers/admin/retailer/getRetailerDetail");
 const { getAssignedPackagesByAssignToId } = require("../../controllers/admin/retailer/getAssignPackageByToId");
+const { addResellerEmployee } = require("../../controllers/admin/retailer/addResellerEmployee");
 
 
 const router = express.Router();
@@ -35,5 +36,7 @@ router.get("/list/:id", adminAuthenticate, getRetailerDetails);
 router.patch("/update/:id", adminAuthenticate, updateRetailer);
 router.delete("/delete/:id", adminAuthenticate, deleteRetailer);
 router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);
+router.patch("/addEmployee/:id", adminAuthenticate, addResellerEmployee);
+
 
 module.exports = router;

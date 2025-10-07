@@ -3,13 +3,9 @@ const AppError = require("../utils/AppError");
 const Role = require("../models/role");
 const Reseller = require("../models/retailer");
 const ResellerConfig = require("../models/resellerConfig");
-const Lco = require("../models/lco"); // Assuming you have similar logic for LCO
-// const LcoConfig = require("../models/lcoConfig"); // Create this if it doesn't exist
+const Lco = require("../models/lco");
+// const LcoConfig = require("../models/lcoConfig"); // optional
 
-/**
- * @param {string} moduleName - e.g., 'users'
- * @param {string} action - e.g., 'create'
- */
 exports.authorize = (moduleName, action) => {
   return async (req, res, next) => {
     const user = req.user;
@@ -19,11 +15,9 @@ exports.authorize = (moduleName, action) => {
     }
 
     try {
-      let permissions = null;
-
-      // ============================
-      // ✅ 1. Reseller Permissions
-      // ============================
+      // ========================================
+      // ✅ 1. Reseller Permissions (Map-based)
+      // ========================================
       if (user.role === "Reseller") {
         const reseller = await Reseller.findById(user._id);
         if (!reseller) return next(new AppError("Reseller not found", 404));
@@ -33,35 +27,32 @@ exports.authorize = (moduleName, action) => {
 
         let employeeRole = "admin";
 
-        // Check if it's a nested employee user
+        // Check if user is a nested employee (by username)
         const employee = reseller.employeeAssociation?.find(emp =>
           emp.employeeUserName === user.username && emp.status === "active"
         );
 
         if (employee) {
-          employeeRole = employee.type?.toLowerCase(); // e.g., 'manager'
+          employeeRole = employee.type?.toLowerCase(); // manager / operator
         }
 
-        const rolePermissions = resellerConfig[employeeRole];
-        if (!rolePermissions || !Array.isArray(rolePermissions)) {
-          return next(new AppError("Permissions not defined for this employee role", 403));
+        // Get role-based permissions from reseller config
+        const rolePermissions = resellerConfig[employeeRole]; // Map
+        if (!rolePermissions || !(rolePermissions instanceof Map)) {
+          return next(new AppError("Permissions not defined for this role", 403));
         }
 
-        // Find permission for module/action
-        const allowed = rolePermissions.find(
-          (perm) => perm.module === moduleName && perm[action] === true
-        );
-
-        if (!allowed) {
+        const modulePerms = rolePermissions.get(moduleName);
+        if (!modulePerms || modulePerms[action] !== true) {
           return next(new AppError(`Access denied to ${action} on ${moduleName}`, 403));
         }
 
         return next(); // ✅ Allowed
       }
 
-      // ============================
-      // ✅ 2. LCO Permissions
-      // ============================
+      // ========================================
+      // ✅ 2. LCO Permissions (Same logic if used)
+      // ========================================
       if (user.role === "Lco") {
         const lco = await Lco.findById(user._id);
         if (!lco) return next(new AppError("LCO not found", 404));
@@ -80,24 +71,21 @@ exports.authorize = (moduleName, action) => {
         }
 
         const rolePermissions = lcoConfig[employeeRole];
-        if (!rolePermissions || !Array.isArray(rolePermissions)) {
-          return next(new AppError("Permissions not defined for this employee role", 403));
+        if (!rolePermissions || !(rolePermissions instanceof Map)) {
+          return next(new AppError("Permissions not defined for this role", 403));
         }
 
-        const allowed = rolePermissions.find(
-          (perm) => perm.module === moduleName && perm[action] === true
-        );
-
-        if (!allowed) {
+        const modulePerms = rolePermissions.get(moduleName);
+        if (!modulePerms || modulePerms[action] !== true) {
           return next(new AppError(`Access denied to ${action} on ${moduleName}`, 403));
         }
 
         return next(); // ✅ Allowed
       }
 
-      // ============================
-      // ✅ 3. Other Roles (Admin, etc.)
-      // ============================
+      // ========================================
+      // ✅ 3. Admin / Other Role (Role Schema)
+      // ========================================
       const roleDoc = await Role.findOne({ roleName: user.role });
       if (!roleDoc) {
         return next(new AppError("Role not found", 403));
@@ -108,13 +96,10 @@ exports.authorize = (moduleName, action) => {
         return next(new AppError(`Access denied to ${action} on ${moduleName}`, 403));
       }
 
-      next(); // ✅ Allowed
+      return next(); // ✅ Allowed
     } catch (error) {
       console.error("Authorization error:", error);
       return next(new AppError("Error checking permissions", 500));
     }
   };
 };
-// ============================
-// ✅ 4. Default Deny
-// ============================

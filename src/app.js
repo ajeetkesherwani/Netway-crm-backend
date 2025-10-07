@@ -6,6 +6,9 @@ const morgan = require("morgan");
 const { appRoutes } = require("./routes/appRoutes");
 const AppError = require("./utils/AppError");
 const globalErrorHandler = require("./controllers/errorController");
+const scheduleExpirePlansJob = require("./jobs/expirePurchasedPlans");
+
+
 
 const app = express();
 app.use(cors());
@@ -13,6 +16,7 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+scheduleExpirePlansJob(); // Start the cron job
 
 const router = express.Router();
 

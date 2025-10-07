@@ -19,7 +19,7 @@ const {
 router.post('/create', adminAuthenticate, createRole);
 
 // Get all roles
-router.get('/list', adminAuthenticate, authorize("users", "listing"), getRoles);
+router.get('/list', adminAuthenticate, authorize("users", "create"), getRoles);
 
 // Get single role by ID
 router.get('/:id', adminAuthenticate, getRoleById);

@@ -7,9 +7,20 @@ const resellerConfigSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Retailer"
         },
-        admin: [],
-        manager: [],
-        operator: [],
+        admin: {
+            type: Map,
+            of: new mongoose.Schema({}, { strict: false, _id: false }) // Dynamic module-based permissions
+        },
+
+        manager: {
+            type: Map,
+            of: new mongoose.Schema({}, { strict: false, _id: false }) // Dynamic module-based permissions
+        },
+
+        operator: {
+            type: Map,
+            of: new mongoose.Schema({}, { strict: false, _id: false }) // Dynamic module-based permissions
+        },
         createdBy: {
             type: String
         },

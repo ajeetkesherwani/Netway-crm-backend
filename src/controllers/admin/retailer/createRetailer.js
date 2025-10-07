@@ -30,10 +30,11 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
             return next(new AppError("employeeAssociation with username and password is required", 400));
         }
 
-        for (let emp of employeeAssociation) {
-            emp.password = await bcrypt.hash(emp.password, 10);
-            existingRetailer.employeeAssociation.push(emp);
-        }
+
+        // for (let emp of employeeAssociation) {
+        //     emp.password = await bcrypt.hash(emp.password, 10);
+        //     existingRetailer.employeeAssociation.push(emp);
+        // }
 
         await existingRetailer.save();
         return successResponse(res, "New employee(s) added successfully", existingRetailer);
@@ -43,7 +44,7 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
     if (!resellerName) return next(new AppError("resellerName is required for new reseller", 400));
     if (!mobileNo) return next(new AppError("mobileNo is required for new reseller", 400));
     if (!state) return next(new AppError("state is required for new reseller", 400));
-    if (!role) return next(new AppError("roleId is required for new reseller", 400));
+    if (!role) return next(new AppError("role is required for new reseller", 400));
     if (!password) return next(new AppError("password is required for new reseller", 400));
     if (
         !employeeAssociation ||

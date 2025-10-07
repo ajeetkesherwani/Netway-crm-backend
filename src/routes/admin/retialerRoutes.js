@@ -1,30 +1,48 @@
 const express = require("express");
 
-const { 
-    adminAuthenticate 
+const {
+    adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-const { 
-    createRetailer 
+const {
+    createRetailer
 } = require("../../controllers/admin/retailer/createRetailer");
 
-const { 
-    getRetailer 
+const {
+    getRetailer
 } = require("../../controllers/admin/retailer/getRetailer");
 
-const { 
-    deleteRetailer 
+const {
+    deleteRetailer
 } = require("../../controllers/admin/retailer/deleteRetailer");
 
-const { 
-    updateRetailer 
+const {
+    updateRetailer
 } = require("../../controllers/admin/retailer/updateRetailer");
 
-const { 
-    getRetailerDetails 
+const {
+    getRetailerDetails
 } = require("../../controllers/admin/retailer/getRetailerDetail");
-const { getAssignedPackagesByAssignToId } = require("../../controllers/admin/retailer/getAssignPackageByToId");
-const { addResellerEmployee } = require("../../controllers/admin/retailer/addResellerEmployee");
+const {
+    getAssignedPackagesByAssignToId
+} = require("../../controllers/admin/retailer/getAssignPackageByToId");
+
+const {
+    addResellerEmployee
+} = require("../../controllers/admin/retailer/addResellerEmployee");
+
+const {
+    getResellerEmployees
+} = require("../../controllers/admin/retailer/getResellerEmployee");
+
+const {
+    updateResellerEmployee
+} = require("../../controllers/admin/retailer/updateResellerEmployee");
+
+const {
+    deleteResellerEmployee
+} = require("../../controllers/admin/retailer/deleteResellerEmployee");
+
 
 
 const router = express.Router();
@@ -37,6 +55,8 @@ router.patch("/update/:id", adminAuthenticate, updateRetailer);
 router.delete("/delete/:id", adminAuthenticate, deleteRetailer);
 router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);
 router.patch("/addEmployee/:id", adminAuthenticate, addResellerEmployee);
-
+router.get("/employee/:resllerId", adminAuthenticate, getResellerEmployees);
+router.patch("/update/:resellerId/:employeeId", adminAuthenticate, updateResellerEmployee);
+router.delete("/delete/:resellerId/:employeeId", adminAuthenticate, deleteResellerEmployee);
 
 module.exports = router;

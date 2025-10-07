@@ -8,6 +8,11 @@ exports.addResellerEmployee = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const { employee } = req.body;
 
+  //  1. Role check
+  if (!req.user || !["admin", "reseller"].includes(req.user.role)) {
+    return next(new AppError("You are not authorized to add employees", 403));
+  }
+
   if (!employee || typeof employee !== "object") {
     return next(new AppError("Employee object is required", 400));
   }

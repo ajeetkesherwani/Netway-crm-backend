@@ -75,6 +75,7 @@ exports.login = catchAsync(async (req, res, next) => {
     userType = "admin";
   }
 
+  //2.reseller login
   if (!user && employeeUserName) {
     const reseller = await Reseller.findOne({
       "employeeAssociation.employeeUserName": employeeUserName,
@@ -140,10 +141,73 @@ exports.login = catchAsync(async (req, res, next) => {
 
 
   // ✅ 3. LCO Login
-  if (!user && email) {
-    user = await Lco.findOne({ email }).populate("role");
+  // if (!user && email) {
+  //   user = await Lco.findOne({ email }).populate("role");
+  //   userType = "lco";
+  // }
+
+  if (!user && employeeUserName) {
+    const lco = await Lco.findOne({
+      "employeeAssociation.employeeUserName": employeeUserName,
+    })
+      .populate("roleId")
+      .lean();
+
+    if (!lco) {
+      return next(new AppError("Invalid employee username or password.", 401));
+    }
+
+    // Find the logged-in employee only
+    const employee = lco.employeeAssociation.find(
+      (emp) => emp.employeeUserName === employeeUserName
+    );
+
+    if (!employee) {
+      return next(new AppError("Invalid employee username or password.", 401));
+    }
+
+    const isMatch = await bcrypt.compare(password, employee.password);
+    if (!isMatch) {
+      return next(new AppError("Invalid employee username or password.", 401));
+    }
+
+    user = lco;
     userType = "lco";
+
+    // Fetch reseller config for this employee type only
+    let lcoConfig = await LcoConfig.findOne({
+      typeId: lco._id,
+      type: employee.type,
+    }).lean();
+
+    if (lcoConfig) {
+      const filteredConfig = {
+        _id: lcoConfig._id,
+        type: lcoConfig.type,
+        typeId: lcoConfig.typeId,
+        createdBy: lcoConfig.createdBy,
+        createdById: lcoConfig.createdById,
+        createdAt: lcoConfig.createdAt,
+        updatedAt: lcoConfig.updatedAt,
+      };
+
+      const employeeTypeKey = employee.type.toLowerCase();
+      if (lcoConfig[employeeTypeKey]) {
+        filteredConfig[employeeTypeKey] = lcoConfig[employeeTypeKey];
+      }
+
+      lcoConfig = filteredConfig;
+    }
+
+    user.lcoConfig = lcoConfig || null;
+
+    // Attach only the logged-in employee
+    user.employee = employee;
+
+    // Remove all employeeAssociation except the logged-in one
+    delete user.employeeAssociation;
   }
+
 
   // ✅ 4. Staff Login
   if (!user && email) {

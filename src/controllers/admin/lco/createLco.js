@@ -2,6 +2,7 @@ const Lco = require("../../../models/lco");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const bcrypt = require("bcryptjs")
 
 exports.createLco = catchAsync(async (req, res, next) => {
 
@@ -40,11 +41,11 @@ exports.createLco = catchAsync(async (req, res, next) => {
 
 
     // New reseller creation
-    if (!lcoName) return next(new AppError("resellerName is required for new reseller", 400));
-    if (!mobileNo) return next(new AppError("mobileNo is required for new reseller", 400));
-    if (!state) return next(new AppError("state is required for new reseller", 400));
-    if (!roleId) return next(new AppError("roleId is required for new reseller", 400));
-    if (!password) return next(new AppError("password is required for new reseller", 400));
+    if (!lcoName) return next(new AppError("lcoName is required for new lco", 400));
+    if (!mobileNo) return next(new AppError("mobileNo is required for new lco", 400));
+    if (!state) return next(new AppError("state is required for new lco", 400));
+    if (!roleId) return next(new AppError("roleId is required for new lco", 400));
+    if (!password) return next(new AppError("password is required for new lco", 400));
     if (
         !employeeAssociation ||
         !Array.isArray(employeeAssociation) ||

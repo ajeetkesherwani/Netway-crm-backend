@@ -7,26 +7,40 @@ exports.updateRetailer = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   if (!id) return next(new AppError("Retailer ID is required", 400));
 
+  // Prevent updating employeeAssociation
+  if ("employeeAssociation" in req.body) {
+    delete req.body.employeeAssociation;
+  }
 
-  const retailer = await Retailer.findById(id);
-  if (!retailer) return next(new AppError("Retailer not found", 404));
-
+  // Define which fields can be updated
   const updatableFields = [
-    "title", "phoneNo", "email", "password", "resellerName", "houseNo", "pincode", "area",
+    "title", "phoneNo", "email", "resellerName", "houseNo", "pincode", "area",
     "subArea", "mobileNo", "fax", "messengerId", "dob", "balance", "dashboard",
     "panNumber", "resellerCode", "contactPersonNumber", "whatsAppNumber", "address",
     "taluka", "state", "country", "website", "annversaryDate", "latitude", "longitude",
-    "gstNo", "contactPersonName", "supportEmail", "nas", "description", "status"
+    "gstNo", "contactPersonName", "supportEmail", "nas", "description", "status", "role"
   ];
 
-  updatableFields.forEach(field => {
+  // Prepare update data object safely
+  const updateData = {};
+  for (const field of updatableFields) {
     if (req.body[field] !== undefined) {
-      retailer[field] = req.body[field];
+      updateData[field] = req.body[field];
     }
-  });
+  }
 
-  await retailer.save();
+  if (Object.keys(updateData).length === 0) {
+    return next(new AppError("No valid fields provided for update", 400));
+  }
 
-  successResponse(res, "Retailer updated successfully", retailer);
+  // Use findByIdAndUpdate to avoid triggering pre('save') hook
+  const updatedRetailer = await Retailer.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true, runValidators: true }
+  );
 
+  if (!updatedRetailer) return next(new AppError("Retailer not found", 404));
+
+  successResponse(res, "Retailer updated successfully", updatedRetailer);
 });

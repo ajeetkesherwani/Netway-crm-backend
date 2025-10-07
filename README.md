@@ -17,12 +17,12 @@
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Node.js / Laravel / Django (choose your backend)
-- **Frontend:** React.js / Vue.js / Blade Templates
-- **Database:** MySQL / PostgreSQL
+- **Backend:** Node.js 
+- **Frontend:** React.js 
+- **Database:** MongoDB
 - **Authentication:** JWT / OAuth2
 - **APIs:** RESTful APIs for frontend/backend communication
-- **Deployment:** Docker / VPS / Shared Hosting (customizable)
+- **Deployment:** VPS 
 
 ---
 

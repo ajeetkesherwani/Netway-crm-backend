@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const resellerConfigSchema = new mongoose.Schema(
     {
-        type: { type: String, enum: ["Admin", "Manager", "Operator"], default: "Admin" },
+        type: { type: String, enum: ["Admin", "Reseller", "Lco"], default: "Reseller" },
         typeId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Retailer"

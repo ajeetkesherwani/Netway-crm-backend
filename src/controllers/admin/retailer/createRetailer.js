@@ -43,7 +43,7 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
     if (!resellerName) return next(new AppError("resellerName is required for new reseller", 400));
     if (!mobileNo) return next(new AppError("mobileNo is required for new reseller", 400));
     if (!state) return next(new AppError("state is required for new reseller", 400));
-    if (!roleId) return next(new AppError("roleId is required for new reseller", 400));
+    if (!role) return next(new AppError("roleId is required for new reseller", 400));
     if (!password) return next(new AppError("password is required for new reseller", 400));
     if (
         !employeeAssociation ||

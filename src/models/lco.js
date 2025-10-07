@@ -40,16 +40,51 @@ const lcoSchema = new mongoose.Schema({
     nas: { type: [String], default: [], },
     descripition: { type: String },
     status: { type: String, enum: ["active", "inActive"], default: "inActive" },
-    walletBalance: { type: Number, default: 0 }
+    walletBalance: { type: Number, default: 0 },
+    employeeAssociation: [{
+        type: {
+            type: String,
+            enum: ["Admin", "Manager", "Operator"],
+            default: "Admin"
+        },
+        status: {
+            type: String,
+            enum: ["active", "Inactive"],
+            default: "Inactive"
+        },
+        employeeName: { type: String },
+        employeeUserName: { type: String },
+        password: { type: String },
+        mobile: { type: Number },
+        email: { type: String }
+    }]
+
 });
 
+// lcoSchema.pre("save", async function (next) {
+//     if (!this.isModified("password")) return next();
+//     this.password = await bcrypt.hash(this.password, 10);
+// });
+
+// lcoSchema.methods.comparePassword = async function (enteredPassword) {
+//     return await bcrypt.compare(enteredPassword, this.password);
+// };
+
+// Hash employeeAssociation passwords before saving
 lcoSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
-    this.password = await bcrypt.hash(this.password, 10);
+    if (this.isModified("employeeAssociation")) {
+        for (let emp of this.employeeAssociation) {
+            if (emp.isNew || emp.isModified("password")) {
+                emp.password = await bcrypt.hash(emp.password, 10);
+            }
+        }
+    }
+    next();
 });
 
-lcoSchema.methods.comparePassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
+// Compare password for employeeAssociation login
+lcoSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
+    return await bcrypt.compare(enteredPassword, empPassword);
 };
 
 const Lco = mongoose.model("Lco", lcoSchema);

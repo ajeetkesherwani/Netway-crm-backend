@@ -24,6 +24,8 @@ router.use("/ticketReply", require("./admin/ticketReplyRoutes"));
 router.use("/timeLine", require("./admin/timeLineRoutes"));
 router.use("/resellerConfig", require("./admin/resellerConfigRoutes"));
 
+router.use("/purchasedPlan", require("./admin/purchasedPlanRoutes"));
+
 
 
 

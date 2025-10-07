@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { adminAuthenticate } = require('../../controllers/admin/auth/adminAuthenticate');
+const { authorize } = require("../../middlewares/authorize");
 const {
     createRole,
     getRoles,
@@ -18,7 +19,7 @@ const {
 router.post('/create', adminAuthenticate, createRole);
 
 // Get all roles
-router.get('/list', adminAuthenticate, getRoles);
+router.get('/list', adminAuthenticate, authorize("users", "listing"), getRoles);
 
 // Get single role by ID
 router.get('/:id', adminAuthenticate, getRoleById);

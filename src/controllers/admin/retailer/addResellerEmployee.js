@@ -5,7 +5,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const bcrypt = require("bcryptjs");
 
 exports.addResellerEmployee = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
+  const { id } = req.params;
   const { employee } = req.body;
 
   if (!employee || typeof employee !== "object") {
@@ -30,7 +30,7 @@ exports.addResellerEmployee = catchAsync(async (req, res, next) => {
   if (existingEmp) return next(new AppError("Employee username already exists", 400));
 
   // Hash the password
-  employee.password = await bcrypt.hash(employee.password, 10);
+  // employee.password = employee.password
 
   // Push new employee to employeeAssociation array
   retailer.employeeAssociation.push(employee);

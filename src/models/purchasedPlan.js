@@ -23,7 +23,7 @@ const renewalSchema = new Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ["Online", "Cash", "Wallet", "Other"],
+    enum: ["Online", "Cash", "Upi", "Wallet", "Other"],
     default: "Online"
   },
   remarks: String

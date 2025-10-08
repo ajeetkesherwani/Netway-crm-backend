@@ -5,6 +5,10 @@ const {
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
 const {
+    renewPurchasedPlan
+} = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan");
+
+const {
     createPurchasedPlan
 } = require("../../controllers/admin/purchasedPlan/createPurchasedPlan");
 
@@ -19,10 +23,6 @@ const {
 const {
     deletePurchasedPlan
 } = require("../../controllers/admin/purchasedPlan/deletePurchasedPlan");
-
-const {
-    renewPurchasedPlan
-} = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan");
 
 const router = express.Router();
 

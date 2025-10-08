@@ -18,8 +18,6 @@ const UserSchema = new mongoose.Schema({
     state: { type: String, required: true },
     country: { type: String },
     district: { type: String },
-    // retailerId: { type: mongoose.Schema.Types.ObjectId, ref: "Retailer", },
-    // lcoId: { type: mongoose.Schema.Types.ObjectId, ref: "Lco" },
     paymentMethod: { type: String, enum: ["Cash", "Online"], default: "Cash" },
 
     createdBy: {

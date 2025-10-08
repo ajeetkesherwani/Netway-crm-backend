@@ -14,7 +14,7 @@ exports.updateRetailer = catchAsync(async (req, res, next) => {
 
   // Define which fields can be updated
   const updatableFields = [
-    "title", "phoneNo", "email", "resellerName", "houseNo", "pincode", "area",
+    "title", "phoneNo", "email", "resellerName", "district", "houseNo", "pincode", "area",
     "subArea", "mobileNo", "fax", "messengerId", "dob", "balance", "dashboard",
     "panNumber", "resellerCode", "contactPersonNumber", "whatsAppNumber", "address",
     "taluka", "state", "country", "website", "annversaryDate", "latitude", "longitude",

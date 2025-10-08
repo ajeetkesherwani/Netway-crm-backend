@@ -1,24 +1,28 @@
 const express = require("express");
 
-const { 
+const {
     assignPackageToReseller
 } = require("../../controllers/admin/assignPackage/assignPackage");
 
-const { 
-    adminAuthenticate 
+const {
+    adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-const { 
-    getAssignedPackagesByAssignToId 
+const {
+    getAssignedPackagesByAssignToId
 } = require("../../controllers/admin/retailer/getAssignPackageByToId");
 
-const { 
-    getPackages 
+const {
+    getPackages
 } = require("../../controllers/admin/assignPackage/getPackagesList");
 
-const { 
-    getAssignedPackageDetails 
+const {
+    getAssignedPackageDetails
 } = require("../../controllers/admin/retailer/getAssignPackageDetails");
+
+const {
+    updateAssignPackageStatus
+} = require("../../controllers/admin/assignPackage/updateAssignPackagesStatus");
 
 const router = express.Router();
 
@@ -26,5 +30,6 @@ router.post("/create", adminAuthenticate, assignPackageToReseller);
 router.get("/list", adminAuthenticate, getPackages);
 router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);
 router.get("/packageList/:assignToId/:packageId", adminAuthenticate, getAssignedPackageDetails);
+router.patch("/update/status/:packageItemId", adminAuthenticate, updateAssignPackageStatus);
 
 module.exports = router;

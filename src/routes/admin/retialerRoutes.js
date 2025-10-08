@@ -43,6 +43,10 @@ const {
     deleteResellerEmployee
 } = require("../../controllers/admin/retailer/deleteResellerEmployee");
 
+const {
+    getResellerEmployeeDetails
+} = require("../../controllers/admin/retailer/getResellerEmployeeDetail");
+
 
 
 const router = express.Router();
@@ -58,5 +62,6 @@ router.patch("/addEmployee/:id", adminAuthenticate, addResellerEmployee);
 router.get("/employee/:resllerId", adminAuthenticate, getResellerEmployees);
 router.patch("/update/:resellerId/:employeeId", adminAuthenticate, updateResellerEmployee);
 router.delete("/delete/:resellerId/:employeeId", adminAuthenticate, deleteResellerEmployee);
+router.get("/employee/:resellerId/:employeeId", adminAuthenticate, getResellerEmployeeDetails);
 
 module.exports = router;

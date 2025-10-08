@@ -27,6 +27,22 @@ const {
     addLcoEmployee
 } = require("../../controllers/admin/lco/addLcoEmployee");
 
+const {
+    getLcoEmployeesList
+} = require("../../controllers/admin/lco/getLcoEmployeeList");
+
+const {
+    getLcoEmployeeDetails
+} = require("../../controllers/admin/lco/getLcoEmployeeDetails");
+
+const {
+    deleteLcoEmployee
+} = require("../../controllers/admin/lco/deleteLcoEmployee");
+
+const {
+    updateLcoEmployee
+} = require("../../controllers/admin/lco/updateLocEmployeeDetails");
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createLco);
@@ -35,5 +51,9 @@ router.get("/list/:id", adminAuthenticate, getDetails);
 router.patch("/update/:lcoId", adminAuthenticate, updateLco);
 router.delete("/delet/:id", adminAuthenticate, deleteLoc);
 router.patch("/addEmployee/:id", adminAuthenticate, addLcoEmployee);
+router.get("/employee/:lcoId", adminAuthenticate, getLcoEmployeesList);
+router.get("/employee/:lcoId/:employeeId", adminAuthenticate, getLcoEmployeeDetails);
+router.delete("/delete/employee/:lcoId/:employeeId", adminAuthenticate, deleteLcoEmployee);
+router.patch("/update/employee/:lcoId/:employeeId", adminAuthenticate, updateLcoEmployee);
 
 module.exports = router;

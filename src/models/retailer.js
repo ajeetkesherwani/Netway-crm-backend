@@ -28,6 +28,7 @@ const retailerSchema = new mongoose.Schema({
   whatsAppNumber: { type: String },
   address: { type: String },
   taluka: { type: String },
+  district: { type: String },
   state: { type: String },
   country: { type: String },
   website: { type: String },
@@ -38,7 +39,7 @@ const retailerSchema = new mongoose.Schema({
   contactPersonName: { type: String },
   supportEmail: { type: String },
   nas: { type: [String], default: [] },
-  Description: { type: String },
+  description: { type: String },
   role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
   status: { type: String, default: "false" },
   walletBalance: { type: Number, default: 0 },
@@ -64,10 +65,22 @@ const retailerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash employeeAssociation passwords before saving
+// retailerSchema.pre("save", async function (next) {
+//   if (this.isModified("employeeAssociation")) {
+//     for (let emp of this.employeeAssociation) {
+//       if (emp.isNew || emp.isModified("password")) {
+//         emp.password = await bcrypt.hash(emp.password, 10);
+//       }
+//     }
+//   }
+//   next();
+// });
+
 retailerSchema.pre("save", async function (next) {
-  if (this.isModified("employeeAssociation")) {
+  if (this.isModified("employeeAssociation") || this.isNew) {
     for (let emp of this.employeeAssociation) {
-      if (emp.isNew || emp.isModified("password")) {
+      // Avoid rehashing already hashed passwords
+      if (emp.password && !emp.password.startsWith("$2a$")) {
         emp.password = await bcrypt.hash(emp.password, 10);
       }
     }
@@ -76,9 +89,9 @@ retailerSchema.pre("save", async function (next) {
 });
 
 // Compare password for employeeAssociation login
-retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
-  return await bcrypt.compare(enteredPassword, empPassword);
-};
+// retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
+//   return await bcrypt.compare(enteredPassword, empPassword);
+// };
 
 const Retailer = mongoose.model("Retailer", retailerSchema);
 module.exports = Retailer;

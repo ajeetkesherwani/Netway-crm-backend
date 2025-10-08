@@ -19,4 +19,5 @@ router.post('/create', adminAuthenticate, createUser);
 router.get("/list", adminAuthenticate, getUserList);
 router.get("/:id", adminAuthenticate, getUserDetails);
 
+
 module.exports = router;

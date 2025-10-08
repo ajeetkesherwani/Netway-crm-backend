@@ -49,7 +49,7 @@ router.post("/create", adminAuthenticate, createLco);
 router.get("/list", adminAuthenticate, getLcoList);
 router.get("/list/:id", adminAuthenticate, getDetails);
 router.patch("/update/:lcoId", adminAuthenticate, updateLco);
-router.delete("/delet/:id", adminAuthenticate, deleteLoc);
+router.delete("/delete/:id", adminAuthenticate, deleteLoc);
 router.patch("/addEmployee/:id", adminAuthenticate, addLcoEmployee);
 router.get("/employee/:lcoId", adminAuthenticate, getLcoEmployeesList);
 router.get("/employee/:lcoId/:employeeId", adminAuthenticate, getLcoEmployeeDetails);

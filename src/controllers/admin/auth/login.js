@@ -75,36 +75,107 @@ exports.login = catchAsync(async (req, res, next) => {
     userType = "admin";
   }
 
-  //2.reseller login
+  // // ✅ 2. Reseller Employee Login
+  // if (!user && employeeUserName) {
+  //   const reseller = await Reseller.findOne({
+  //     "employeeAssociation.employeeUserName": employeeUserName,
+  //   }).populate({
+  //     path: "role",
+  //     populate: { path: "permissions" },
+  //   });
+
+  //   if (!reseller) {
+  //     return next(new AppError("Invalid employee username or password.", 401));
+  //   }
+
+  //   // ✅ Find only the logged-in employee
+  //   const employee = reseller.employeeAssociation.find(
+  //     (emp) => emp.employeeUserName === employeeUserName
+  //   );
+
+  //   if (!employee) {
+  //     return next(new AppError("Invalid employee username or password.", 401));
+  //   }
+
+  //   // ✅ Check password
+  //   const isMatch = await bcrypt.compare(password, employee.password);
+  //   if (!isMatch) {
+  //     return next(new AppError("Invalid employee username or password.", 401));
+  //   }
+
+  //   user = reseller;
+  //   userType = "reseller";
+
+  //   // ✅ Fetch reseller config
+  //   let resellerConfig = await ResellerConfig.findOne({
+  //     // typeId: reseller._id,
+  //     // type: "Reseller"
+  //   }).lean();
+
+
+  //   let selectedConfig = null;
+  //   if (resellerConfig) {
+  //     const employeeTypeKey = employee.type.toLowerCase(); // admin, manager, operator
+
+  //     selectedConfig = {
+  //       _id: resellerConfig._id,
+  //       type: resellerConfig.type,
+  //       typeId: resellerConfig.typeId,
+  //       createdBy: resellerConfig.createdBy,
+  //       createdById: resellerConfig.createdById,
+  //       createdAt: resellerConfig.createdAt,
+  //       updatedAt: resellerConfig.updatedAt,
+  //     };
+
+  //     if (resellerConfig[employeeTypeKey]) {
+  //       selectedConfig[employeeTypeKey] = resellerConfig[employeeTypeKey];
+  //     }
+  //   }
+
+  //   // ✅ Build clean response user object
+  //   const cleanUser = {
+  //     _id: reseller._id,
+  //     resellerName: reseller.resellerName,
+  //     email: reseller.email,
+  //     phoneNo: reseller.phoneNo,
+  //     role: reseller.role,
+  //     employee: {
+  //       _id: employee._id,
+  //       employeeName: employee.employeeName,
+  //       employeeUserName: employee.employeeUserName,
+  //       email: employee.email,
+  //       mobile: employee.mobile,
+  //       type: employee.type,
+  //       status: employee.status,
+  //     },
+  //     resellerConfig: selectedConfig, // fixed: full config with only relevant employee type
+  //   };
+
+  //   user = cleanUser;
+  // }
+
+
   if (!user && employeeUserName) {
     const reseller = await Reseller.findOne({
       "employeeAssociation.employeeUserName": employeeUserName,
-    })
-      .populate("role")
-
-    // console.log(reseller, "resller");
+    }).populate({
+      path: "role",
+      populate: { path: "permissions" },
+    });
 
     if (!reseller) {
       return next(new AppError("Invalid employee username or password.", 401));
     }
 
-    // Find the logged-in employee only
     const employee = reseller.employeeAssociation.find(
       (emp) => emp.employeeUserName === employeeUserName
     );
-
 
     if (!employee) {
       return next(new AppError("Invalid employee username or password.", 401));
     }
 
-    console.log("Password entered:", password);
-    console.log("Hashed password from DB:", employee.password);
-
-
     const isMatch = await bcrypt.compare(password, employee.password);
-    console.log("isMatch", isMatch);
-
     if (!isMatch) {
       return next(new AppError("Invalid employee username or password.", 401));
     }
@@ -112,14 +183,17 @@ exports.login = catchAsync(async (req, res, next) => {
     user = reseller;
     userType = "reseller";
 
-    // Fetch reseller config for this employee type only
+    // 🔹 Dynamically fetch ResellerConfig based on typeId and type
     let resellerConfig = await ResellerConfig.findOne({
-      typeId: reseller._id,
-      type: employee.type,
+      typeId: reseller._id, // dynamic ID of reseller/Lco/admin
+      // type: reseller.type || "Reseller", // dynamic type
     }).lean();
 
+    let selectedConfig = null;
     if (resellerConfig) {
-      const filteredConfig = {
+      const employeeTypeKey = employee.type.toLowerCase(); // admin, manager, operator
+
+      selectedConfig = {
         _id: resellerConfig._id,
         type: resellerConfig.type,
         typeId: resellerConfig.typeId,
@@ -127,24 +201,34 @@ exports.login = catchAsync(async (req, res, next) => {
         createdById: resellerConfig.createdById,
         createdAt: resellerConfig.createdAt,
         updatedAt: resellerConfig.updatedAt,
-        __v: resellerConfig.__v,
       };
 
-      const employeeTypeKey = employee.type.toLowerCase();
+      // ✅ Include only the config relevant to the employee type
       if (resellerConfig[employeeTypeKey]) {
-        filteredConfig[employeeTypeKey] = resellerConfig[employeeTypeKey];
+        selectedConfig[employeeTypeKey] = resellerConfig[employeeTypeKey];
       }
-
-      resellerConfig = filteredConfig;
     }
 
-    user.resellerConfig = resellerConfig || null;
+    // ✅ Build clean response object
+    const cleanUser = {
+      _id: reseller._id,
+      resellerName: reseller.resellerName,
+      email: reseller.email,
+      phoneNo: reseller.phoneNo,
+      role: reseller.role,
+      employee: {
+        _id: employee._id,
+        employeeName: employee.employeeName,
+        employeeUserName: employee.employeeUserName,
+        email: employee.email,
+        mobile: employee.mobile,
+        type: employee.type,
+        status: employee.status,
+      },
+      resellerConfig: selectedConfig,
+    };
 
-    // Attach only the logged-in employee
-    user.employee = employee;
-
-    // Remove all employeeAssociation except the logged-in one
-    delete user.employeeAssociation;
+    user = cleanUser;
   }
 
 

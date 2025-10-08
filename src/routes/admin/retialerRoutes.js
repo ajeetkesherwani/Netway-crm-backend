@@ -47,6 +47,10 @@ const {
     getResellerEmployeeDetails
 } = require("../../controllers/admin/retailer/getResellerEmployeeDetail");
 
+const {
+    getResellerLcos
+} = require("../../controllers/admin/retailer/resellerGetOwnLco");
+
 
 
 const router = express.Router();
@@ -63,5 +67,6 @@ router.get("/employee/:resllerId", adminAuthenticate, getResellerEmployees);
 router.patch("/update/:resellerId/:employeeId", adminAuthenticate, updateResellerEmployee);
 router.delete("/delete/:resellerId/:employeeId", adminAuthenticate, deleteResellerEmployee);
 router.get("/employee/:resellerId/:employeeId", adminAuthenticate, getResellerEmployeeDetails);
+router.get("/lcoList", adminAuthenticate, getResellerLcos);
 
 module.exports = router;

@@ -17,9 +17,9 @@ exports.updateResellerEmployee = catchAsync(async (req, res, next) => {
     // Optional: Prevent overwriting array accidentally
     if ("employeeAssociation" in req.body) delete req.body.employeeAssociation;
 
-    // Handle password update securely
     if (updateData.password) {
-        updateData.password = await bcrypt.hash(updateData.password, 10);
+        employee.password = updateData.password;
+        employee.markModified("password");
     }
 
     // Update employee fields dynamically

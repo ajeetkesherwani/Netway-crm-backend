@@ -65,28 +65,18 @@ const retailerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash employeeAssociation passwords before saving
-// retailerSchema.pre("save", async function (next) {
-//   if (this.isModified("employeeAssociation")) {
-//     for (let emp of this.employeeAssociation) {
-//       if (emp.isNew || emp.isModified("password")) {
-//         emp.password = await bcrypt.hash(emp.password, 10);
-//       }
-//     }
-//   }
-//   next();
-// });
-
 retailerSchema.pre("save", async function (next) {
-  if (this.isModified("employeeAssociation") || this.isNew) {
+  if (this.isModified("employeeAssociation")) {
     for (let emp of this.employeeAssociation) {
-      // Avoid rehashing already hashed passwords
-      if (emp.password && !emp.password.startsWith("$2a$")) {
+      if (emp.isNew || emp.isModified("password")) {
         emp.password = await bcrypt.hash(emp.password, 10);
       }
     }
   }
   next();
 });
+
+
 
 // Compare password for employeeAssociation login
 // retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {

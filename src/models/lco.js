@@ -8,7 +8,7 @@ const lcoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, ref: "Role"
     },
     lcoName: { type: String, requied: true },
-    password: { type: String, required: true },
+    password: { type: String, },
     mobileNo: { type: Number, match: /^[0-9]{10}$/ },
     address: { type: String },
     houseNo: { type: String },
@@ -31,7 +31,7 @@ const lcoSchema = new mongoose.Schema({
     lcoBalance: { type: String },
     gst: { type: String },
     panNo: { type: String },
-    dashboard: { type: String, enum: ["Admin"], default: "Admin" },
+    dashboard: { type: String, enum: ["Admin", "Reseller", "Lco"], default: "Admin" },
     contactPersonName: { type: String },
     contactPersonNumber: { type: String },
     supportEmail: { type: String },
@@ -61,15 +61,6 @@ const lcoSchema = new mongoose.Schema({
 
 });
 
-// lcoSchema.pre("save", async function (next) {
-//     if (!this.isModified("password")) return next();
-//     this.password = await bcrypt.hash(this.password, 10);
-// });
-
-// lcoSchema.methods.comparePassword = async function (enteredPassword) {
-//     return await bcrypt.compare(enteredPassword, this.password);
-// };
-
 // Hash employeeAssociation passwords before saving
 lcoSchema.pre("save", async function (next) {
     if (this.isModified("employeeAssociation")) {
@@ -83,9 +74,9 @@ lcoSchema.pre("save", async function (next) {
 });
 
 // Compare password for employeeAssociation login
-lcoSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
-    return await bcrypt.compare(enteredPassword, empPassword);
-};
+// lcoSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
+//     return await bcrypt.compare(enteredPassword, empPassword);
+// };
 
 const Lco = mongoose.model("Lco", lcoSchema);
 

@@ -10,6 +10,7 @@ exports.updateLcoEmployee = catchAsync(async (req, res, next) => {
 
     const lco = await Lco.findById(lcoId);
     if (!lco) return next(new AppError("Lco not found", 404));
+    console.log("lco", lco);
 
     const employee = lco.employeeAssociation.id(employeeId);
     if (!employee) return next(new AppError("Employee not found", 404));
@@ -17,10 +18,13 @@ exports.updateLcoEmployee = catchAsync(async (req, res, next) => {
     // Optional: Prevent overwriting array accidentally
     if ("employeeAssociation" in req.body) delete req.body.employeeAssociation;
 
-    // Handle password update securely
+
+
     if (updateData.password) {
-        updateData.password = await bcrypt.hash(updateData.password, 10);
+        employee.password = updateData.password;
+        employee.markModified("password");
     }
+
 
     // Update employee fields dynamically
     Object.assign(employee, updateData);

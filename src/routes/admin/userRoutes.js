@@ -4,20 +4,28 @@ const {
   adminAuthenticate,
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-const { 
-  createUser 
+const {
+  createUser
 } = require('../../controllers/admin/user/CreateUser');
 
-const { 
-  getUserList 
+const {
+  getUserList
 } = require('../../controllers/admin/user/getUser');
-const { getUserDetails } = require('../../controllers/admin/user/getUserDetails');
+
+const {
+  getUserDetails
+} = require('../../controllers/admin/user/getUserDetails');
+
+const {
+  updateUser
+} = require('../../controllers/admin/user/updateUser');
 
 
 
 router.post('/create', adminAuthenticate, createUser);
 router.get("/list", adminAuthenticate, getUserList);
 router.get("/:id", adminAuthenticate, getUserDetails);
+router.patch("/update/:userId", adminAuthenticate, updateUser);
 
 
 module.exports = router;

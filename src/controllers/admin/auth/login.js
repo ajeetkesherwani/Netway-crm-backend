@@ -1,325 +1,368 @@
-// const bcrypt = require("bcrypt");
+// // const bcrypt = require("bcrypt");
+// // const Admin = require("../../../models/admin");
+// // const Reseller = require("../../../models/retailer");
+// // const Lco = require("../../../models/lco");
+// // const Staff = require("../../../models/Staff");
+// // const AppError = require("../../../utils/AppError");
+// // const catchAsync = require("../../../utils/catchAsync");
+// // const createToken = require("../../../utils/createToken");
+
+// // exports.login = catchAsync(async (req, res, next) => {
+// //   const { email, password } = req.body;
+
+// //   if (!email || !password) {
+// //     return next(new AppError("Email and password are required.", 400));
+// //   }
+
+// //   let user = await Admin.findOne({ email }).populate("role");
+// //   let userType = "admin";
+
+// //   if (!user) {
+// //     user = await Reseller.findOne({ email }).populate("role");
+// //     userType = "reseller";
+// //   }
+
+// //   if (!user) {
+// //     user = await Lco.findOne({ email }).populate("role");
+// //     userType = "lco";
+// //   }
+
+// //   if (!user) {
+// //     user = await Staff.findOne({ email }).populate("role");
+// //     userType = "staff";
+// //   }
+
+// //   if (!user) {
+// //     return next(new AppError("Invalid email or password.", 401));
+// //   }
+
+// //   // Compare password
+// //   const isMatch = await bcrypt.compare(password, user.password);
+// //   if (!isMatch) {
+// //     return next(new AppError("Invalid email or password.", 401));
+// //   }
+
+// //   // Generate token
+// //   createToken(user, 200, res);
+
+// // });
+
+
+
+// const bcrypt = require("bcryptjs");
+// const mongoose = require("mongoose");
+
 // const Admin = require("../../../models/admin");
 // const Reseller = require("../../../models/retailer");
 // const Lco = require("../../../models/lco");
-// const Staff = require("../../../models/Staff");
 // const AppError = require("../../../utils/AppError");
 // const catchAsync = require("../../../utils/catchAsync");
 // const createToken = require("../../../utils/createToken");
+// const ResellerConfig = require("../../../models/resellerConfig");
 
 // exports.login = catchAsync(async (req, res, next) => {
-//   const { email, password } = req.body;
+//   const { email, password, employeeUserName } = req.body;
 
-//   if (!email || !password) {
-//     return next(new AppError("Email and password are required.", 400));
+//   if ((!email && !employeeUserName) || !password) {
+//     return next(new AppError("Email or employeeUserName and password are required.", 400));
 //   }
 
-//   let user = await Admin.findOne({ email }).populate("role");
-//   let userType = "admin";
+//   let user = null;
+//   let userType = "";
+//   let employee = null;
 
-//   if (!user) {
-//     user = await Reseller.findOne({ email }).populate("role");
-//     userType = "reseller";
+//   // 1️⃣ Admin Login
+//   if (email) {
+//     user = await Admin.findOne({ email }).populate("role");
+//     userType = "admin";
+
+//     if (!user) return next(new AppError("Invalid email or password.", 401));
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) return next(new AppError("Invalid email or password.", 401));
+
+//     employee = {
+//       type: "admin",
+//       employeeName: user.title || "Admin",
+//       _id: null,
+//       employeeUserName: email,
+//       email: email,
+//       status: "active",
+//     };
 //   }
 
-//   if (!user) {
-//     user = await Lco.findOne({ email }).populate("role");
-//     userType = "lco";
+//   // 2️⃣ Reseller Employee Login
+//   if (!user && employeeUserName) {
+//     const reseller = await Reseller.findOne({
+//       "employeeAssociation.employeeUserName": employeeUserName,
+//     }).populate({
+//       path: "role",
+//       populate: { path: "permissions" },
+//     });
+
+//     if (reseller) {
+//       employee = reseller.employeeAssociation.find(
+//         (emp) => emp.employeeUserName === employeeUserName
+//       );
+//       if (!employee) return next(new AppError("Invalid employee username or password.", 401));
+
+//       const isMatch = await bcrypt.compare(password, employee.password);
+//       if (!isMatch) return next(new AppError("Invalid employee username or password.", 401));
+
+//       user = reseller;
+//       userType = "reseller";
+//     }
 //   }
 
-//   if (!user) {
-//     user = await Staff.findOne({ email }).populate("role");
-//     userType = "staff";
+//   // 3️⃣ LCO Employee Login
+//   if (!user && employeeUserName) {
+//     const lco = await Lco.findOne({
+//       "employeeAssociation.employeeUserName": employeeUserName,
+//     }).populate("role");
+
+//     if (lco) {
+//       employee = lco.employeeAssociation.find(
+//         (emp) => emp.employeeUserName === employeeUserName
+//       );
+//       if (!employee) return next(new AppError("Invalid employee username or password.", 401));
+
+//       const isMatch = await bcrypt.compare(password, employee.password);
+//       if (!isMatch) return next(new AppError("Invalid employee username or password.", 401));
+
+//       user = lco;
+//       userType = "lco";
+//     }
 //   }
 
-//   if (!user) {
-//     return next(new AppError("Invalid email or password.", 401));
+//   if (!user) return next(new AppError("Invalid email or username or password.", 401));
+
+//   // 🔹 Fetch Config by typeId ONLY
+//   let typeId;
+//   try {
+//     typeId = new mongoose.Types.ObjectId(user._id);
+//   } catch (err) {
+//     return next(new AppError("Invalid user ID", 400));
 //   }
 
-//   // Compare password
-//   const isMatch = await bcrypt.compare(password, user.password);
-//   if (!isMatch) {
-//     return next(new AppError("Invalid email or password.", 401));
+//   const resellerConfig = await ResellerConfig.findOne({ typeId }).lean();
+
+//   let selectedConfig = null;
+
+//   if (resellerConfig && employee && employee.type) {
+//     const employeeTypeKey = employee.type.toLowerCase(); // admin / manager / operator
+
+//     selectedConfig = {
+//       _id: resellerConfig._id,
+//       typeId: resellerConfig.typeId,
+//       createdBy: resellerConfig.createdBy,
+//       createdById: resellerConfig.createdById,
+//       createdAt: resellerConfig.createdAt,
+//       updatedAt: resellerConfig.updatedAt,
+//     };
+
+//     selectedConfig[employeeTypeKey] = resellerConfig[employeeTypeKey] || {};
 //   }
 
-//   // Generate token
-//   createToken(user, 200, res);
+//   const cleanUser = {
+//     _id: user._id,
+//     resellerName: user.resellerName || user.title || "",
+//     email: user.email,
+//     phoneNo: user.phoneNo || user.mobileNo,
+//     role: user.role,
+//     employee: {
+//       _id: employee._id || null,
+//       employeeName: employee.employeeName || "",
+//       employeeUserName: employee.employeeUserName || "",
+//       email: employee.email || "",
+//       mobile: employee.mobile || "",
+//       type: employee.type || "",
+//       status: employee.status || "",
+//     },
+//     resellerConfig: selectedConfig,
+//   };
 
+//   createToken(cleanUser, 200, res, userType, employee);
 // });
 
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const Admin = require("../../../models/admin");
 const Reseller = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
-const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
 const ResellerConfig = require("../../../models/resellerConfig");
 
 exports.login = catchAsync(async (req, res, next) => {
-  // console.log(await bcrypt.hash("123456", 10))
   const { email, password, employeeUserName } = req.body;
-  console.log("req.body", req.body);
-  // ✅ Validation
+
   if ((!email && !employeeUserName) || !password) {
     return next(new AppError("Email or employeeUserName and password are required.", 400));
   }
 
   let user = null;
   let userType = "";
+  let employee = null;
 
-  // ✅ 1. Admin Login
+  // 1️⃣ ADMIN LOGIN
   if (email) {
     user = await Admin.findOne({ email }).populate("role");
+    if (!user) return next(new AppError("Invalid email or password.", 401));
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return next(new AppError("Invalid email or password.", 401));
+
     userType = "admin";
+    employee = {
+      type: "Admin",
+      employeeName: user.title || "Administrator",
+      _id: null,
+      employeeUserName: email,
+      email: email,
+      mobile: user.mobile || null,
+      status: "active",
+    };
   }
 
-  // // ✅ 2. Reseller Employee Login
-  // if (!user && employeeUserName) {
-  //   const reseller = await Reseller.findOne({
-  //     "employeeAssociation.employeeUserName": employeeUserName,
-  //   }).populate({
-  //     path: "role",
-  //     populate: { path: "permissions" },
-  //   });
-
-  //   if (!reseller) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   // ✅ Find only the logged-in employee
-  //   const employee = reseller.employeeAssociation.find(
-  //     (emp) => emp.employeeUserName === employeeUserName
-  //   );
-
-  //   if (!employee) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   // ✅ Check password
-  //   const isMatch = await bcrypt.compare(password, employee.password);
-  //   if (!isMatch) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   user = reseller;
-  //   userType = "reseller";
-
-  //   // ✅ Fetch reseller config
-  //   let resellerConfig = await ResellerConfig.findOne({
-  //     // typeId: reseller._id,
-  //     // type: "Reseller"
-  //   }).lean();
-
-
-  //   let selectedConfig = null;
-  //   if (resellerConfig) {
-  //     const employeeTypeKey = employee.type.toLowerCase(); // admin, manager, operator
-
-  //     selectedConfig = {
-  //       _id: resellerConfig._id,
-  //       type: resellerConfig.type,
-  //       typeId: resellerConfig.typeId,
-  //       createdBy: resellerConfig.createdBy,
-  //       createdById: resellerConfig.createdById,
-  //       createdAt: resellerConfig.createdAt,
-  //       updatedAt: resellerConfig.updatedAt,
-  //     };
-
-  //     if (resellerConfig[employeeTypeKey]) {
-  //       selectedConfig[employeeTypeKey] = resellerConfig[employeeTypeKey];
-  //     }
-  //   }
-
-  //   // ✅ Build clean response user object
-  //   const cleanUser = {
-  //     _id: reseller._id,
-  //     resellerName: reseller.resellerName,
-  //     email: reseller.email,
-  //     phoneNo: reseller.phoneNo,
-  //     role: reseller.role,
-  //     employee: {
-  //       _id: employee._id,
-  //       employeeName: employee.employeeName,
-  //       employeeUserName: employee.employeeUserName,
-  //       email: employee.email,
-  //       mobile: employee.mobile,
-  //       type: employee.type,
-  //       status: employee.status,
-  //     },
-  //     resellerConfig: selectedConfig, // fixed: full config with only relevant employee type
-  //   };
-
-  //   user = cleanUser;
-  // }
-
-
+  // 2️⃣ RESELLER EMPLOYEE LOGIN
   if (!user && employeeUserName) {
     const reseller = await Reseller.findOne({
       "employeeAssociation.employeeUserName": employeeUserName,
-    }).populate({
-      path: "role",
-      populate: { path: "permissions" },
-    });
+    })
+      .populate({
+        path: "role",
+        select: "roleName permissions",
+      })
+      .lean();
 
-    if (!reseller) {
-      return next(new AppError("Invalid employee username or password.", 401));
+    if (reseller) {
+      const foundEmployee = reseller.employeeAssociation.find(
+        (emp) => emp.employeeUserName === employeeUserName
+      );
+      if (!foundEmployee)
+        return next(new AppError("Invalid employee username or password.", 401));
+
+      const isMatch = await bcrypt.compare(password, foundEmployee.password);
+      if (!isMatch)
+        return next(new AppError("Invalid employee username or password.", 401));
+
+      user = reseller;
+      employee = foundEmployee;
+      userType = "reseller";
     }
+  }
 
-    const employee = reseller.employeeAssociation.find(
-      (emp) => emp.employeeUserName === employeeUserName
-    );
+  // 3️⃣ LCO EMPLOYEE LOGIN
+  if (!user && employeeUserName) {
+    const lco = await Lco.findOne({
+      "employeeAssociation.employeeUserName": employeeUserName,
+    })
+      .populate({
+        path: "role",
+        select: "roleName permissions",
+      })
+      .populate({
+        path: "retailerId", // LCO’s parent reseller
+        select: "resellerName",
+        populate: {
+          path: "role",
+          select: "roleName",
+        },
+      })
+      .lean();
 
-    if (!employee) {
-      return next(new AppError("Invalid employee username or password.", 401));
+    if (lco) {
+      const foundEmployee = lco.employeeAssociation.find(
+        (emp) => emp.employeeUserName === employeeUserName
+      );
+      if (!foundEmployee)
+        return next(new AppError("Invalid employee username or password.", 401));
+
+      const isMatch = await bcrypt.compare(password, foundEmployee.password);
+      if (!isMatch)
+        return next(new AppError("Invalid employee username or password.", 401));
+
+      user = lco;
+      employee = foundEmployee;
+      userType = "lco";
     }
+  }
 
-    const isMatch = await bcrypt.compare(password, employee.password);
-    if (!isMatch) {
-      return next(new AppError("Invalid employee username or password.", 401));
-    }
+  if (!user) return next(new AppError("Invalid credentials.", 401));
 
-    user = reseller;
-    userType = "reseller";
+  // 4️⃣ FETCH CONFIGURATION (only for reseller or LCO)
+  let resellerConfig = null;
+  if (userType === "reseller" || userType === "lco") {
+    const typeId = new mongoose.Types.ObjectId(user._id);
+    const config = await ResellerConfig.findOne({ typeId }).lean();
 
-    // 🔹 Dynamically fetch ResellerConfig based on typeId and type
-    let resellerConfig = await ResellerConfig.findOne({
-      typeId: reseller._id, // dynamic ID of reseller/Lco/admin
-      // type: reseller.type || "Reseller", // dynamic type
-    }).lean();
-
-    let selectedConfig = null;
-    if (resellerConfig) {
-      const employeeTypeKey = employee.type.toLowerCase(); // admin, manager, operator
-
-      selectedConfig = {
-        _id: resellerConfig._id,
-        type: resellerConfig.type,
-        typeId: resellerConfig.typeId,
-        createdBy: resellerConfig.createdBy,
-        createdById: resellerConfig.createdById,
-        createdAt: resellerConfig.createdAt,
-        updatedAt: resellerConfig.updatedAt,
+    if (config && employee?.type) {
+      const key = employee.type.toLowerCase();
+      resellerConfig = {
+        _id: config._id,
+        typeId: config.typeId,
+        createdBy: config.createdBy,
+        createdById: config.createdById,
+        createdAt: config.createdAt,
+        updatedAt: config.updatedAt,
+        [key]: config[key] || {},
       };
-
-      // ✅ Include only the config relevant to the employee type
-      if (resellerConfig[employeeTypeKey]) {
-        selectedConfig[employeeTypeKey] = resellerConfig[employeeTypeKey];
-      }
     }
+  }
 
-    // ✅ Build clean response object
-    const cleanUser = {
-      _id: reseller._id,
-      resellerName: reseller.resellerName,
-      email: reseller.email,
-      phoneNo: reseller.phoneNo,
-      role: reseller.role,
-      employee: {
-        _id: employee._id,
-        employeeName: employee.employeeName,
-        employeeUserName: employee.employeeUserName,
-        email: employee.email,
-        mobile: employee.mobile,
-        type: employee.type,
-        status: employee.status,
+  // 5️⃣ BUILD RESPONSE BASED ON USER TYPE
+  let cleanUser = {};
+
+  if (userType === "admin") {
+    cleanUser = {
+      _id: user._id,
+      adminName: user.title || "Admin",
+      email: user.email,
+      mobile: user.mobile,
+      role: {
+        roleName: user.role?.roleName || "ADMIN",
+        permissions: user.role?.permissions || {},
       },
-      resellerConfig: selectedConfig,
+      employee,
     };
-
-    user = cleanUser;
+  } else if (userType === "reseller") {
+    cleanUser = {
+      _id: user._id,
+      resellerName: user.resellerName,
+      email: user.email,
+      phoneNo: user.phoneNo,
+      role: {
+        roleName: user.role?.roleName || "RESELLER",
+        permissions: user.role?.permissions || {},
+      },
+      employee,
+      resellerConfig,
+    };
+  } else if (userType === "lco") {
+    cleanUser = {
+      _id: user._id,
+      lcoName: user.lcoName,
+      email: user.email,
+      phoneNo: user.phoneNo,
+      role: {
+        roleName: user.role?.roleName || "LCO",
+        permissions: user.role?.permissions || {},
+      },
+      employee,
+      resellerConfig,
+      parentReseller: user.retailerId
+        ? {
+          _id: user.retailerId._id,
+          resellerName: user.retailerId.resellerName,
+          email: user.retailerId.email,
+          phoneNo: user.retailerId.phoneNo,
+          roleName: user.retailerId.role?.roleName || "Reseller",
+        }
+        : null,
+    };
   }
 
-
-  // ✅ 3. LCO Login
-  // if (!user && email) {
-  //   user = await Lco.findOne({ email }).populate("role");
-  //   userType = "lco";
-  // }
-
-  // if (!user && employeeUserName) {
-  //   const lco = await Lco.findOne({
-  //     "employeeAssociation.employeeUserName": employeeUserName,
-  //   })
-  //     .populate("roleId")
-  //     .lean();
-
-  //   if (!lco) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   // Find the logged-in employee only
-  //   const employee = lco.employeeAssociation.find(
-  //     (emp) => emp.employeeUserName === employeeUserName
-  //   );
-
-  //   if (!employee) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   const isMatch = await bcrypt.compare(password, employee.password);
-  //   if (!isMatch) {
-  //     return next(new AppError("Invalid employee username or password.", 401));
-  //   }
-
-  //   user = lco;
-  //   userType = "lco";
-
-  //   // Fetch reseller config for this employee type only
-  //   let lcoConfig = await LcoConfig.findOne({
-  //     typeId: lco._id,
-  //     type: employee.type,
-  //   }).lean();
-
-  //   if (lcoConfig) {
-  //     const filteredConfig = {
-  //       _id: lcoConfig._id,
-  //       type: lcoConfig.type,
-  //       typeId: lcoConfig.typeId,
-  //       createdBy: lcoConfig.createdBy,
-  //       createdById: lcoConfig.createdById,
-  //       createdAt: lcoConfig.createdAt,
-  //       updatedAt: lcoConfig.updatedAt,
-  //     };
-
-  //     const employeeTypeKey = employee.type.toLowerCase();
-  //     if (lcoConfig[employeeTypeKey]) {
-  //       filteredConfig[employeeTypeKey] = lcoConfig[employeeTypeKey];
-  //     }
-
-  //     lcoConfig = filteredConfig;
-  //   }
-
-  //   user.lcoConfig = lcoConfig || null;
-
-  //   // Attach only the logged-in employee
-  //   user.employee = employee;
-
-  //   // Remove all employeeAssociation except the logged-in one
-  //   delete user.employeeAssociation;
-  // }
-
-
-  // ✅ 4. Staff Login
-  if (!user && email) {
-    user = await Staff.findOne({ email }).populate("role");
-    userType = "staff";
-  }
-
-  // ✅ 5. If user not found
-  if (!user) {
-    return next(new AppError("Invalid email or password.", 401));
-  }
-
-  // ✅ Compare password for Admin, Lco, Staff
-  if (userType !== "reseller") {
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return next(new AppError("Invalid email or password.", 401));
-    }
-  }
-
-  // ✅ Generate Token
-  createToken(user, 200, res, userType, user.employee || null);
+  // 6️⃣ CREATE TOKEN
+  createToken(cleanUser, 200, res, userType, employee);
 });

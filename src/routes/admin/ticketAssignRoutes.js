@@ -6,7 +6,7 @@ const {
 
 const {
     assignTicket
-} = require("../../controllers/admin/ticketAssignToStaff/assignTIcketToStaff");
+} = require("../../controllers/admin/ticketAssignToStaff/assignTicketToStaff");
 
 const {
     reAssignTicket

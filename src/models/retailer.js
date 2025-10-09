@@ -58,6 +58,7 @@ const retailerSchema = new mongoose.Schema({
     employeeName: { type: String },
     employeeUserName: { type: String },
     password: { type: String },
+    plainPassword: { type: String },
     mobile: { type: Number },
     email: { type: String }
   }]
@@ -69,6 +70,7 @@ retailerSchema.pre("save", async function (next) {
   if (this.isModified("employeeAssociation")) {
     for (let emp of this.employeeAssociation) {
       if (emp.isNew || emp.isModified("password")) {
+        emp.plainPassword = emp.password;
         emp.password = await bcrypt.hash(emp.password, 10);
       }
     }

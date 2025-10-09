@@ -5,7 +5,8 @@ const resellerConfigSchema = new mongoose.Schema(
         type: { type: String, enum: ["Admin", "Reseller", "Lco"], default: "Reseller" },
         typeId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Retailer"
+            required: true,
+            refPath: "type"
         },
         admin: {
             type: Map,

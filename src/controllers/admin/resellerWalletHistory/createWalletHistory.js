@@ -37,10 +37,10 @@ exports.createResellerWallet = catchAsync(async (req, res, next) => {
         createdById: req.user._id
     });
 
-    reseller.walletBalance = (reseller.walletBalance || 0) + amount;
+    reseller.walletBalance = (reseller.walletBalance || 0) + Number(amount);
 
     if (mode === "Credit") {
-        reseller.creditBalance = (reseller.creditBalance || 0) + amount;
+        reseller.creditBalance = (reseller.creditBalance || 0) + Number(amount);
     }
 
     await reseller.save();

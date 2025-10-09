@@ -85,6 +85,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
   // Hash password if provided
   if (generalInformation.password) {
+    generalInformation.plainPassword = generalInformation.password
     generalInformation.password = await bcrypt.hash(generalInformation.password, 10);
   }
 

@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
     name: { type: String },
     username: { type: String, required: true },
     password: { type: String },
+    plainPassword: { type: String },
     email: { type: String },
     phone: { type: String },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
@@ -62,7 +63,7 @@ const UserSchema = new mongoose.Schema({
     documentDetails: { type: String, enum: ["Licence", "Pancard", "Gst", "Address Proof", "Passport"], default: "Pancard" },
     documentImage: { type: String, default: "" }
   },
-  status: { type: Boolean, default: "false" }
+  status: { type: String, enum: ["active", "Inactive", "Suspend"], default: "Inactive" }
 }, { timestamps: true });
 
 const User = mongoose.model("User", UserSchema);

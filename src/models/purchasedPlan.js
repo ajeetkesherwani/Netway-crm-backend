@@ -64,7 +64,7 @@ const purchasedPlanSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["active", "expired", "cancelled", "pending"],
+    enum: ["active", "expired", "cancelled", "pending", "Inactive"],
     default: "active"
   },
   amountPaid: {

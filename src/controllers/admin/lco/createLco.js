@@ -5,7 +5,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.createLco = catchAsync(async (req, res, next) => {
     const {
-        title, retailerId, role, lcoName, password, mobileNo, address, houseNo, taluka, pincode, district,
+        title, retailerId, role, lcoName, plainPassword, password, mobileNo, address, houseNo, taluka, pincode, district,
         area, state, country, subArea, telephone, faxNo, email, messengerId, website, dob, anniversaryDate,
         latitude, longitude, lcoBalance, gst, panNo, dashboard, contactPersonName, contactPersonNumber,
         supportEmail, supportWhatsApp, lcoCode, nas, description, status, employeeAssociation
@@ -60,7 +60,7 @@ exports.createLco = catchAsync(async (req, res, next) => {
     }
 
     const newLco = new Lco({
-        title, retailerId, role, lcoName, password, mobileNo, address, houseNo, taluka, pincode, district,
+        title, retailerId, role, lcoName, plainPassword: password, password, mobileNo, address, houseNo, taluka, pincode, district,
         area, state, country, subArea, telephone, faxNo, email, messengerId, website, dob, anniversaryDate,
         latitude, longitude, lcoBalance, gst, panNo, dashboard, contactPersonName, contactPersonNumber,
         supportEmail, supportWhatsApp, lcoCode, nas, description, status, employeeAssociation

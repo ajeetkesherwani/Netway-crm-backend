@@ -128,17 +128,12 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const selectedPackage = await Package.findById(packageId);
   if (!selectedPackage) return next(new AppError("Package not found", 404));
 
-  let packagePrice = Number(selectedPackage.basePrice || selectedPackage.offerPrice || 0);
+  //=============================================//
+  // Calculate validity period
 
-  // ---------------- CHECK WALLET BALANCE ---------------- //
-  if (user.role === "Reseller" || user.role === "Lco") {
-    const walletBalance = user.walletBalance || 0;
-    if (walletBalance < packagePrice) {
-      return next(new AppError("Insufficient wallet balance in purchaser account", 400));
-    }
-  }
+  
 
-  // ---------------- CALCULATE VALIDITY ---------------- //
+
   const validityNumber = selectedPackage.validity.number;
   const validityUnit = selectedPackage.validity.unit.toLowerCase();
 

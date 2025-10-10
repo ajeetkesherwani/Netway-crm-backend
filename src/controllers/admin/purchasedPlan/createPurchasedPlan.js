@@ -24,6 +24,12 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const selectedPackage = await Package.findById(packageId);
   if (!selectedPackage) return next(new AppError("Package not found", 404));
 
+  //=============================================//
+  // Calculate validity period
+
+  
+
+
   const validityNumber = selectedPackage.validity.number;
   const validityUnit = selectedPackage.validity.unit.toLowerCase(); // "day", "month", etc.
 

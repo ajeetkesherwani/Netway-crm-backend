@@ -28,7 +28,9 @@ const resellerConfigSchema = new mongoose.Schema(
         createdById: {
             type: mongoose.Schema.Types.ObjectId,
             refPath: "createdBy"
-        }
+        },
+
+        isPaymentRecived: { type: Boolean, enum: ["ture", "false"], default: "false" },
     },
     { timestamps: true }
 );

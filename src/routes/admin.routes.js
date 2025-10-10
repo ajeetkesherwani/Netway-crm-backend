@@ -26,6 +26,7 @@ router.use("/resellerConfig", require("./admin/resellerConfigRoutes"));
 
 router.use("/purchasedPlan", require("./admin/purchasedPlanRoutes"));
 router.use("/subscriberReport", require("./admin/subscriberReportRoutes"));
+// router.use("/franchiseeReport", require("./admin/franchiseeReportRoutes"));
 router.use("/userManage", require("./admin/useerManageRoutes"));
 
 module.exports = router;

@@ -5,7 +5,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.deleteUser = catchAsync(async (req, res, next) => {
 
-    const userId = req.params;
+    const { userId } = req.params;
     if (!userId) return next(new AppError("userId is required", 400));
 
     const user = await User.findByIdAndDelete(userId);

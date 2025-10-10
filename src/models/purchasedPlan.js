@@ -86,7 +86,10 @@ const purchasedPlanSchema = new Schema({
     type: Boolean,
     default: false
   },
-  renewals: [renewalSchema]
+  renewals: [renewalSchema],
+  isPaymentRecived: {
+    type: Boolean, enum: ["true", "false"], default: "false"
+  }
 
 }, { timestamps: true });
 

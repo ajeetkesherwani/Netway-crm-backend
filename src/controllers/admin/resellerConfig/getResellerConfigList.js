@@ -12,7 +12,7 @@ exports.getResellerConfigList = catchAsync(async (req, res, next) => {
 
     const [data, total] = await Promise.all([
         ResellerConfig.find(filter)
-            .populate("typeId", "resellerName email phoneNo") // Adjust fields as needed
+            // .populate("typeId", "resellerName email phoneNo") // Adjust fields as needed
             // .populate({
             //     path: "createdById",
             //     select: "resellerName email",
@@ -23,6 +23,7 @@ exports.getResellerConfigList = catchAsync(async (req, res, next) => {
             .sort({ createdAt: -1 }),
         ResellerConfig.countDocuments(filter)
     ]);
+
 
     successResponse(res, "ResellerConfig list fetched successfully", {
         total,

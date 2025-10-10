@@ -14,7 +14,7 @@ exports.createResellerConfig = catchAsync(async (req, res, next) => {
     if (!typeId) return next(new AppError("typeId is required", 400));
 
     // Check for valid type
-    const allowedTypes = ["Admin", "Manager", "Operator"];
+    const allowedTypes = ["Reseller", "Lco"];
     if (!allowedTypes.includes(type)) {
         return next(new AppError(`Invalid type. Allowed values are: ${allowedTypes.join(", ")}`, 400));
     }

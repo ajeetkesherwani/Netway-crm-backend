@@ -20,12 +20,17 @@ const {
   updateUser
 } = require('../../controllers/admin/user/updateUser');
 
+const {
+  deleteUser
+} = require('../../controllers/admin/user/deleteUser');
+
 
 
 router.post('/create', adminAuthenticate, createUser);
 router.get("/list", adminAuthenticate, getUserList);
 router.get("/:id", adminAuthenticate, getUserDetails);
 router.patch("/update/:userId", adminAuthenticate, updateUser);
+router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 
 
 module.exports = router;

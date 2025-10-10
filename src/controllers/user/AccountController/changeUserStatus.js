@@ -6,6 +6,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.updateUserStatus = catchAsync(async (req, res, next) => {
     const { userId, status } = req.body;
+    console.log(req.body, "req.body")
 
     // 1️⃣ Validation
     if (!userId || !status) {
@@ -24,10 +25,10 @@ exports.updateUserStatus = catchAsync(async (req, res, next) => {
     // 2️⃣ Find User
     const user = await User.findById(userId);
     if (!user) return next(new AppError("User not found", 404));
+    console.log(user, "User");
 
     // 3️⃣ Permission Check
-    // Admin can update any user
-    // Reseller / Lco can update only if they created the user
+
     if (req.user.role !== "Admin") {
         if (
             !user.generalInformation.createdBy ||

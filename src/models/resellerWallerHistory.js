@@ -36,6 +36,12 @@ const resellerWalletHistorySchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    openingBalance: {
+        type: Number,
+    },
+    closingBalance: {
+        type: String
     }
 }, { timestamps: true });
 

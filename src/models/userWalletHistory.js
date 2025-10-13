@@ -5,14 +5,8 @@ const userWalletHistorySchema = new Schema(
     {
         userId: {
             type: Schema.Types.ObjectId,
-            refPath: "userModel",
+            ref: "User",
             required: true,
-        },
-        userModel: {
-            type: String,
-            enum: ["Admin", "Reseller", "Lco"],
-            required: true,
-            default: "Admin",
         },
         transactionType: {
             type: String,

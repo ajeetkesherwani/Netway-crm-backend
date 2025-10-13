@@ -20,10 +20,15 @@ const {
     deleteResellerConfig
 } = require("../../controllers/admin/resellerConfig/deleteResellerConfig");
 
+const {
+    getResllerConfigDetails
+} = require("../../controllers/admin/resellerConfig/resellerConfigDetails");
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createResellerConfig);
 router.get("/list", adminAuthenticate, getResellerConfigList);
+router.get("/list/:configId", adminAuthenticate, getResllerConfigDetails);
 router.patch("/update/:id", adminAuthenticate, updateResellerConfig);
 router.delete("/delete/:id", adminAuthenticate, deleteResellerConfig);
 

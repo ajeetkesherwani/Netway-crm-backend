@@ -32,6 +32,10 @@ const lcoWalletHistorySchema = new mongoose.Schema({
         required: true,
         refPath: "createdBy"
     },
+    isReverse: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

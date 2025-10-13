@@ -12,54 +12,50 @@ exports.customerBalanceReport = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const total = await LcoWalletHistory.countDocuments();
+  const total = await User.countDocuments();
 
   const userData = await User.find()
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(parseInt(limit))
     .lean();
-
+console.log("userData",userData);
     const mappedTransactions = await Promise.all(userData.map(async (usr) => {
-      let adminName = "";
-      let resellerName = "";
-      let lcoName = "";
-    if(user.generalInformation.createdFor){
-        switch (user.generalInformation.createdFor.type) {
-            case "Admin":
-                const admin = Admin.findById(user.generalInformation.createdFor.id).select("name").lean();
-                adminName = admin.name;
-                break;
-            case "Retailer":
-                const reseller = Reseller.findById(user.generalInformation.createdFor.id).select("resellerName").lean();
-                resellerName = reseller.resellerName;
-                break;
-            case "Lco":
-                const lco = Lco.findById(user.generalInformation.createdFor.id).select("lcoName").lean();
-                lcoName = lco.lcoName;
-                break;
-            case "Self":
-            
-                break;
-            default:
-                break;
+        let adminName = "";
+        let resellerName = "";
+        let lcoName = "";
+        console.log(usr.generalInformation.createdFor);
+        if(usr.generalInformation.createdFor){
+            switch (usr.generalInformation.createdFor.type) {
+                case "Admin":
+                    const admin = Admin.findById(usr.generalInformation.createdFor.id).select("name").lean();
+                    adminName = admin.name;
+                    break;
+                case "Retailer":
+                    const reseller = Reseller.findById(usr.generalInformation.createdFor.id).select("resellerName").lean();
+                    resellerName = reseller.resellerName;
+                    break;
+                case "Lco":
+                    const lco = Lco.findById(usr.generalInformation.createdFor.id).populate("retailerId","resellerName").select("lcoName").lean();
+                    lcoName = lco.lcoName;
+                    resellerName = lco.retailerId.resellerName;
+                    break;
+                case "Self":
+                
+                    break;
+                default:
+                    break;
+            }
         }
-    }
 
-
-    if (tx.createdBy === "Admin" && tx.createdById) {
-      const admin = await Admin.findById(tx.createdById).select("name").lean();
-      console.log("admin data",admin);
-      if (admin) createdByName = admin.name;
-    } else if (tx.createdBy === "Reseller" && tx.createdById) {
-      const reseller = await Reseller.findById(tx.createdById).select("resellerName").lean();
-      console.log("reseller data",reseller);
-      if (reseller) createdByName = reseller.resellerName;
-    }
+        // const purchasedPlan = PurchasedPlan.find({userId:usr._id, status:"active"}).lean();
+        // console.log("purchasedPlan",purchasedPlan);
 
     return {
-      ...tx,
-      createdByName
+      ...usr,
+      adminName,
+      resellerName,
+      lcoName
     };
   }));
 

@@ -3,23 +3,21 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
 
-exports.getRegisterUsers = catchAsync(async (req, res, next) => {
-    const { _id, role } = req.user; // user info from JWT
+exports.getAllActiveUsers = catchAsync(async (req, res, next) => {
+    const { _id, role } = req.user;
     const { filter } = req.query;
 
-    // Query initialization
-    let query = {};
+    // all active user
+    let query = { status: "active" };
 
     // Restrict Reseller and LCO to their own users
     if (role === "Retailer" || role === "Lco") {
-        query = {
-            "generalInformation.createdFor.id": _id,
-            "generalInformation.createdFor.type": role
-        };
+        query["generalInformation.createdFor.id"] = _id;
+        query["generalInformation.createdFor.type"] = role;
     }
-    // Admin sees all users → query stays empty {}
+    // Admin sees all active users → no further filter
 
-    // Date filter
+    // Optional Date filter
     if (filter) {
         const now = new Date();
         let startDate;
@@ -42,13 +40,14 @@ exports.getRegisterUsers = catchAsync(async (req, res, next) => {
         query.createdAt = { $gte: startDate };
     }
 
+    // Fetch users
     const users = await User.find(query)
         .select(
             "generalInformation.name generalInformation.username generalInformation.email generalInformation.phone status createdAt"
         )
         .sort({ createdAt: -1 });
 
-    successResponse(res, "Register users found successfully", {
+    successResponse(res, "Active users found successfully", {
         results: users.length,
         data: users
     });

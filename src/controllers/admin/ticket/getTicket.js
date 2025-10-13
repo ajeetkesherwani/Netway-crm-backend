@@ -116,6 +116,11 @@ exports.getTicketList = catchAsync(async (req, res, next) => {
         );
     }
 
+    // const finalTicket = Ticket.map(
+    //     //const userData = User
+
+    // )
+
     successResponse(res, "Ticket list fetched successfully", {
         openTickets,
         assignedTickets,

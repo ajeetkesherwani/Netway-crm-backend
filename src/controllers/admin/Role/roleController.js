@@ -5,7 +5,7 @@ const { successResponse } = require('../../../utils/responseHandler');
 
 // Create Role
 exports.createRole = catchAsync(async (req, res, next) => {
-    const { roleName, description, permissions } = req.body;
+    const { roleName, description, permissions, addedBy } = req.body;
 
     if (!roleName || !permissions) {
         return next(new AppError('Name and permissions are required', 400));
@@ -20,8 +20,9 @@ exports.createRole = catchAsync(async (req, res, next) => {
         roleName,
         // description,
         permissions,
-        addedBy: req.admin._id
+        addedBy
     });
+    console.log(role, "role");
 
     successResponse(res, 'Role created successfully', role);
 });
@@ -31,7 +32,7 @@ exports.getRoles = catchAsync(async (req, res) => {
     const roles = await Role.find()
         .populate('addedBy', 'name email')
         .sort('-createdAt');
-    
+
     successResponse(res, 'Roles fetched successfully', roles);
 });
 
@@ -50,7 +51,7 @@ exports.getRoleById = catchAsync(async (req, res, next) => {
 // Update Role
 exports.updateRole = catchAsync(async (req, res, next) => {
     const { name, description, permissions } = req.body;
-    
+
     const role = await Role.findById(req.params.id);
     if (!role) {
         return next(new AppError('Role not found', 404));
@@ -76,7 +77,7 @@ exports.updateRole = catchAsync(async (req, res, next) => {
 // Delete Role
 exports.deleteRole = catchAsync(async (req, res, next) => {
     const role = await Role.findByIdAndDelete(req.params.id);
-    
+
     if (!role) {
         return next(new AppError('Role not found', 404));
     }
@@ -87,7 +88,7 @@ exports.deleteRole = catchAsync(async (req, res, next) => {
 // Toggle Role Status
 exports.toggleRoleStatus = catchAsync(async (req, res, next) => {
     const role = await Role.findById(req.params.id);
-    
+
     if (!role) {
         return next(new AppError('Role not found', 404));
     }

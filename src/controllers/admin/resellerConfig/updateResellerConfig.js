@@ -17,7 +17,7 @@ exports.updateResellerConfig = catchAsync(async (req, res, next) => {
 
   // 2. Validate type if provided
   if (type) {
-    const allowedTypes = ["Admin", "Manager", "Operator"];
+    const allowedTypes = ["Admin", "Reseller", "Lco"];
     if (!allowedTypes.includes(type)) {
       return next(new AppError(`Invalid type. Allowed values are: ${allowedTypes.join(", ")}`, 400));
     }

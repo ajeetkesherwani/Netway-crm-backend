@@ -63,7 +63,7 @@ const UserSchema = new mongoose.Schema({
     documentDetails: { type: String, enum: ["Licence", "Pancard", "Gst", "Address Proof", "Passport"], default: "Pancard" },
     documentImage: { type: String, default: "" }
   },
-  status: { type: String, enum: ["active", "Inactive", "Suspend"], default: "Inactive" },
+  status: { type: String, enum: ["active", "Inactive", "Suspend", "Terminated"], default: "Inactive" },
   walletBalance: { type: Number, default: 0 }
 }, { timestamps: true });
 

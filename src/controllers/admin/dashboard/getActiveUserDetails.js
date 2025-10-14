@@ -6,7 +6,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const { monthNames } = require("../../../utils/monthNames");
 const Package = require("../../../models/package");
 
-exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
+exports.getActiveUsersDetailByFilter = catchAsync(async (req, res, next) => {
     const { filter, month, year } = req.query;
     const { role, _id } = req.user;
 
@@ -14,26 +14,19 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
     const currentDate = new Date();
     const targetYear = year || currentDate.getFullYear();
 
-    // Updated logic for targetEndMonth
+    // Determine targetEndMonth
     let targetEndMonth;
     if (month) {
-        // specific month passed
         targetEndMonth = parseInt(month);
     } else {
-        // only year passed
-        if (parseInt(targetYear) === currentDate.getFullYear()) {
-            // current year → upto current month
-            targetEndMonth = currentDate.getMonth() + 1;
-        } else {
-            // past year → full 12 months
-            targetEndMonth = 12;
-        }
+        targetEndMonth = parseInt(targetYear) === currentDate.getFullYear() ? currentDate.getMonth() + 1 : 12;
     }
 
     const startDate = new Date(targetYear, 0, 1);
     const endDate = new Date(targetYear, targetEndMonth, 0, 23, 59, 59);
 
-    let matchQuery = { createdAt: { $gte: startDate, $lte: endDate } };
+    // ✅ Only active users
+    let matchQuery = { createdAt: { $gte: startDate, $lte: endDate }, status: "active" };
     if (role === "reseller" || role === "lco") matchQuery.referredBy = _id;
 
     const users = await User.find(matchQuery).lean();
@@ -120,6 +113,5 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
         return next(new AppError("Invalid filter. Use day/week/month", 400));
     }
 
-    return successResponse(res, `${filterValue}-wise user counts`, Object.values(aggregated));
-
+    return successResponse(res, `${filterValue}-wise active user counts`, Object.values(aggregated));
 });

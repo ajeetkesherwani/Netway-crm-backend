@@ -5,7 +5,7 @@ const {
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
 const {
-    getRegisterUsers
+    getRegisterUsersCountByFilter
 } = require("../../controllers/admin/dashboard/registerUser");
 
 const {
@@ -13,20 +13,34 @@ const {
 } = require("../../controllers/admin/dashboard/allTypeUser");
 
 const {
-    getAllActiveUsers
+    getActiveUsersCountByFilter
 } = require("../../controllers/admin/dashboard/activeUser");
 
 const {
-    getAllInActiveUsers
+    getInActiveUsersCountByFilter
 } = require("../../controllers/admin/dashboard/inActiveUser");
-const { getRegisterUsersByFilter } = require("../../controllers/admin/dashboard/getRegisterdUserDetail");
+
+const {
+    getRegisterUsersByFilter
+} = require("../../controllers/admin/dashboard/getRegisterdUserDetail");
+
+const {
+    getActiveUsersDetailByFilter
+} = require("../../controllers/admin/dashboard/getActiveUserDetails");
+const { getInactiveUsersDetailByFilter } = require("../../controllers/admin/dashboard/getInactiveUserDetails");
 
 const router = express.Router();
 
-router.get("/register/userList", adminAuthenticate, getRegisterUsers);
-router.get("/allType/userList", adminAuthenticate, getUserByStatus);
-router.get("/active/userList", adminAuthenticate, getAllActiveUsers);
-router.get("/inactive/userList", adminAuthenticate, getAllInActiveUsers);
+router.get("/register/userList", adminAuthenticate, getRegisterUsersCountByFilter);
 router.get("/register/userList/details", adminAuthenticate, getRegisterUsersByFilter);
+
+router.get("/active/userList", adminAuthenticate, getActiveUsersCountByFilter);
+router.get("/active/userList/details", adminAuthenticate, getActiveUsersDetailByFilter);
+
+router.get("/inactive/userList", adminAuthenticate, getInActiveUsersCountByFilter);
+router.get("/inactive/userList/details", adminAuthenticate, getInactiveUsersDetailByFilter);
+
+router.get("/allType/userList", adminAuthenticate, getUserByStatus);
+
 
 module.exports = router;

@@ -6,7 +6,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const { monthNames } = require("../../../utils/monthNames");
 const Package = require("../../../models/package");
 
-exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
+exports.getInactiveUsersDetailByFilter = catchAsync(async (req, res, next) => {
     const { filter, month, year } = req.query;
     const { role, _id } = req.user;
 
@@ -14,26 +14,18 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
     const currentDate = new Date();
     const targetYear = year || currentDate.getFullYear();
 
-    // Updated logic for targetEndMonth
     let targetEndMonth;
     if (month) {
-        // specific month passed
         targetEndMonth = parseInt(month);
     } else {
-        // only year passed
-        if (parseInt(targetYear) === currentDate.getFullYear()) {
-            // current year → upto current month
-            targetEndMonth = currentDate.getMonth() + 1;
-        } else {
-            // past year → full 12 months
-            targetEndMonth = 12;
-        }
+        targetEndMonth = parseInt(targetYear) === currentDate.getFullYear() ? currentDate.getMonth() + 1 : 12;
     }
 
     const startDate = new Date(targetYear, 0, 1);
     const endDate = new Date(targetYear, targetEndMonth, 0, 23, 59, 59);
 
-    let matchQuery = { createdAt: { $gte: startDate, $lte: endDate } };
+    // ✅ Only inactive users
+    let matchQuery = { createdAt: { $gte: startDate, $lte: endDate }, status: "inactive" };
     if (role === "reseller" || role === "lco") matchQuery.referredBy = _id;
 
     const users = await User.find(matchQuery).lean();
@@ -41,7 +33,7 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
     const usersWithPlans = await Promise.all(users.map(async (user) => {
         const purchasedPlan = await PurchasedPlan.findOne({
             userId: user._id,
-            status: "active"
+            status: "active" // still fetch only active purchased plans
         }).sort({ purchaseDate: -1 }).lean();
 
         let packageDetails = null;
@@ -120,6 +112,5 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
         return next(new AppError("Invalid filter. Use day/week/month", 400));
     }
 
-    return successResponse(res, `${filterValue}-wise user counts`, Object.values(aggregated));
-
+    return successResponse(res, `${filterValue}-wise inactive user counts`, Object.values(aggregated));
 });

@@ -1,19 +1,3 @@
-// const User = require("../../../../models/user");
-// const AppError = require("../../../../utils/AppError");
-// const catchAsync = require("../../../../utils/catchAsync");
-// const { successResponse } = require("../../../../utils/responseHandler");
-
-// exports.getAllInactiveUsersList = catchAsync(async(req, res, next) => {
-//     const id = req.user;
-    
-//     const user = await User.find({status: "Inactive"}).populate('roleId', 'name').select('-password -__v');
-//     if(!user) return next(new AppError("user not found",404));
-
-//     successResponse(res, "user found successfully", user);
-
-// });
-
-
 const User = require("../../../../models/user");
 const Admin = require("../../../../models/admin");
 const PurchasedPlan = require("../../../../models/purchasedPlan");
@@ -22,6 +6,7 @@ const catchAsync = require("../../../../utils/catchAsync");
 const { successResponse } = require("../../../../utils/responseHandler");
 const Reseller = require("../../../../models/retailer");
 const Lco = require("../../../../models/lco");
+const AssignPackage = require("../../../../models/assignPackage");
 
 // Helper to fetch createdBy name
 async function getCreatedByName(type, id) {
@@ -55,6 +40,64 @@ async function getResellerLcoName(createdFor, id) {
   return { resellerName, lcoName };
 }
 
+async function getPlanPrice(userId) {
+  let planPrice = null;
+
+  // Find the user's active plan
+  const planData = await PurchasedPlan.findOne({
+    userId,
+    status: "active"
+  }).populate("packageId").lean();
+
+//   console.log("planData",planData);
+
+  if (!planData || !planData.packageId) {
+    return { planPrice };
+  }
+
+  // Find the user to check who created them
+  const user = await User.findById(userId)
+    .select("generalInformation.createdFor")
+    .lean();
+
+  const createdFor = user?.generalInformation?.createdFor;
+  const packageId = planData.packageId;
+
+  console.log("createdFor",createdFor);
+  // If created by Admin, return base package price
+  if (createdFor?.type === "Admin") {
+    const packageDoc = await Package.findById(packageId).select("basePrice").lean();
+    planPrice = packageDoc?.basePrice ?? null;
+  }
+
+  // If created by Reseller or Lco, return assigned price
+  let roleType = "";
+  if (["Retailer", "Lco"].includes(createdFor?.type)) {
+    if(createdFor.type == 'Retailer'){
+        roleType = "Reseller";
+    }
+    else{
+        roleType = "Lco";
+    }
+
+
+    const assigned = await AssignPackage.findOne({
+      assignTo: roleType,
+      assignToId: createdFor.id,
+      "packages.packageId": packageId
+    }, {
+      "packages.$": 1 // only the matched package
+    }).lean();
+
+    console.log("assigned",assigned);
+    const assignedPackage = assigned?.packages?.[0];
+    planPrice = assignedPackage?.price ?? null;
+  }
+  console.log("planPrice",planPrice);
+
+  return { planPrice };
+}
+
 
 
 exports.newRegistrationPlanReport = catchAsync(async (req, res, next) => {
@@ -65,26 +108,39 @@ exports.newRegistrationPlanReport = catchAsync(async (req, res, next) => {
   const totalUsers = await User.countDocuments();
 
   // Fetch paginated users
-  const users = await User.find({status: "Inactive"})
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0); // 00:00:00.000
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999); // 23:59:59.999
+
+    const users = await User.find({
+    createdAt: {
+        $gte: startOfToday,
+        $lt: endOfToday
+    }
+    })
     .select(`
-      generalInformation.username 
-      generalInformation.name 
-      generalInformation.phone 
-      generalInformation.email 
-      generalInformation.status 
-      generalInformation.gst 
-      generalInformation.address 
-      generalInformation.activationDate 
-      generalInformation.expiryDate 
-      generalInformation.createdBy 
-      generalInformation.createdFor 
-      createdAt
-      status
+        generalInformation.username 
+        generalInformation.name 
+        generalInformation.phone 
+        generalInformation.email 
+        generalInformation.status 
+        generalInformation.gst 
+        generalInformation.address 
+        generalInformation.activationDate 
+        generalInformation.expiryDate 
+        generalInformation.createdBy 
+        generalInformation.createdFor 
+        createdAt
+        status
     `)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(parseInt(limit))
     .lean();
+
+    console.log("user",users);
 
   const modifiedUsers = await Promise.all(
     users.map(async (user) => {
@@ -108,6 +164,11 @@ exports.newRegistrationPlanReport = catchAsync(async (req, res, next) => {
         createdForField?.id
       );
 
+        const {planPrice} = await getPlanPrice(user._id);
+        const gstValue = planPrice * 18 / 100;
+        const finalAmount = planPrice + gstValue; // This is what customer pays
+
+
       return {
         id: user._id,
         username: user.generalInformation?.username || null,
@@ -124,6 +185,9 @@ exports.newRegistrationPlanReport = catchAsync(async (req, res, next) => {
         createdByName,
         createdFor: user.generalInformation?.createdFor?.type || null,
         planName: planData?.packageId?.name || null,
+        planPrice: planPrice || null,
+        gst:gstValue || null,
+        finalAmount:finalAmount || null,
         resellerName,
         lcoName
       };

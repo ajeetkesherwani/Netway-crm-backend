@@ -14,8 +14,7 @@ const assignPackageSchema = new mongoose.Schema({
             status: { type: String, enum: ["active", "inActive"], default: "active" }
         }
     ],
-    // createdBy: { type: String, enum: ["Admin", "Reseller"] },
-    // createdById: { type: mongoose.Schema.Types.ObjectId }
+    
     createdBy: {
         type: String,
         enum: ["Admin", "Reseller"],

@@ -28,6 +28,7 @@ router.use("/purchasedPlan", require("./admin/purchasedPlanRoutes"));
 router.use("/subscriberReport", require("./admin/subscriberReportRoutes"));
 router.use("/franchiseeReport", require("./admin/franchiseeReportRoutes"));
 router.use("/misReport", require("./admin/misReportRoutes"));
+router.use("/revenueReport", require("./admin/revenueReportRoutes"));
 router.use("/userManage", require("./admin/useerManageRoutes"));
 router.use("/dashboard", require("./admin/dashboardRoutes"));
 

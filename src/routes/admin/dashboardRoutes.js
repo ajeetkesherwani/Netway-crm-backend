@@ -27,7 +27,26 @@ const {
 const {
     getActiveUsersDetailByFilter
 } = require("../../controllers/admin/dashboard/getActiveUserDetails");
-const { getInactiveUsersDetailByFilter } = require("../../controllers/admin/dashboard/getInactiveUserDetails");
+
+const {
+    getInactiveUsersDetailByFilter
+} = require("../../controllers/admin/dashboard/getInactiveUserDetails");
+
+const {
+    getUpcomingRenewalUsersCount
+} = require("../../controllers/admin/dashboard/upcomingRenewal");
+
+const {
+    getUpcomingRenewalUsersDetails
+} = require("../../controllers/admin/dashboard/getUpacomingRenewalDetails");
+
+const {
+    getRenewedUsersCountByFilter
+} = require("../../controllers/admin/dashboard/renewal");
+
+const {
+    getRenewedUsersDetailsByFilter
+} = require("../../controllers/admin/dashboard/getRenewalUserDetails");
 
 const router = express.Router();
 
@@ -39,6 +58,12 @@ router.get("/active/userList/details", adminAuthenticate, getActiveUsersDetailBy
 
 router.get("/inactive/userList", adminAuthenticate, getInActiveUsersCountByFilter);
 router.get("/inactive/userList/details", adminAuthenticate, getInactiveUsersDetailByFilter);
+
+router.get("/upcomig-renewal/userList", adminAuthenticate, getUpcomingRenewalUsersCount);
+router.get("/upcoming-renewal/userList/details", adminAuthenticate, getUpcomingRenewalUsersDetails);
+
+router.get("/renewal/userList", adminAuthenticate, getRenewedUsersCountByFilter);
+router.get("/renewal/userList/details", adminAuthenticate, getRenewedUsersDetailsByFilter);
 
 router.get("/allType/userList", adminAuthenticate, getUserByStatus);
 

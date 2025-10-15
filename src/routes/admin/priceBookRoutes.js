@@ -16,11 +16,16 @@ const {
     getPricebookDetails
 } = require("../../controllers/admin/priceBook/getPricebookDetails");
 
+const {
+    updatePriceBook
+} = require("../../controllers/admin/priceBook/updatePriceBook");
+
 
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createPriceBook);
 router.get("/list", adminAuthenticate, getPricebookList);
 router.get("/list/:pricebookId", adminAuthenticate, getPricebookDetails);
+router.patch("/update/:priceBookId", adminAuthenticate, updatePriceBook);
 
 module.exports = router;

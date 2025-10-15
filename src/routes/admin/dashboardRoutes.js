@@ -48,6 +48,10 @@ const {
     getRenewedUsersDetailsByFilter
 } = require("../../controllers/admin/dashboard/getRenewalUserDetails");
 
+const {
+    getLatestPurchasedPlans
+} = require("../../controllers/admin/dashboard/getLetestPurchesedPlan");
+
 const router = express.Router();
 
 router.get("/register/userList", adminAuthenticate, getRegisterUsersCountByFilter);
@@ -66,6 +70,9 @@ router.get("/renewal/userList", adminAuthenticate, getRenewedUsersCountByFilter)
 router.get("/renewal/userList/details", adminAuthenticate, getRenewedUsersDetailsByFilter);
 
 router.get("/allType/userList", adminAuthenticate, getUserByStatus);
+
+router.get("/recent/plan/list", adminAuthenticate, getLatestPurchasedPlans);
+
 
 
 module.exports = router;

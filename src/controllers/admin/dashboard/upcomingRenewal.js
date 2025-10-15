@@ -38,22 +38,37 @@ exports.getUpcomingRenewalUsersCount = catchAsync(async (req, res, next) => {
     const next5Days = new Date(today);
     next5Days.setDate(today.getDate() + 5);
 
-    // Find plans about to expire
+    // Find plans about to expire based on isRenewed
     const plans = await PurchasedPlan.find({
         userId: { $in: userIds },
         status: "active",
-        expiryDate: { $gte: today, $lte: next5Days },
-    }).select("userId expiryDate");
+        $or: [
+            { isRenewed: false, expiryDate: { $gte: today, $lte: next5Days } },
+            {
+                isRenewed: true,
+                "renewals.newExpiryDate": { $gte: today, $lte: next5Days }
+            }
+        ]
+    }).select("userId expiryDate isRenewed renewals").lean();
 
     if (!plans.length) return successResponse(res, "No upcoming renewals found", []);
 
     const aggregated = {};
 
     plans.forEach(plan => {
-        const expiry = new Date(plan.expiryDate);
-        const day = expiry.getUTCDate();
-        const monthNum = expiry.getUTCMonth() + 1;
-        const yearNum = expiry.getUTCFullYear();
+        let checkDate;
+
+        if (plan.isRenewed && plan.renewals && plan.renewals.length > 0) {
+            // Get latest newExpiryDate from renewals array
+            const latestRenewal = plan.renewals[plan.renewals.length - 1];
+            checkDate = new Date(latestRenewal.newExpiryDate);
+        } else {
+            checkDate = new Date(plan.expiryDate);
+        }
+
+        const day = checkDate.getUTCDate();
+        const monthNum = checkDate.getUTCMonth() + 1;
+        const yearNum = checkDate.getUTCFullYear();
 
         if (filterValue === "day") {
             const key = `${day}-${monthNum}-${yearNum}`;

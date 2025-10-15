@@ -9,19 +9,29 @@ const {
   createPackage,
 } = require("../../controllers/admin/Package/createPackage");
 
-const { 
-  getPackages 
+const {
+  getPackages
 } = require("../../controllers/admin/Package/getPackages");
 
-const { 
+const {
   getPackagesDetails
 } = require("../../controllers/admin/Package/getPackagesDetails");
+
+const {
+  updatePackage
+} = require("../../controllers/admin/Package/updatePackage");
+
+const {
+  deletePackage
+} = require("../../controllers/admin/Package/deletePackage");
 
 
 
 router.get("/list", adminAuthenticate, getPackages);
-router.post("/create",adminAuthenticate, createPackage);
-router.get("/:id", adminAuthenticate, getPackagesDetails); 
+router.post("/create", adminAuthenticate, createPackage);
+router.get("/:id", adminAuthenticate, getPackagesDetails);
+router.patch("/update/:packageId", adminAuthenticate, updatePackage);
+router.delete("/delete/:packageId", adminAuthenticate, deletePackage);
 
 module.exports = router;
 

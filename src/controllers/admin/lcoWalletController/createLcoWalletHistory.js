@@ -27,6 +27,9 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
     const reseller = lco.retailerId;
     if (!reseller) return next(new AppError("Reseller not found for this Lco", 404));
 
+    // Capture LCO opening balance before transfer
+    const openingBalance = lco.walletBalance || 0;
+
     // Check reseller wallet balance (unless admin)
     if (req.user.role !== "Admin" && reseller.walletBalance < amount) {
         return next(new AppError("Insufficient balance in reseller wallet", 400));
@@ -42,6 +45,9 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
     lco.walletBalance = (lco.walletBalance || 0) + amount;
     await lco.save();
 
+    // Capture LCO closing balance after transfer
+    const closingBalance = lco.walletBalance;
+
     // Create LCO wallet history
     const walletHistory = await LcoWalletHistory.create({
         lco: lco._id,
@@ -51,7 +57,9 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
         mode: "Cash",
         remark: remark || "",
         createdBy: req.user.role,
-        createdById: req.user._id
+        createdById: req.user._id,
+        openingBalance,
+        closingBalance
     });
 
     successResponse(res, "Wallet created successfully", {

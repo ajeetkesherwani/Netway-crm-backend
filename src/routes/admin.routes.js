@@ -31,5 +31,7 @@ router.use("/misReport", require("./admin/misReportRoutes"));
 router.use("/revenueReport", require("./admin/revenueReportRoutes"));
 router.use("/userManage", require("./admin/useerManageRoutes"));
 router.use("/dashboard", require("./admin/dashboardRoutes"));
+router.use("/hardware", require("./admin/hardwareRoutes"));
+
 
 module.exports = router;

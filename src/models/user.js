@@ -64,7 +64,13 @@ const UserSchema = new mongoose.Schema({
     documentImage: { type: String, default: "" }
   },
   status: { type: String, enum: ["active", "Inactive", "Suspend", "Terminated"], default: "Inactive" },
-  walletBalance: { type: Number, default: 0 }
+  walletBalance: { type: Number, default: 0 },
+  assignedHardware: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hardware"
+    }
+  ]
 }, { timestamps: true });
 
 const User = mongoose.model("User", UserSchema);

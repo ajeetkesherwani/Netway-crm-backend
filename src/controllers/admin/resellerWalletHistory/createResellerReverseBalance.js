@@ -6,7 +6,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
 
-    // ✅ Role validation — only admin allowed
+    // Role validation — only admin allowed
     if (req.user.role !== "Admin") {
         return next(new AppError("Only admin can add wallet balance to reseller", 403));
     }
@@ -29,6 +29,16 @@ exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
     }
 
 
+    // Opening balance before deduction
+    const openingBalance = reseller.walletBalance || 0;
+
+    // Deduct from reseller wallet
+    reseller.walletBalance = openingBalance - Number(amount);
+
+    // Closing balance after deduction
+    const closingBalance = reseller.walletBalance;
+
+
     const walletHistory = await ResellerWalletHistory.create({
         reseller: resellerId,
         amount,
@@ -36,10 +46,11 @@ exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
         mode,
         remark,
         createdBy: req.user.role,
-        createdById: req.user._id
+        createdById: req.user._id,
+        openingBalance,
+        closingBalance
     });
 
-    reseller.walletBalance = (reseller.walletBalance || 0) - amount;
 
     await reseller.save();
 

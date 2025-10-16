@@ -6,19 +6,20 @@ const {
 
 const {
     changePlanExpiry
-} = require("../../controllers/user/AccountController/changeExpiryDate");
+} = require("../../controllers/admin/user/AccountController/changeExpiryDate");
 
 const {
     updateUserStatus
-} = require("../../controllers/user/AccountController/changeUserStatus");
+} = require("../../controllers/admin/user/AccountController/changeUserStatus");
 
 const {
     getUserPassword
-} = require("../../controllers/user/userPasswordController/viewPassword");
+} = require("../../controllers/admin/user/userPasswordController/viewPassword");
 
 const {
     getUserWalletHistoryList
 } = require("../../controllers/user/userWalletController/userWalletHistoryList");
+
 
 const router = express.Router();
 

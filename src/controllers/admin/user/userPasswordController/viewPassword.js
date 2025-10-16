@@ -1,7 +1,7 @@
-const User = require("../../../models/user");
-const catchAsync = require("../../../utils/catchAsync");
-const AppError = require("../../../utils/AppError");
-const { successResponse } = require("../../../utils/responseHandler");
+const User = require("../../../../models/user");
+const catchAsync = require("../../../../utils/catchAsync");
+const AppError = require("../../../../utils/AppError");
+const { successResponse } = require("../../../../utils/responseHandler");
 
 // Get plain password by user ID (Admin Only)
 exports.getUserPassword = catchAsync(async (req, res, next) => {

@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
-const PurchasedPlan = require("../../../models/purchasedPlan");
-const AppError = require("../../../utils/AppError");
-const catchAsync = require("../../../utils/catchAsync");
-const User = require("../../../models/user");
-const { successResponse } = require("../../../utils/responseHandler");
+const PurchasedPlan = require("../../../../models/purchasedPlan");
+const AppError = require("../../../../utils/AppError");
+const catchAsync = require("../../../../utils/catchAsync");
+const User = require("../../../../models/user");
+const { successResponse } = require("../../../../utils/responseHandler");
 
 exports.changePlanExpiry = catchAsync(async (req, res, next) => {
     const { purchasedPlanId, newExpiryDate } = req.body;

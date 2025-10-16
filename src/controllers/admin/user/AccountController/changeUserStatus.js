@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
-const User = require("../../../models/user");
-const AppError = require("../../../utils/AppError");
-const catchAsync = require("../../../utils/catchAsync");
-const { successResponse } = require("../../../utils/responseHandler");
+const User = require("../../../../models/user");
+const AppError = require("../../../../utils/AppError");
+const catchAsync = require("../../../../utils/catchAsync");
+const { successResponse } = require("../../../../utils/responseHandler");
 
 exports.updateUserStatus = catchAsync(async (req, res, next) => {
     const { userId, status } = req.body;

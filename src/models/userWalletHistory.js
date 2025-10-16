@@ -29,9 +29,28 @@ const userWalletHistorySchema = new Schema(
             required: true,
             default: 0,
         },
+        purpose: {
+            type: String,
+            enum: ["plan","payment"],
+            default: "plan",
+        },
+        paymentMode: {
+            type: String,
+            enum: ["cash","cheque","onlineTrancation"],
+            default: "plan",
+        },
+        paymentDate: {
+            type: Date,
+            default: Date.now
+        },
+        referenceNumber: {
+            type: String,
+            default: null,
+        },
         relatedPurchasePlanId: {
             type: Schema.Types.ObjectId,
             ref: "PurchasedPlan",
+            default: null
         },
         remark: { type: String, default: "plan purched" }
     },

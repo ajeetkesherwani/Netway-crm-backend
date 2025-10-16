@@ -7,9 +7,14 @@ const {
     newRegistrationPlanReport
 } = require("../../controllers/admin/reports/revenue/newRegistrationPlanReport");
 
+const {
+    payemntReport
+} = require("../../controllers/admin/reports/revenue/payemntReport");
+
 
 const router = express.Router();
 
 router.get("/newRegistrationPlanReport", adminAuthenticate, newRegistrationPlanReport);
+router.get("/payemntReport", adminAuthenticate, payemntReport);
 
 module.exports = router;

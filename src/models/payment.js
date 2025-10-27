@@ -8,7 +8,7 @@ const PaymentSchema = new mongoose.Schema({
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'WebUser', // assuming the user model is named 'User'
+    ref: 'User', // assuming the user model is named 'User'
     required: true
   },
   totalAmount: {

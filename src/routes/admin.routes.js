@@ -29,7 +29,7 @@ router.use("/subscriberReport", require("./admin/subscriberReportRoutes"));
 router.use("/franchiseeReport", require("./admin/franchiseeReportRoutes"));
 router.use("/misReport", require("./admin/misReportRoutes"));
 router.use("/revenueReport", require("./admin/revenueReportRoutes"));
-router.use("/userManage", require("./admin/useerManageRoutes"));
+// router.use("/userManage", require("./admin/userManageRoutes"));
 router.use("/dashboard", require("./admin/dashboardRoutes"));
 router.use("/hardware", require("./admin/hardwareRoutes"));
 

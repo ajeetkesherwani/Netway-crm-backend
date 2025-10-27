@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const ticketReplySchema = new mongoose.Schema({
-
     ticket: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Ticket"

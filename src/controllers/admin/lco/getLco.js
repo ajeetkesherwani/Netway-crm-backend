@@ -6,22 +6,33 @@ const { successResponse } = require("../../../utils/responseHandler");
 exports.getLcoList = catchAsync(async (req, res, next) => {
     const user = req.user;
 
-
     if (user.role !== "Admin" && user.role !== "Reseller") {
         return next(new AppError("You are not authorized to access this resource", 403));
     }
 
-    let lco;
-
+    // Query setup
+    let query = {};
     if (user.role === "Reseller") {
-        lco = await Lco.find({ retailerId: user._id });
+        query = { retailerId: user._id }; // Reseller sees only their LCOs
     }
-    if (user.role === "Admin") {
-        lco = await Lco.find();
+    // Admin sees all LCOs (query is empty)
+
+    // Fetch LCOs and populate retailer name
+    const lcoList = await Lco.find(query)
+        .populate({
+            path: "retailerId",
+            select: "resellerName", // Retailer name
+        });
+
+    if (!lcoList || lcoList.length === 0) {
+        return next(new AppError("LCO not found", 404));
     }
 
-    if (!lco || lco.length === 0) return next(new AppError("Lco not found", 404));
+    // Add retailerName at top-level for each LCO
+    const formattedList = lcoList.map(lco => ({
+        ...lco.toObject(),
+        retailerName: lco.retailerId?.name || "N/A"
+    }));
 
-    successResponse(res, "lco found successfully", lco);
-
+    successResponse(res, "LCO found successfully", formattedList);
 });

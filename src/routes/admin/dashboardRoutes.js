@@ -51,6 +51,7 @@ const {
 const {
     getLatestPurchasedPlans
 } = require("../../controllers/admin/dashboard/getLetestPurchesedPlan");
+const { getResellerWiseRegisterUsersCount } = require("../../controllers/admin/dashboard/resellerWiseRegisterUser");
 
 const router = express.Router();
 
@@ -72,6 +73,8 @@ router.get("/renewal/userList/details", adminAuthenticate, getRenewedUsersDetail
 router.get("/allType/userList", adminAuthenticate, getUserByStatus);
 
 router.get("/recent/plan/list", adminAuthenticate, getLatestPurchasedPlans);
+
+router.get("/resellerWise/registerUser", adminAuthenticate, getResellerWiseRegisterUsersCount);
 
 
 

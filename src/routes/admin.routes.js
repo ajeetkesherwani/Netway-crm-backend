@@ -32,6 +32,7 @@ router.use("/revenueReport", require("./admin/revenueReportRoutes"));
 router.use("/userManage", require("./admin/userManageRoutes"));
 router.use("/dashboard", require("./admin/dashboardRoutes"));
 router.use("/hardware", require("./admin/hardwareRoutes"));
+router.use("/ticketReport", require("./admin/ticketReportRoutes"));
 
 
 module.exports = router;

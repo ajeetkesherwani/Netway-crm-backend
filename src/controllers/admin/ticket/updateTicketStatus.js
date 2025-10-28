@@ -16,6 +16,9 @@ exports.updateTicketStatus = catchAsync(async (req, res, next) => {
 
     ticket.status = status || ticket.status;
 
+    ticket.lastModifiedBy = req.user._id;
+    ticket.lastModifiedByType = req.user.role;
+
     await ticket.save();
 
     await logTicketActivity({

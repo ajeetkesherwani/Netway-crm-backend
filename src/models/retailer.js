@@ -17,9 +17,7 @@ const retailerSchema = new mongoose.Schema({
   area: { type: String },
   subArea: { type: String },
   mobileNo: { type: Number },
-  fax: { type: String },
   messengerId: { type: String },
-  dob: { type: String },
   balance: { type: String },
   dashboard: { type: String, enum: ["Admin", "Reseller", "Manager"], default: "Admin" },
   panNumber: { type: String },
@@ -32,7 +30,6 @@ const retailerSchema = new mongoose.Schema({
   state: { type: String },
   country: { type: String },
   website: { type: String },
-  annversaryDate: { type: String },
   latitude: { type: String },
   longitude: { type: String },
   gstNo: { type: String },
@@ -53,7 +50,7 @@ const retailerSchema = new mongoose.Schema({
     status: {
       type: String,
       enum: ["active", "Inactive"],
-      default: "Inactive"
+      default: "active"
     },
     employeeName: { type: String },
     employeeUserName: { type: String },

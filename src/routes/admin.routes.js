@@ -33,6 +33,8 @@ router.use("/userManage", require("./admin/userManageRoutes"));
 router.use("/dashboard", require("./admin/dashboardRoutes"));
 router.use("/hardware", require("./admin/hardwareRoutes"));
 router.use("/ticketReport", require("./admin/ticketReportRoutes"));
+router.use("/resellerWise", require("./admin/resllerWiseDashboardRoutes"));
+router.use("/lcoWise", require("./admin/lcoWiseDashboardRoutes"));
 
 
 module.exports = router;

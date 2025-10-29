@@ -39,7 +39,7 @@ const lcoSchema = new mongoose.Schema({
     lcoCode: { type: String },
     nas: { type: [String], default: [], },
     descripition: { type: String },
-    status: { type: String, enum: ["active", "inActive"], default: "inActive" },
+    status: { type: String, enum: ["active", "inActive"], default: "active" },
     walletBalance: { type: Number, default: 0 },
     employeeAssociation: [{
         type: {

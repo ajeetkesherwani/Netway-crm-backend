@@ -40,7 +40,7 @@ const UserSchema = new mongoose.Schema({
   },
 
   networkInformation: {
-    networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL"] },
+    networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL", ". ILL"] },
     ipType: { type: String, enum: ["Static IP", "Dynamic IP Pool"] },
     statisIp: {
       nas: { type: [String], enum: [""], default: "" },

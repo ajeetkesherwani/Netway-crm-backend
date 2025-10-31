@@ -1,0 +1,108 @@
+const Payment = require('../../../models/payment');
+const { successResponse, errorResponse } = require('../../../utils/responseHandler');
+const AppError = require("../../../utils/AppError");
+
+const validateRequiredField = (field, fieldName) => {
+  if (!field || !field.trim())
+    return new AppError(`${fieldName} is required.`, 400);
+  return null;
+};
+
+
+// CREATE Payment
+exports.createPayment = async (req, res) => {
+  try {
+    const {
+      ReceiptNo,
+      userId,
+      totalAmount,
+      amountToBePaid,
+      dueAmount,
+      PaymentDate,
+      PaymentMode,
+      transactionNo,
+      comment,
+      paymentProof
+    } = req.body;
+
+    // Check if ReceiptNo already exists (unique)
+    const existingPayment = await Payment.findOne({ ReceiptNo });
+    if (existingPayment) {
+        errorResponse(res, 'ReceiptNo already exists', null);
+    }
+
+    const payment = new Payment({
+      ReceiptNo,
+      userId,
+      totalAmount,
+      amountToBePaid,
+      dueAmount,
+      PaymentDate,
+      PaymentMode,
+      transactionNo,
+      comment,
+      paymentProof
+    });
+
+    await payment.save();
+    successResponse(res, 'Payment created successfully', payment);
+  } catch (error) {
+    errorResponse(res, 'Failed to create Payment', error.message);
+  }
+};
+
+// READ ALL Payments
+exports.getAllPayments = async (req, res) => {
+  try {
+    const payments = await Payment.find().populate('userId', 'fullName email');
+    successResponse(res, 'Payments fetched successfully', payments);
+  } catch (error) {
+    errorResponse(res, 'Failed to fetch Payments', error.message);
+  }
+};
+
+// READ Payment BY ID
+exports.getPaymentById = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id).populate('userId', 'fullName email');
+    if (!payment) errorResponse(res, 'Payment not found', null);
+
+    successResponse(res, 'Payment fetched successfully', payment);
+  } catch (error) {
+    errorResponse(res, 'Failed to fetch Payment', error.message);
+  }
+};
+
+// UPDATE Payment
+exports.updatePayment = async (req, res) => {
+  try {
+    const updateData = req.body;
+
+    // If updating ReceiptNo, check for uniqueness
+    if (updateData.ReceiptNo) {
+      const existing = await Payment.findOne({ ReceiptNo: updateData.ReceiptNo, _id: { $ne: req.params.id } });
+      if (existing) return res.status(400).json({ error: 'ReceiptNo already exists' });
+    }
+
+    const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!updatedPayment) return res.status(404).json({ error: 'Payment not found' });
+
+    successResponse(res, 'Payment updated successfully', updatedPayment);
+  } catch (error) {
+    errorResponse(res, 'Failed to update Payment', error.message);
+  }
+};
+
+// DELETE Payment
+exports.deletePayment = async (req, res) => {
+  try {
+    const deleted = await Payment.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Payment not found' });
+
+    successResponse(res, 'Payment deleted successfully', null);
+  } catch (error) {
+    errorResponse(res, 'Failed to delete Payment', error.message);
+  }
+
+};
+

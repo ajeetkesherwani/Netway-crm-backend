@@ -10,7 +10,7 @@ const {
 
 // const {
 //   getUserList
-// } = require('../../controllers/admin/user/getUser');
+// } = require('../../../controllers/admin/user/getUser');
 
 // const {
 //   getUserDetails

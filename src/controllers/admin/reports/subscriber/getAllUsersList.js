@@ -7,7 +7,7 @@ const { successResponse } = require("../../../../utils/responseHandler");
 const Retailer = require("../../../../models/retailer");
 const Lco = require("../../../../models/lco");
 
-// Helper to fetch createdBy name
+// // Helper to fetch createdBy name
 async function getCreatedByName(type, id) {
   const modelMap = { Admin, Retailer, Lco };
   if (!type || !id || !modelMap[type]) return null;
@@ -15,15 +15,116 @@ async function getCreatedByName(type, id) {
   return doc?.name || null;
 }
 
+// exports.getAllUsersList = catchAsync(async (req, res, next) => {
+//   const { page = 1, limit = 10 } = req.query;
+//   const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//   // Get total user count
+//   const totalUsers = await User.countDocuments();
+
+//   // Fetch paginated users
+//   const users = await User.find()
+//     .select(`
+//       generalInformation.username 
+//       generalInformation.name 
+//       generalInformation.phone 
+//       generalInformation.email 
+//       generalInformation.status 
+//       generalInformation.gst 
+//       generalInformation.address 
+//       generalInformation.activationDate 
+//       generalInformation.expiryDate 
+//       generalInformation.createdBy 
+//       generalInformation.createdFor 
+//       createdAt
+//       status
+//     `)
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(parseInt(limit))
+//     .lean();
+
+//     // console.log("Fetched Users:", users);
+
+//   const modifiedUsers = await Promise.all(
+//     users.map(async (user) => {
+//       const planData = await PurchasedPlan.findOne({
+//         userId: user._id,
+//         status: "active"
+//       })
+//         .populate("packageId", "name")
+//         .select("packageId activationDate expiryDate")
+//         .lean();
+
+//       const createdByField = user.generalInformation?.createdBy;
+//       const createdByName = await getCreatedByName(
+//         createdByField?.type,
+//         createdByField?.id
+//       );
+
+//       return {
+//         id: user._id,
+//         username: user.generalInformation?.username || null,
+//         customerName: user.generalInformation?.name || null,
+//         phone: user.generalInformation?.phone || null,
+//         email: user.generalInformation?.email || null,
+//         status: user?.status || null,
+//         gstin: user.generalInformation?.gst || null,
+//         area: user.generalInformation?.address || null,
+//         createdAt: user.createdAt || null,
+//         activationDate: planData?.activationDate || null,
+//         expiryDate: planData?.expiryDate || null,
+//         createdByType: createdByField?.type || null,
+//         createdByName,
+//         createdFor: user.generalInformation?.createdFor?.type || null,
+//         planName: planData?.packageId?.name || null
+//       };
+//     })
+//   );
+
+//   return successResponse(res, "Users fetched successfully", {
+//     total: totalUsers,
+//     page: parseInt(page),
+//     limit: parseInt(limit),
+//     data: modifiedUsers
+//   });
+// });
+
+
 exports.getAllUsersList = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, searchField, searchValue } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // Get total user count
-  const totalUsers = await User.countDocuments();
+  // Build filter dynamically
+  let filter = {};
+
+  if (searchField && searchValue) {
+    const allowedFields = [
+      "customerName", // maps to generalInformation.name
+      "username",     // maps to generalInformation.username
+      "phone",        // maps to generalInformation.phone
+      "email"         // maps to generalInformation.email
+    ];
+
+    if (allowedFields.includes(searchField)) {
+      const fieldMap = {
+        customerName: "generalInformation.name",
+        username: "generalInformation.username",
+        phone: "generalInformation.phone",
+        email: "generalInformation.email"
+      };
+
+      filter[fieldMap[searchField]] = { $regex: searchValue, $options: "i" };
+    } else {
+      return next(new AppError("Invalid search field provided", 400));
+    }
+  }
+
+  // Get total user count with filter
+  const totalUsers = await User.countDocuments(filter);
 
   // Fetch paginated users
-  const users = await User.find()
+  const users = await User.find(filter)
     .select(`
       generalInformation.username 
       generalInformation.name 
@@ -43,8 +144,6 @@ exports.getAllUsersList = catchAsync(async (req, res, next) => {
     .skip(skip)
     .limit(parseInt(limit))
     .lean();
-
-    // console.log("Fetched Users:", users);
 
   const modifiedUsers = await Promise.all(
     users.map(async (user) => {

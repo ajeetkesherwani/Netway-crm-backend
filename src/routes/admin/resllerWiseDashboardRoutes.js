@@ -24,6 +24,26 @@ const {
     getResellerWiseUpcomingRenewalUsersCount
 } = require("../../controllers/admin/resellerWiseDashboard/resellerWiseUpcmingRenewalUser");
 
+const {
+    getResellerWiseRegisterUserDetails
+} = require("../../controllers/admin/resellerWiseDashboard/resellerWiseRegisterUserDetails");
+
+const {
+    getResellerWiseActiveUserDetails
+} = require("../../controllers/admin/resellerWiseDashboard/resellerWiseActiveUserDetails");
+
+const {
+    getResellerWiseInActiveUserDetails
+} = require("../../controllers/admin/resellerWiseDashboard/resellerWiseInActiveUser");
+
+const {
+    getResellerWiseRenewalUserDetails
+} = require("../../controllers/admin/resellerWiseDashboard/resellerWiseRenewalUserDetails");
+
+const {
+    getResellerWiseUpcomingRenewalUserDetails
+} = require("../../controllers/admin/resellerWiseDashboard/resellerWiseUpcomingUserDetails");
+
 const router = express.Router();
 
 router.get("/register/userList", adminAuthenticate, getResellerWiseRegisterUsersCount);
@@ -31,5 +51,11 @@ router.get("/active/userList", adminAuthenticate, getResellerWiseActiveUsersCoun
 router.get("/inActive/userList", adminAuthenticate, getResellerWiseInActiveUsersCount);
 router.get("/renewal/userList", adminAuthenticate, getResellerWiseRenewalUsersCount);
 router.get("/upcomingRenewal/userList", adminAuthenticate, getResellerWiseUpcomingRenewalUsersCount);
+
+router.get("/register/userlist/:resellerId", adminAuthenticate, getResellerWiseRegisterUserDetails);
+router.get("/active/userList/:resellerId", adminAuthenticate, getResellerWiseActiveUserDetails);
+router.get("/inActive/userList/:resellerId", adminAuthenticate, getResellerWiseInActiveUserDetails);
+router.get("/renewal/userList/:resellerId", adminAuthenticate, getResellerWiseRenewalUserDetails);
+router.get("/upcomingRenewal/userList/:resellerId", adminAuthenticate, getResellerWiseUpcomingRenewalUserDetails);
 
 module.exports = router;

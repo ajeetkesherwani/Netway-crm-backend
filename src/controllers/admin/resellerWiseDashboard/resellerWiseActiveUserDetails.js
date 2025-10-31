@@ -1,68 +1,73 @@
 const mongoose = require("mongoose");
 const User = require("../../../models/user");
 const Reseller = require("../../../models/retailer");
-const Lco = require("../../../models/lco");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 
-exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
-    const { role, _id } = req.user; // from logged-in user
+exports.getResellerWiseActiveUserDetails = catchAsync(async (req, res) => {
+    const { resellerId } = req.params;
     const { filter = "day", year, month } = req.query; // day | week | month
+
+    if (!resellerId || !mongoose.Types.ObjectId.isValid(resellerId)) {
+        return successResponse(res, "Invalid or missing reseller ID", { result: [] });
+    }
 
     const now = new Date();
     const selectedYear = parseInt(year) || now.getFullYear();
-    const selectedMonth = month ? parseInt(month) - 1 : now.getMonth(); // 0-based
+    const selectedMonth = month ? parseInt(month) - 1 : now.getMonth(); // 0-based month
 
-    // Base match condition (only active users)
-    const matchCondition = { status: "active" };
+    //Include only Active users for given retailer
+    const matchCondition = {
+        "generalInformation.createdFor.type": "Retailer",
+        "generalInformation.createdFor.id": new mongoose.Types.ObjectId(resellerId),
+        status: "active",
+    };
 
-    let name = null;
-
-    // === ROLE-BASED FILTERS ===
-    if (role === "Reseller") {
-        matchCondition["generalInformation.createdFor.type"] = "Retailer";
-        matchCondition["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
-        const reseller = await Reseller.findById(_id).select("resellerName").lean();
-        name = reseller?.resellerName || "Unknown Reseller";
-    }
-    else if (role === "Lco") {
-        matchCondition["generalInformation.createdFor.type"] = "Lco";
-        matchCondition["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
-        const lco = await Lco.findById(_id).select("lcoName").lean();
-        name = lco?.lcoName || "Unknown LCO";
-    }
-    else if (role === "Admin") {
-        name = "Admin Dashboard";
-    }
-
-    // === DATE RANGE AND GROUP STAGE ===
     let groupStage = {};
     let dateRange = {};
     let format = "";
 
+    // === DAY WISE ===
     if (filter === "day") {
         const startDate = new Date(selectedYear, selectedMonth, 1);
         const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
         dateRange = { $gte: startDate, $lte: endDate };
-        groupStage = { _id: { $dayOfMonth: "$updatedAt" }, count: { $sum: 1 } };
+
+        groupStage = {
+            _id: { $dayOfMonth: "$updatedAt" },
+            count: { $sum: 1 },
+        };
         format = "day";
     }
+
+    // === WEEK WISE ===
     else if (filter === "week") {
         const startDate = new Date(selectedYear, selectedMonth, 1);
         const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
         dateRange = { $gte: startDate, $lte: endDate };
-        groupStage = { _id: { $dayOfMonth: "$updatedAt" }, count: { $sum: 1 } };
+
+        groupStage = {
+            _id: { $dayOfMonth: "$updatedAt" },
+            count: { $sum: 1 },
+            updatedAt: { $first: "$updatedAt" },
+        };
         format = "week";
     }
+
+    // === MONTH WISE ===
     else if (filter === "month") {
         const startDate = new Date(selectedYear, 0, 1);
         const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
         dateRange = { $gte: startDate, $lte: endDate };
-        groupStage = { _id: { $month: "$updatedAt" }, count: { $sum: 1 } };
+
+        groupStage = {
+            _id: { $month: "$updatedAt" },
+            count: { $sum: 1 },
+        };
         format = "month";
     }
 
-    // === AGGREGATION QUERY ===
+    // ===  AGGREGATION ===
     const data = await User.aggregate([
         { $match: { ...matchCondition, updatedAt: dateRange } },
         { $group: groupStage },
@@ -71,7 +76,7 @@ exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
 
     let result = [];
 
-    // === FORMAT RESULT ===
+    // --- DAY WISE ---
     if (format === "day") {
         const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
@@ -82,6 +87,8 @@ exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
             });
         }
     }
+
+    // --- WEEK WISE ---
     else if (format === "week") {
         const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
         const weeks = [];
@@ -94,9 +101,9 @@ exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
 
             const weekCount = data
                 .filter((d) => {
-                    const createdDay = d._id;
-                    const createdDate = new Date(selectedYear, selectedMonth, createdDay);
-                    return createdDate >= startDate && createdDate <= endDate;
+                    const updatedDay = d._id;
+                    const updatedDate = new Date(selectedYear, selectedMonth, updatedDay);
+                    return updatedDate >= startDate && updatedDate <= endDate;
                 })
                 .reduce((sum, d) => sum + d.count, 0);
 
@@ -110,6 +117,8 @@ exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
 
         result = weeks;
     }
+
+    // --- MONTH WISE ---
     else if (format === "month") {
         const monthNames = [
             "January", "February", "March", "April", "May", "June",
@@ -125,14 +134,11 @@ exports.getActiveUsersDetailByFilter = catchAsync(async (req, res) => {
         }
     }
 
-    // === FINAL RESPONSE ===
-    return successResponse(res, "Role-wise active user trend fetched successfully", {
-        role,
-        name,
+    return successResponse(res, "Reseller-wise ACTIVE user trend fetched successfully", {
+        resellerId,
         filter,
         year: selectedYear,
         month: selectedMonth + 1,
-        totalActiveUsers: data.reduce((sum, d) => sum + d.count, 0),
         result,
     });
 });

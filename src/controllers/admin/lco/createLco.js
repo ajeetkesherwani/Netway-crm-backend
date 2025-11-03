@@ -11,6 +11,7 @@ exports.createLco = catchAsync(async (req, res, next) => {
         supportEmail, supportWhatsApp, lcoCode, nas, description, status, employeeAssociation
     } = req.body;
 
+
     if (!email) return next(new AppError("Email is required", 400));
 
     // Check if LCO already exists
@@ -59,11 +60,45 @@ exports.createLco = catchAsync(async (req, res, next) => {
         return next(new AppError("employeeAssociation with username and password is required", 400));
     }
 
+
+    // Handle document uploads
+    let documentData = {
+        aadhaarCard: [],
+        panCard: [],
+        license: [],
+        other: [],
+    };
+
+
+    if (req.files) {
+        if (req.files.aadhaarCard) {
+            req.files.aadhaarCard.forEach((file) => {
+                documentData.aadhaarCard.push(file.path.replace(/\\/g, "/"));
+            });
+        }
+        if (req.files.panCard) {
+            req.files.panCard.forEach((file) => {
+                documentData.panCard.push(file.path.replace(/\\/g, "/"));
+            });
+        }
+        if (req.files.license) {
+            req.files.license.forEach((file) => {
+                documentData.license.push(file.path.replace(/\\/g, "/"));
+            });
+        }
+        if (req.files.other) {
+            req.files.other.forEach((file) => {
+                documentData.other.push(file.path.replace(/\\/g, "/"));
+            });
+        }
+    }
+
+
     const newLco = new Lco({
         title, retailerId, role, lcoName, plainPassword: password, password, mobileNo, address, houseNo, taluka, pincode, district,
         area, state, country, subArea, telephone, faxNo, email, messengerId, website, dob, anniversaryDate,
         latitude, longitude, lcoBalance, gst, panNo, dashboard, contactPersonName, contactPersonNumber,
-        supportEmail, supportWhatsApp, lcoCode, nas, description, status, employeeAssociation
+        supportEmail, supportWhatsApp, lcoCode, nas, description, status, employeeAssociation, document: documentData,
     });
 
     await newLco.save();

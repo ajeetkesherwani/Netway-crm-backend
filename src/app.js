@@ -8,8 +8,6 @@ const AppError = require("./utils/AppError");
 const globalErrorHandler = require("./controllers/errorController");
 const scheduleExpirePlansJob = require("./jobs/expirePurchasedPlans");
 
-
-
 const app = express();
 app.use(cors());
 app.use(morgan("dev"));

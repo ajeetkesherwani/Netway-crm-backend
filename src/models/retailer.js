@@ -58,7 +58,13 @@ const retailerSchema = new mongoose.Schema({
     plainPassword: { type: String },
     mobile: { type: Number },
     email: { type: String }
-  }]
+  }],
+  document: {
+    aadhaarCard: { type: [String], default: "" },
+    panCard: { type: [String], default: "" },
+    license: { type: [String], default: "" },
+    other: { type: [String], default: "" },
+  },
 
 }, { timestamps: true });
 
@@ -74,8 +80,6 @@ retailerSchema.pre("save", async function (next) {
   }
   next();
 });
-
-
 
 // Compare password for employeeAssociation login
 // retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {

@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const lcoSchema = new mongoose.Schema({
-    title: { type: String },
+    title: {
+        type: String,
+        enum: ["Mr.", "Ms", "M/s", "Mrs", "Miss"],
+        default: "M/s"
+    },
     retailerId: { type: mongoose.Schema.Types.ObjectId, ref: "Retailer", required: true },
     role: {
         type: mongoose.Schema.Types.ObjectId, ref: "Role"
@@ -58,7 +62,13 @@ const lcoSchema = new mongoose.Schema({
         plainPassword: { type: String },
         mobile: { type: Number },
         email: { type: String }
-    }]
+    }],
+    document: {
+        aadhaarCard: { type: [String], default: "" },
+        panCard: { type: [String], default: "" },
+        license: { type: [String], default: "" },
+        other: { type: [String], default: "" },
+    },
 
 });
 

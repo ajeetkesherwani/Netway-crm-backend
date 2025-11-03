@@ -1,4 +1,6 @@
 const User = require("../../../models/user");
+const Reseller = require("../../../models/retailer");
+const Lco = require("../../../models/lco");
 const PurchasedPlan = require("../../../models/purchasedPlan");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
@@ -25,8 +27,25 @@ exports.getUpcomingRenewalUsersCount = catchAsync(async (req, res) => {
 
     // User filter (role-based)
     const userQuery = { status: "active" };
-    if (role === "Reseller" || role === "Lco") {
-        userQuery.referredBy = _id;
+    let name = null;
+
+    if (role === "Reseller") {
+        userQuery["generalInformation.createdFor.type"] = "Retailer";
+        userQuery["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
+
+        const reseller = await Reseller.findById(_id).select("resellerName").lean();
+        name = reseller?.resellerName || "Unknown Reseller";
+    }
+    else if (role === "Lco") {
+        userQuery["generalInformation.createdFor.type"] = "Lco";
+        userQuery["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
+
+        const lco = await Lco.findById(_id).select("lcoName").lean();
+        name = lco?.lcoName || "Unknown LCO";
+    }
+    else if (role === "Admin") {
+        // Admin can see all users
+        name = "Admin Dashboard";
     }
 
     const users = await User.find(userQuery).select("_id").lean();

@@ -28,7 +28,7 @@ exports.createPayment = async (req, res) => {
     // Check if ReceiptNo already exists (unique)
     const existingPayment = await Payment.findOne({ ReceiptNo });
     if (existingPayment) {
-        errorResponse(res, 'ReceiptNo already exists', null);
+      errorResponse(res, 'ReceiptNo already exists', null);
     }
 
     const payment = new Payment({

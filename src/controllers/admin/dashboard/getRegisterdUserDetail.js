@@ -21,19 +21,22 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
     let name = "";
 
     if (role === "Reseller") {
-        matchCondition["generalInformation.createdBy.id"] = new mongoose.Types.ObjectId(_id);
+        matchCondition["generalInformation.createdFor.type"] = "Retailer";
+        matchCondition["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
+
         const reseller = await Reseller.findById(_id).select("resellerName").lean();
-        console.log(reseller, "reseller name");
         name = reseller?.resellerName || "Unknown Reseller";
-    } else if (role === "Lco") {
-        matchCondition["generalInformation.createdBy.id"] = new mongoose.Types.ObjectId(_id);
+    }
+    else if (role === "Lco") {
+        matchCondition["generalInformation.createdFor.type"] = "Lco";
+        matchCondition["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(_id);
+
         const lco = await Lco.findById(_id).select("lcoName").lean();
-        console.log("lco", lco);
         name = lco?.lcoName || "Unknown LCO";
-    } else if (role === "Admin") {
+    }
+    else if (role === "Admin") {
         name = "Admin Dashboard";
     }
-
     // === DATE FILTER (supports day/week/month/year) ===
     let startDate, endDate, format;
 

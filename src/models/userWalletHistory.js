@@ -31,13 +31,13 @@ const userWalletHistorySchema = new Schema(
         },
         purpose: {
             type: String,
-            enum: ["plan","payment"],
+            enum: ["plan", "payment"],
             default: "plan",
         },
         paymentMode: {
             type: String,
-            enum: ["cash","cheque","onlineTrancation"],
-            default: "plan",
+            enum: ["cash", "cheque", "onlineTrancation", "Online"],
+            default: "Online",
         },
         paymentDate: {
             type: Date,

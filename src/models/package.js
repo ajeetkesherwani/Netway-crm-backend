@@ -15,7 +15,12 @@ const packageSchema = new Schema({
     status: { type: String, enum: ["active", "inActive"], required: true },
     typeOfPlan: { type: String, enum: ["Renew", "Speed Booster Plan", "Valume Booster"], default: "Renew" },
     categoryOfPlan: { type: String, enum: ["Unlimited", "Limited", "Fup", "DayNight"], required: true },
-    description: { type: String }
+    description: { type: String },
+    isIptv: { type: Boolean, default: false },
+    iptvPlanName: { type: String },
+    isOtt: { type: Boolean, default: false },
+    ottPlanName: { type: String }
+
 
     // Timestamps
 }, { timestamps: true });

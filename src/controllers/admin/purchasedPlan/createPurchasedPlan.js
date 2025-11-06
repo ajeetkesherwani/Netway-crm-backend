@@ -29,7 +29,17 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const selectedPackage = await Package.findById(packageId);
   if (!selectedPackage) return next(new AppError("Package not found", 404));
 
-  const packagePrice = Number(selectedPackage.basePrice || selectedPackage.offerPrice || 0);
+  // const packagePrice = Number(selectedPackage.basePrice || selectedPackage.offerPrice || 0);
+  let packagePrice = 0;
+
+  if (selectedPackage.basePrice && Number(selectedPackage.basePrice) > 0) {
+    packagePrice = Number(selectedPackage.basePrice);
+  } else if (selectedPackage.offerPrice && Number(selectedPackage.offerPrice) > 0) {
+    packagePrice = Number(selectedPackage.offerPrice);
+  } else {
+    packagePrice = 0;
+  }
+
 
   // Check if the purchaser has enough wallet balance
   if (purchaser.role === "Reseller" || purchaser.role === "Lco") {
@@ -80,7 +90,9 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     expiryDate: expiry,
     status: "active",
     remarks,
+    isPaymentRecived
   });
+
 
   // ---------------- Fetch Target User ---------------- //
   const targetUser = await User.findById(userId);
@@ -89,22 +101,33 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   }
 
   // ---------------- Manage User Wallet ---------------- //
-  const openingBalance = targetUser.walletBalance || 0;
-  const transferAmount = packagePrice;
+
+  // Get user's last wallet history to maintain continuity
+  const lastHistory = await UserWalletHistory.findOne({ userId })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const lastClosingBalance = lastHistory ? lastHistory.closingBalance : 0; // last closing = new opening
+  const openingBalance = Number(lastClosingBalance);
+  const transferAmount = Number(packagePrice);
   let closingBalance = openingBalance;
   let transactionType;
+  let remarkText;
 
+  // Case 1: Payment Not Received → Deduct from Wallet
   if (!isPaymentRecived) {
-    // Payment not received → deduct from user wallet
-    closingBalance = openingBalance - packagePrice;
+    closingBalance = openingBalance - transferAmount;
     transactionType = "debit";
+    remarkText = "Plan purchased - amount deducted from wallet";
 
-    // update user wallet
+    // Update user's current wallet balance (never positive)
     await User.findByIdAndUpdate(userId, { walletBalance: closingBalance });
-  } else {
-    // Payment received → wallet unchanged
+  }
+  // Case 2: Payment Received → Wallet Unchanged (record only)
+  else {
     closingBalance = openingBalance;
     transactionType = "credit";
+    remarkText = "Plan purchased - payment received";
   }
 
   // ---------------- Create User Wallet History ---------------- //
@@ -115,8 +138,11 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     transferAmount,
     closingBalance,
     relatedPurchasePlanId: newPurchase._id,
-    remark: "plan Recharge"
+    purpose: "plan",
+    paymentMode: paymentMethod === "Online" ? "onlineTrancation" : "cash",
+    remark: remarkText,
   });
+
 
   // ---------------- Response ---------------- //
   return successResponse(res, "Plan purchased successfully", {

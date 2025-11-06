@@ -1,7 +1,9 @@
 const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
+const catchAsync = require("../../../utils/catchAsync");
+const { successResponse } = require("../../../utils/responseHandler");
 
-exports.updateStaff = (async (req, res, next) => {
+exports.updateStaff = catchAsync(async (req, res, next) => {
 
     const { id } = req.params;
 
@@ -11,16 +13,18 @@ exports.updateStaff = (async (req, res, next) => {
     if (!staff) return next(new AppError("staff not found", 404));
 
     const updatableFields = [
-       "name", "email", "phoneNo", "password", "address", "bio", "roleId", "logId", "staffName", "salary",
-     "comment", "area", "staffIp", "status"
+        "name", "userName", "email", "password", "phoneNo", "address", "bio", "roleId", "logId", "staffName", "salary",
+        "comment", "area", "staffIp", "status"
     ];
 
     updatableFields.forEach(field => {
         if (req.body[field] !== undefined) {
-            retailer[field] = req.body[field];
+            staff[field] = req.body[field];
         }
     });
 
-    await retailer.save();
+    await staff.save();
 
-});
+    successResponse(res, "staff update successfully", staff);
+
+}); 

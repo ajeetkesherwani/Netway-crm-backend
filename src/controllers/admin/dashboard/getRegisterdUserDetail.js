@@ -56,12 +56,26 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
         return next(new AppError("Invalid filter. Use day/week/month", 400));
     }
 
+    // === COPY ROLE BASED CONDITION (for total count)
+    const roleMatchCondition = { ...matchCondition };
+
+    // === ADD DATE FILTER ONLY FOR FILTER RESULT
     matchCondition.createdAt = { $gte: startDate, $lte: endDate };
 
-    // === FETCH USERS ===
+    // === FETCH USERS FOR FILTER RANGE ===
     const users = await User.find(matchCondition)
         .populate("generalInformation.createdFor.id", "generalInformation.name generalInformation.username generalInformation.phone generalInformation.email")
         .lean();
+
+    // === FETCH TOTAL USERS (WITHOUT DATE FILTER) ===
+    const totalUsers = await User.countDocuments(roleMatchCondition);
+
+    // matchCondition.createdAt = { $gte: startDate, $lte: endDate };
+
+    // // === FETCH USERS ===
+    // const users = await User.find(matchCondition)
+    //     .populate("generalInformation.createdFor.id", "generalInformation.name generalInformation.username generalInformation.phone generalInformation.email")
+    //     .lean();
 
     // === ENRICH USER DATA ===
     const usersWithPlans = await Promise.all(
@@ -196,7 +210,8 @@ exports.getRegisterUsersByFilter = catchAsync(async (req, res, next) => {
         filter,
         year: selectedYear,
         month: selectedMonth + 1,
-        totalRegisteredUsers: usersWithPlans.length,
+        // totalRegisteredUsers: usersWithPlans.length,
+        totalRegisteredUsers: totalUsers,
         result
     });
 });

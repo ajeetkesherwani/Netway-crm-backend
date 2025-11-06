@@ -83,7 +83,6 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
         }
     }
 
-
     const retailer = new Retailer({
         title, phoneNo, email, password, district, resellerName, houseNo, pincode, area, subArea,
         mobileNo, fax, messengerId, dob, balance, dashboard, panNumber, resellerCode,

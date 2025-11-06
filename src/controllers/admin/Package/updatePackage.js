@@ -14,7 +14,11 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
         status,
         typeOfPlan,
         categoryOfPlan,
-        description
+        description,
+        isIptv,
+        iptvPlanName,
+        isOtt,
+        ottPlanName,
     } = req.body;
 
     if (!packageId) {
@@ -26,8 +30,6 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
         return next(new AppError("Package not found", 404));
     }
 
-
-
     // Update fields only if provided
     if (name) packageToUpdate.name = name;
     if (validity) packageToUpdate.validity = validity;
@@ -38,6 +40,10 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
     if (typeOfPlan) packageToUpdate.typeOfPlan = typeOfPlan;
     if (categoryOfPlan) packageToUpdate.categoryOfPlan = categoryOfPlan;
     if (description !== undefined) packageToUpdate.description = description;
+    if (isIptv !== undefined) packageToUpdate.isIptv = isIptv;
+    if (iptvPlanName !== undefined) packageToUpdate.iptvPlanName = iptvPlanName;
+    if (isOtt !== undefined) packageToUpdate.isOtt = isOtt;
+    if (ottPlanName !== undefined) packageToUpdate.ottPlanName = ottPlanName;
 
     await packageToUpdate.save();
 

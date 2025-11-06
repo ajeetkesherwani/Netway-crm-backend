@@ -1,54 +1,3 @@
-// // const bcrypt = require("bcrypt");
-// // const Admin = require("../../../models/admin");
-// // const Reseller = require("../../../models/retailer");
-// // const Lco = require("../../../models/lco");
-// // const Staff = require("../../../models/Staff");
-// // const AppError = require("../../../utils/AppError");
-// // const catchAsync = require("../../../utils/catchAsync");
-// // const createToken = require("../../../utils/createToken");
-
-// // exports.login = catchAsync(async (req, res, next) => {
-// //   const { email, password } = req.body;
-
-// //   if (!email || !password) {
-// //     return next(new AppError("Email and password are required.", 400));
-// //   }
-
-// //   let user = await Admin.findOne({ email }).populate("role");
-// //   let userType = "admin";
-
-// //   if (!user) {
-// //     user = await Reseller.findOne({ email }).populate("role");
-// //     userType = "reseller";
-// //   }
-
-// //   if (!user) {
-// //     user = await Lco.findOne({ email }).populate("role");
-// //     userType = "lco";
-// //   }
-
-// //   if (!user) {
-// //     user = await Staff.findOne({ email }).populate("role");
-// //     userType = "staff";
-// //   }
-
-// //   if (!user) {
-// //     return next(new AppError("Invalid email or password.", 401));
-// //   }
-
-// //   // Compare password
-// //   const isMatch = await bcrypt.compare(password, user.password);
-// //   if (!isMatch) {
-// //     return next(new AppError("Invalid email or password.", 401));
-// //   }
-
-// //   // Generate token
-// //   createToken(user, 200, res);
-
-// // });
-
-
-
 // const bcrypt = require("bcryptjs");
 // const mongoose = require("mongoose");
 
@@ -189,15 +138,17 @@ const mongoose = require("mongoose");
 const Admin = require("../../../models/admin");
 const Reseller = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
+const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
 const ResellerConfig = require("../../../models/resellerConfig");
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { email, password, employeeUserName } = req.body;
+  const { email, password, employeeUserName, userName } = req.body;
+  console.log("req.body", req.body);
 
-  if ((!email && !employeeUserName) || !password) {
+  if ((!email && !employeeUserName && !userName) || !password) {
     return next(new AppError("Email or employeeUserName and password are required.", 400));
   }
 
@@ -217,10 +168,10 @@ exports.login = catchAsync(async (req, res, next) => {
     employee = {
       type: "Admin",
       employeeName: user.title || "Administrator",
-      _id: null,
+      _id: user._id,
       employeeUserName: email,
       email: email,
-      mobile: user.mobile || null,
+      phoneNo: user.phoneNo || null,
       status: "active",
     };
   }
@@ -287,6 +238,34 @@ exports.login = catchAsync(async (req, res, next) => {
       employee = foundEmployee;
       userType = "lco";
     }
+  }
+
+  // 4️⃣ STAFF LOGIN
+  if (!user && userName) {
+    const staff = await Staff.findOne({ userName })
+      .populate({
+        path: "role",
+        select: "roleName permissions",
+      })
+      .lean();
+
+    if (!staff) return next(new AppError("Invalid username or password.", 401));
+
+    const isMatch = await bcrypt.compare(password, staff.password);
+    if (!isMatch) return next(new AppError("Invalid username or password.", 401));
+
+    user = staff;
+    userType = "staff";
+
+    employee = {
+      _id: staff._id,
+      type: "Staff",
+      employeeName: staff.staffName || staff.name,
+      employeeUserName: staff.userName,
+      email: staff.email,
+      mobile: staff.phoneNo,
+      status: staff.status,
+    };
   }
 
   if (!user) return next(new AppError("Invalid credentials.", 401));
@@ -360,6 +339,24 @@ exports.login = catchAsync(async (req, res, next) => {
           roleName: user.retailerId.role?.roleName || "Reseller",
         }
         : null,
+    };
+  } else if (userType === "staff") {
+    cleanUser = {
+      _id: user._id,
+      staffName: user.staffName || user.name,
+      email: user.email,
+      phoneNo: user.phoneNo,
+      area: user.area,
+      salary: user.salary,
+      comment: user.comment,
+      status: user.status,
+      address: user.address,
+      bio: user.bio,
+      role: {
+        roleName: user.role?.roleName || "STAFF",
+        permissions: user.role?.permissions || {},
+      },
+      employee,
     };
   }
 

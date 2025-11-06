@@ -67,7 +67,10 @@ exports.createTicket = catchAsync(async (req, res, next) => {
         );
     }
 
-    const ticketNumber = `TCKT-${Date.now()}`;
+    // const ticketNumber = `TCKT-${Date.now()}`;
+    // Generate ticket number WEB + 8 random digits
+    const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+    const ticketNumber = `WEB${randomNumber}`;
     const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
     const creatorId = req.user._id;
 

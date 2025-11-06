@@ -4,9 +4,11 @@ const bcrypt = require("bcryptjs");
 
 const staffSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  userName: { type: String },
   email: { type: String, required: true },
   phoneNo: { type: String, required: true, match: /^[0-9]{10}$/ },
   password: { type: String, required: true },
+  plainPassword: { type: String },
   resetOtpExpires: { type: String, required: false },
   address: { type: String, required: false },
   resetOtpExpires: { type: Date },
@@ -28,6 +30,7 @@ const staffSchema = new mongoose.Schema({
 // Before saving staff
 staffSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
+  this.plainPassword = this.password;
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });

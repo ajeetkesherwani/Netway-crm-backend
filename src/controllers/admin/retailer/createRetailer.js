@@ -9,14 +9,18 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
         mobileNo, fax, messengerId, dob, balance, dashboard, panNumber, resellerCode,
         contactPersonNumber, whatsAppNumber, address, taluka, state, country, website,
         annversaryDate, latitude, longitude, gstNo, contactPersonName, supportEmail,
-        nas, description, status, role, employeeAssociation
+        nas, description, status, role
     } = req.body;
+
+    let { employeeAssociation } = req.body;
 
 
     if (!email) return next(new AppError("email is required", 400));
 
     let existingRetailer = await Retailer.findOne({ email });
 
+    // console.log("employeeAssociation", JSON.parse(employeeAssociation));
+    employeeAssociation = JSON.parse(employeeAssociation);
     if (existingRetailer) {
         if (
             !employeeAssociation ||
@@ -48,6 +52,11 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
         !employeeAssociation[0].employeeUserName ||
         !employeeAssociation[0].password
     ) {
+        console.log("!employeeAssociation", !employeeAssociation);
+        console.log("!Array.isArray(employeeAssociation)", !Array.isArray(employeeAssociation));
+        console.log("employeeAssociation.length === 0", employeeAssociation.length === 0);
+        console.log("!employeeAssociation[0].employeeUserName", !employeeAssociation[0].employeeUserName);
+        console.log("!employeeAssociation[0].password", !employeeAssociation[0].password);
         return next(new AppError("employeeAssociation with username and password is required", 400));
     }
 

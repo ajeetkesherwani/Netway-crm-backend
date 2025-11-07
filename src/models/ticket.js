@@ -72,7 +72,7 @@ const ticketSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned"],
+      enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned", "Approval"],
       default: "Open",
     },
 
@@ -84,7 +84,7 @@ const ticketSchema = new mongoose.Schema(
         },
         currentStatus: {
           type: String,
-          enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned"],
+          enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned", "Approval"],
           default: "Open",
         },
         assignedAt: {

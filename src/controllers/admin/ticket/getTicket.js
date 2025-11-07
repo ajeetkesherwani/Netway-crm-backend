@@ -242,7 +242,12 @@ exports.getTicketList = catchAsync(async (req, res, next) => {
         openTickets = await Ticket.find({ status: "Open" })
             .select(selectFields)
             .populate(populateAssignTo);
-    } else if (filter === "Resolved") {
+    } else if (filter === "Approval") {
+        approvalTickets = await Ticket.find({ status: "Approval" })
+            .select(selectFields)
+            .populate(populateAssignTo);
+    }
+    else if (filter === "Resolved") {
         resolvedTickets = await Ticket.find({ status: "Resolved" })
             .select(selectFields)
             .populate(populateAssignTo);

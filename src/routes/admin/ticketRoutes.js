@@ -25,6 +25,10 @@ const {
     updateTicket
 } = require("../../controllers/admin/ticket/updateTicket");
 
+const {
+    deleteTicket
+} = require("../../controllers/admin/ticket/deleteTicket");
+
 const router = express.Router();
 
 router.post("/create",

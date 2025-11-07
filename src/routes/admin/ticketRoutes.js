@@ -21,6 +21,9 @@ const {
 const {
     updateTicketStatus
 } = require("../../controllers/admin/ticket/updateTicketStatus");
+const {
+    updateTicket
+} = require("../../controllers/admin/ticket/updateTicket");
 
 const router = express.Router();
 
@@ -36,5 +39,6 @@ router.post("/create",
 router.get("/list", adminAuthenticate, getTicketList);
 router.get("/list/:ticketId", adminAuthenticate, getTicketDetails);
 router.patch("/status/:ticketId", adminAuthenticate, updateTicketStatus);
+router.patch("/update/:ticketId", adminAuthenticate, updateTicket);
 
 module.exports = router;

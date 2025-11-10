@@ -9,6 +9,10 @@ const {
 } = require("../../controllers/admin/common/getUserByName");
 
 const {
+    userGlobalDetails
+} = require("../../controllers/admin/common/userGlobalDetails");
+
+const {
     getStaffRoleList
 } = require("../../controllers/admin/common/getStaffRoleList");
 
@@ -23,5 +27,6 @@ router.get("/user/details", adminAuthenticate, searchUsersByName);
 router.get("/staff/roleList", adminAuthenticate, getStaffRoleList);
 router.get("/user/purchedPlan", adminAuthenticate, getUserPurchasedPlans);
 router.get("/reassign/ticket/list", adminAuthenticate, getAllReassignedTickets);
+router.get("/user/Global/details/:id", adminAuthenticate, userGlobalDetails);
 
 module.exports = router;

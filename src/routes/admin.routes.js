@@ -36,6 +36,7 @@ router.use("/ticketReport", require("./admin/ticketReportRoutes"));
 router.use("/resellerWise", require("./admin/resllerWiseDashboardRoutes"));
 router.use("/lcoWise", require("./admin/lcoWiseDashboardRoutes"));
 router.use("/ticketReplyOption", require("./admin/ticketReplyOptionRoutes"));
+router.use("/ticketResolution", require("./admin/ticketResolutionRoutes"));
 
 
 module.exports = router;

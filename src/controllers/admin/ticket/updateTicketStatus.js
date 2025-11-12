@@ -5,28 +5,31 @@ const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
 
 exports.updateTicketStatus = catchAsync(async (req, res, next) => {
-
     const { ticketId } = req.params;
-    if (!ticketId) return next(new AppError("ticketId is required", 400));
-
     const { status } = req.body;
 
-    const ticket = await Ticket.findById(ticketId);
-    if (!ticket) return next(new AppError("ticket not found", 404));
+    if (!ticketId) return next(new AppError("ticketId is required", 400));
+    if (!status) return next(new AppError("status is required", 400));
 
-    ticket.status = status || ticket.status;
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+        ticketId,
+        {
+            $set: {
+                status,
+                lastModifiedBy: req.user._id,
+                lastModifiedByType: req.user.role,
+            },
+        },
+        { new: true, runValidators: false } // ✅ skip full validation
+    );
 
-    ticket.lastModifiedBy = req.user._id;
-    ticket.lastModifiedByType = req.user.role;
-
-    await ticket.save();
+    if (!updatedTicket) return next(new AppError("Ticket not found", 404));
 
     await logTicketActivity({
         ticketId,
-        activityType: 1, // Status
-        performedBy: req.user._id
+        activityType: 1, // Status change
+        performedBy: req.user._id,
     });
 
-    successResponse(res, "Ticket status updated successfully", ticket);
-
+    successResponse(res, "✅ Ticket status updated successfully", updatedTicket);
 });

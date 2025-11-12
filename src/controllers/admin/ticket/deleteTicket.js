@@ -8,7 +8,7 @@ exports.deleteTicket = catchAsync(async (req, res, next) => {
     const { ticketId } = req.params;
     if (!ticketId) return next(new AppError("ticket id is required", 400));
 
-    const ticket = await Ticket.findByIdAndDelete({ ticketId });
+    const ticket = await Ticket.findByIdAndDelete(ticketId);
     if (!ticket) return next(new AppError("ticket not found", 404));
 
     successResponse(res, "ticket deleted succssfully", ticket);

@@ -16,6 +16,7 @@ const {
 const {
   vendorAccountVerification,
 } = require("../../controllers/admin/auth/vendorAccountVerification");
+const { verifyToken } = require("../../controllers/admin/auth/verifyToken");
 
 
 //=============== CRM Auth ==========================//
@@ -30,4 +31,5 @@ router.post(
 router.post("/signup", signup);
 router.post("/forgotPassword", sendOtpForResetPassword);
 router.post("/reset-password", resetPasswordWithOtp);
+router.get("/verify", adminAuthenticate, verifyToken);
 module.exports = router;

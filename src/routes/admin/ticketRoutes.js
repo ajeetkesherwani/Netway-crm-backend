@@ -41,7 +41,7 @@ router.post("/create",
     ),
     adminAuthenticate, createTicket);
 router.get("/list", adminAuthenticate, getTicketList);
-router.get("/list/:ticketId", adminAuthenticate, getTicketDetails);
+router.get("/view/:ticketId", adminAuthenticate, getTicketDetails);
 router.patch("/status/:ticketId", adminAuthenticate, updateTicketStatus);
 router.patch("/update/:ticketId", adminAuthenticate, updateTicket);
 router.delete("/delete/:ticketId", adminAuthenticate, deleteTicket);

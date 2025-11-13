@@ -45,7 +45,7 @@ const ticketSchema = new mongoose.Schema(
     },
     assignToId: {
       type: mongoose.Schema.Types.ObjectId,
-      // refPath: "assignToModel", // 👈 can dynamically refer to Admin, Reseller, or LCO
+      refPath: "assignToModel", // 👈 can dynamically refer to Admin, Reseller, or LCO
       default: null,
     },
     assignToModel: {
@@ -80,7 +80,7 @@ const ticketSchema = new mongoose.Schema(
       {
         staffId: {
           type: mongoose.Schema.Types.ObjectId,
-          // ref: "Staff",
+          ref: "Staff",
         },
         currentStatus: {
           type: String,

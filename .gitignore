@@ -21,6 +21,7 @@ yarn-error.log*
 # Public folder
 public
 public/
+Backup
 
 # Build output
 # dist/

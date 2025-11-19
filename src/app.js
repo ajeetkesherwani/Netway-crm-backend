@@ -19,7 +19,7 @@ scheduleExpirePlansJob(); // Start the cron job
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  res.status(200).json({ message: "Welcom to Prefitt" });
+  res.status(200).json({ message: "Welcom to Netway Backend" });
 });
 router.get("/test", (req, res) => {
   res.status(200).json({ message: "this is test route" });

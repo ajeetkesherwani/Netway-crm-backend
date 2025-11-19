@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
     title: { type: String, enum: ["M/s", "Mr", "Ms", "Mrs", "Miss"], default: "M/s" },
     name: { type: String },
     billingName: { type: String },
-    username: { type: String, required: true },
+    username: { type: String, },
     password: { type: String },
     plainPassword: { type: String },
     email: { type: String },
@@ -39,20 +39,20 @@ const UserSchema = new mongoose.Schema({
     adharNo: { type: String },
     address: { type: String },
     pincode: { type: String },
-    state: { type: String, required: true },
+    state: { type: String, },
     country: { type: String },
     district: { type: String },
     paymentMethod: { type: String, enum: ["Cash", "Online"], default: "Cash" },
 
     createdBy: {
-      id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-      type: { type: String, enum: ["Admin", "Retailer", "Lco"], required: true }
+      id: { type: mongoose.Schema.Types.ObjectId, ref: "User",  },
+      type: { type: String, enum: ["Admin", "Retailer", "Lco"],  }
     },
 
     // Track for whom it was created
     createdFor: {
       id: { type: mongoose.Schema.Types.ObjectId, refPath: "generalInformation.createdFor.type" },
-      type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self"], required: true }
+      type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self"],  }
     },
 
     paymentMethod: {

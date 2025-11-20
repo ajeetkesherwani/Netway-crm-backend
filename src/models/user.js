@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema({
     ipType: { type: String, enum: ["static", "dynamic"], default: "static" },
     serialNo: { type: String},
     macId: { type: String},
-    serviceOpted: { type: String, enum: ["intercom", "broadBand","coporate"], default: "intercom" },
+    serviceOpted: { type: String, enum: ["intercom", "broadband","coporate"], default: "intercom" },
     stbNo: { type: String},
     vcNo: { type: String},
     circuitId: { type: String},
@@ -94,7 +94,7 @@ const UserSchema = new mongoose.Schema({
   },
 
   networkInformation: {
-    networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL", ". ILL"] },
+    networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL", "ILL"] },
     ipType: { type: String, enum: ["Static IP", "Dynamic IP Pool"] },
     statisIp: {
       nas: { type: [String], enum: [""], default: "" },
@@ -114,7 +114,7 @@ const UserSchema = new mongoose.Schema({
 
   document: [
     {
-      documentType: { type: String, enum: ["ID proof", "Profile Id", "Adhar Card", "Insurence Paper", "Signature", "Other"], default: "Other" },
+      documentType: { type: String, enum: ["ID proof", "Profile Id", "Aadhar Card", "Insurence Paper", "Signature","Pan Card", "Other"], default: "Other" },
       documentImage: { type: String, default: "" }
     }
   ],

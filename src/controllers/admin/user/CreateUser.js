@@ -2,279 +2,167 @@ const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const bcrypt = require("bcryptjs");
 
-// exports.createUser = async (req) => {
-//   let { generalInformation, networkInformation, additionalInformation, documents } = req.body;
-// console.log(req.body, "req.body");
-//   // Parse JSON if sent as string
-//   if (typeof documents === "string") {
-//     documents = JSON.parse(documents);
-//   }
-
-//   // // Validate required fields
-//   // if (!generalInformation?.name || !generalInformation?.username || !generalInformation?.state) {
-//   //   throw new AppError("Required fields: name, username, state", 400);
-//   // }
-
-//   // Validate username
-//   // generalInformation.username = generalInformation.username.trim();
-//   // if (!generalInformation.username) {
-//   //   throw new AppError("Username cannot be empty", 400);
-//   // }
-
-//   //Unique username
-//   const exists = await User.findOne({
-//     "generalInformation.username": generalInformation.username
-//   });
-//   if (exists) {
-//     throw new AppError("Username already exists", 409);
-//   }
-
-//   // Password hashing
-//   // if (generalInformation.password) {
-//   //   generalInformation.plainPassword = generalInformation.password;
-//   //   generalInformation.password = await bcrypt.hash(generalInformation.password, 10);
-//   // }
-
-//   // Attach createdBy from authenticated user
-//   generalInformation.createdBy = {
-//     id: req.user._id,
-//     type: req.user.role
-//   };
-
-//   // Validate createdFor
-//   // if (!generalInformation.createdFor?.id || !generalInformation.createdFor?.type) {
-//   //   throw new AppError("createdFor.id and createdFor.type are required", 400);
-//   // }
-
-//   // Handle documents
-//   const uploadedFiles = req.files?.documents || [];
-//   const finalDocuments = [];
-
-//   if (Array.isArray(documents)) {
-//     documents.forEach((doc, i) => {
-//       const file = uploadedFiles[i];
-//       finalDocuments.push({
-//         documentType: doc.type,
-//         documentImage: file?.filename || null
-//       });
-//     });
-//   }
-
-//   // Create user
-//   const newUser = await User.create({
-//     generalInformation,
-//     networkInformation,
-//     additionalInformation,
-//     document: finalDocuments
-//   });
-
-//   return newUser;
-// };
-
-
-// exports.createUser = async (req, res, next) => {
-//   try {
-//     let {
-//       generalInformation,
-//       networkInformation,
-//       additionalInformation,
-//       documents
-//     } = req.body;
-
-//     if (typeof generalInformation === "string")
-//       generalInformation = JSON.parse(generalInformation);
-//     if (typeof networkInformation === "string")
-//       networkInformation = JSON.parse(networkInformation);
-//     if (typeof additionalInformation === "string")
-//       additionalInformation = JSON.parse(additionalInformation);
-//     if (typeof documents === "string")
-//       documents = JSON.parse(documents);
-
-//     // if (!generalInformation?.name) {
-//     //   return res.status(400).json({ error: true, message: "Name required" });
-//     // }
-
-//     // if (!generalInformation?.username) {
-//     //   return res.status(400).json({ error: true, message: "Username required" });
-//     // }
-
-//     // const exists = await User.findOne({
-//     //   "generalInformation.username": generalInformation.username
-//     // });
-
-//     // if (exists) {
-//     //   return res.status(409).json({
-//     //     error: true,
-//     //     message: "Username already exists"
-//     //   });
-//     // }
-
-//     // if (generalInformation.password) {
-//     //   generalInformation.plainPassword = generalInformation.password;
-//     //   generalInformation.password = await bcrypt.hash(
-//     //     generalInformation.password,
-//     //     10
-//     //   );
-//     // }
-
-//     generalInformation.createdBy = {
-//       id: req.user._id,
-//       type: req.user.role
-//     };
-
-//     const uploadedFiles = req.files?.documents || [];
-//     const finalDocuments = [];
-
-//     if (Array.isArray(documents)) {
-//       documents.forEach((doc, index) => {
-//         const file = uploadedFiles[index];
-//         finalDocuments.push({
-//           documentType: doc.type,
-//           documentImage: file?.filename || ""
-//         });
-//       });
-//     }
-
-//     const newUser = await User.create({
-//       generalInformation,
-//       networkInformation,
-//       additionalInformation,
-//       document: finalDocuments
-//     });
-
-//     return res.status(201).json({
-//       error: false,
-//       message: "User created successfully",
-//       data: newUser
-//     });
-
-//   } catch (err) {
-//     console.log("Error:", err);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//       details: err.message
-//     });
-//   }
-// };
-
-// controllers/admin/user/CreateUser.js
-
 exports.createUser = async (req, res, next) => {
   try {
-    console.log("Files:", req.files?.documents?.length || 0 , req.files?.documents , req.files );
-    // console.log("documentTypes[]:", req.body["documentTypes[]"]);
+    console.log("REQ BODY:", req.body);
+    console.log("FILES:", req.files);
 
-    // 1. DOCUMENT TYPES SAFELY READ
-    const documentTypes = Array.isArray(req.body["documentTypes[]"])
-      ? req.body["documentTypes[]"]
-      : req.body["documentTypes[]"]
-      ? [req.body["documentTypes[]"]]
-      : [];
+    /** ------------------------------
+     * 1. Parse incoming JSON fields
+     * ------------------------------*/
+    const customer = JSON.parse(req.body.customer || "{}");
+    const addresses = JSON.parse(req.body.addresses || "{}");
+    const payment = JSON.parse(req.body.payment || "{}");
+    const additional = JSON.parse(req.body.additional || "{}");
 
+    /** ------------------------------
+     * 2. Documents + Document Types
+     * ------------------------------*/
     const uploadedFiles = req.files?.documents || [];
 
-    // 2. generalInformation (exactly schema ke hisaab se)
+    // Accept BOTH keys — documentTypes OR documentTypes[]
+    let documentTypes = [];
+
+    if (req.body.documentTypes) {
+      documentTypes = Array.isArray(req.body.documentTypes)
+        ? req.body.documentTypes
+        : [req.body.documentTypes];
+    }
+
+    if (req.body["documentTypes[]"]) {
+      const arr = req.body["documentTypes[]"];
+      documentTypes = Array.isArray(arr) ? arr : [arr];
+    }
+
+    console.log("DOCUMENT TYPES RECEIVED:", documentTypes);
+
+    // MUST BE ABOVE finalDocuments!
+    const validDocTypes = [
+      "ID proof",
+      "Profile Id",
+      "Adhar Card",
+      "Insurence Paper",
+      "Signature",
+      "Other",
+      "Pan Card",
+      "Aadhar Card",
+      "Address Proof"
+    ];
+
+    // Map files + types
+    const finalDocuments = uploadedFiles.map((file, i) => ({
+      documentType: validDocTypes.includes(documentTypes[i])
+        ? documentTypes[i]
+        : "Other",
+      documentImage: file.filename
+    }));
+
+    console.log("FINAL DOCUMENTS:", finalDocuments);
+
+    /** ------------------------------
+     * 3. General Information
+     * ------------------------------*/
     const generalInformation = {
-      title: req.body.title || "Mr",
-      name: req.body.name?.trim(),
-      billingName: req.body.billingName || req.body.name,
-      username: req.body.username || req.body.phone,
-      password: "123456", // plain password bhi set kar denge
+      title: customer.title || "Mr",
+      name: customer.name?.trim(),
+      billingName: customer.billingName || customer.name,
+      username: customer.username || customer.phone,
+      password: "123456",
       plainPassword: "123456",
-      email: req.body.email,
-      phone: req.body.phone,
-      alternatePhone: req.body.alternatePhone || "",
-      ipactId: req.body.accountId || "",
-      connectionType: req.body.connectionType === "ILL" ? "iil" : (req.body.connectionType?.toLowerCase() || "other"),
-      installationByName: req.body.installationByName || "",
-      ipAdress: req.body.ipAdress || "",
-      ipType: req.body.ipType || "static",
-      serialNo: req.body.serialNo || "",
-      macId: req.body.macId || "",
-      serviceOpted: ["intercom", "broadband", "coporate"].includes(req.body.serviceOpted?.toLowerCase())
-        ? req.body.serviceOpted.toLowerCase()
+      email: customer.email,
+      phone: customer.mobile,
+      alternatePhone: customer.alternateMobile || "",
+      ipactId: customer.accountId || "",
+      connectionType: customer.connectionType?.toLowerCase() || "other",
+      installationByName: customer.installationByManual || "",
+      ipAdress: customer.ipAddress || "",
+      ipType: customer.ipType || "static",
+      serialNo: customer.serialNo || "",
+      macId: customer.macId || "",
+      serviceOpted: ["intercom", "broadband", "coporate"].includes(customer.serviceOpted?.toLowerCase())
+        ? customer.serviceOpted.toLowerCase()
         : "broadband",
-      stbNo: req.body.stbNo || "",
-      vcNo: req.body.vcNo || "",
-      cafNo: req.body.cafNo || "",
-      gst: req.body.gst || "",
-      adharNo: req.body.adharNo || "",
-      address: req.body.address || "N/A",
-      pincode: req.body.pincode || "",
-      state: req.body.state || "",
-      district: req.body.district || "",
-      country: req.body.country || "India",
-      paymentMethod: req.body.paymentMethod || "Cash",
+      stbNo: customer.stbNo || "",
+      vcNo: customer.vcNo || "",
+      circuitId: customer.circuitId || "",
+      cafNo: "",
+      gst: "",
+      adharNo: customer.aadharNo || "",
+      address: "",
+      pincode: "",
+      state: "",
+      district: "",
+
+
+      country: "India",
+
       createdBy: {
         id: req.user._id,
         type: req.user.role
       }
     };
 
-    // 3. addressDetails (tera schema ke exact naam se)
- const addressDetails = {
-  billingAddress: {
-    addressLine1: req.body.addressLine1 || "",
-    addressLine2: req.body.addressLine2 || "",
-    city: req.body.city || "",
-    state: req.body.state || "",
-    pincode: req.body.pincode || "",
-  },
-  permanentAddress: {
-    addressLine1: req.body.addressLine1 || "",
-    addressLine2: req.body.addressLine2 || "",
-    city: req.body.city || "",
-    state: req.body.state || "",
-    pincode: req.body.pincode || "",
-  },
-  installationAddress: {
-    addressLine1: req.body.installationAddressLine1 || req.body.addressLine1 || "",
-    addressLine2: req.body.installationAddressLine2 || req.body.addressLine2 || "",
-    city: req.body.installationCity || req.body.city || "",
-    state: req.body.state || "",
-    pincode: req.body.pincode || "",
-  },
-  area: req.body.area || ""
-};
+    /** ------------------------------
+     * 4. Address Details
+     * ------------------------------*/
+    const addressDetails = {
+      billingAddress: {
+        addressine1: addresses.billing.addressLine1 || "",
+        addressine2: addresses.billing.addressLine2 || "",
+        city: addresses.billing.city || ""
+      },
+      permanentAddress: {
+        addressine1: addresses.permanent.addressLine1 || "",
+        addressine2: addresses.permanent.addressLine2 || "",
+        city: addresses.permanent.city || ""
+      },
+      installationAddress: {
+        addressine1: addresses.installation.addressLine1 || "",
+        addressine2: addresses.installation.addressLine2 || "",
+        city: addresses.installation.city || ""
+      },
 
-    // 4. packageInfomation
+      /** IMPORTANT — area must be ObjectId */
+      area: addresses.billing.area || null
+    };
+
+    /** ------------------------------
+     * 5. Package Information
+     * ------------------------------*/
     const packageInfomation = {
-      packageId: req.body.packageId || null,
-      packageName: req.body.packageName || "",
-      price: req.body.packageAmount || ""
+      packageId: customer.packageDetails?.packageId || null,
+      packageName: customer.packageDetails?.packageName || "",
+      price: customer.packageDetails?.packageAmount || ""
     };
 
-    // 5. networkInformation
+    /** ------------------------------
+     * 6. Network Information
+     * ------------------------------*/
     const networkInformation = {
-      networkType: req.body.networkType || "PPPOE",
-      ipType: req.body.ipType === "static" ? "Static IP" : "Dynamic IP Pool",
-      statisIp: req.body.ipType === "static"
-        ? { nas: [""], category: "" }
-        : undefined,
-      dynamicIpPool: req.body.dynamicIpPool || ""
+      networkType: customer.networkType || "PPPOE",
+      ipType: customer.ipType === "Static IP" ? "Static IP" : "Dynamic IP Pool",
+      statisIp:
+        customer.ipType === "Static IP"
+          ? { nas: [""], category: "" }
+          : undefined,
+      dynamicIpPool: customer.dynamicIpPool || ""
     };
 
-    // 6. additionalInformation
+    /** ------------------------------
+     * 7. Additional Information
+     * ------------------------------*/
     const additionalInformation = {
-      dob: req.body.dob || "",
-      description: req.body.description || "",
-      ekyc: req.body.ekyc || "no",
+      dob: additional.dob || "",
+      description: additional.description || "",
+      ekyc: additional.ekYC ? "yes" : "no",
       notification: true,
       addPlan: true,
       addCharges: false
     };
 
-    // 7. Documents (tera schema ke exact enum ke hisaab se)
-    const validDocTypes = ["ID proof", "Profile Id", "Adhar Card", "Insurence Paper", "Signature", "Other"];
-    const finalDocuments = documentTypes.map((type, i) => ({
-      documentType: validDocTypes.includes(type) ? type : "Other",
-      documentImage: uploadedFiles[i]?.filename || ""
-    }));
-
-    console.log("finalDocument" ,finalDocuments )
-
-    // 8. FINAL USER CREATE
+    /** ------------------------------
+     * 8. Save User to DB
+     * ------------------------------*/
     const newUser = await User.create({
       generalInformation,
       addressDetails,
@@ -282,7 +170,7 @@ exports.createUser = async (req, res, next) => {
       networkInformation,
       additionalInformation,
       document: finalDocuments,
-      status: req.body.status === "active" ? "active" : "Inactive"
+      status: additional.status ? "active" : "Inactive"
     });
 
     return res.status(201).json({

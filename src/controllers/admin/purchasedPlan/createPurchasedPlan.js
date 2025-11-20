@@ -5,6 +5,7 @@ const PurchasedPlan = require("../../../models/purchasedPlan");
 const Package = require("../../../models/package");
 const User = require("../../../models/user");
 const UserWalletHistory = require("../../../models/userWalletHistory");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const purchaser = req.user; // Admin / Reseller / LCO performing the purchase
@@ -92,6 +93,24 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     remarks,
     isPaymentRecived
   });
+
+  // ---------------- Create Activity Log ---------------- //
+
+await createLog({
+  userId: userId,
+  type: "Plan Purchased",
+  description: `Plan purchased: ${selectedPackage.name}`,
+  details: {
+    packageId: selectedPackage._id,
+    packageName: selectedPackage.name,
+    amountPaid:amountPaid
+  },
+  ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
+  addedBy: {
+    id: purchaser._id,           
+    role: purchaser.role || "Admin",
+  }
+});
 
 
   // ---------------- Fetch Target User ---------------- //

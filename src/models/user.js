@@ -15,12 +15,12 @@ const UserSchema = new mongoose.Schema({
     connectionType: { type: String, enum: ["iil", "ftth", "wireless", "other"], default: "other" },
     selsExecutive: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Hardware"
+      ref: "Staff"
     },
     installationBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Hardware"
+        ref: "Staff"
       }
     ],
     installationByName: { type: String, default: null},
@@ -66,16 +66,22 @@ const UserSchema = new mongoose.Schema({
       addressine1: { type: String },
       addressine2: { type: String },
       city: { type: String },
+      state: { type: String },
+      pincode: { type: String },
     },
     permanentAddress : {
       addressine1: { type: String },
       addressine2: { type: String },
       city: { type: String },
+       state: { type: String },
+      pincode: { type: String },
     },
     installationAddress : {
       addressine1: { type: String },
       addressine2: { type: String },
       city: { type: String },
+       state: { type: String },
+      pincode: { type: String },
     },
     area: {
       type: mongoose.Schema.Types.ObjectId,

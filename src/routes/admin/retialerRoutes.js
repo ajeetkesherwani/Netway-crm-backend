@@ -72,9 +72,12 @@ router.post("/create", adminAuthenticate,
     createRetailer);
 router.get("/list", adminAuthenticate, getRetailer);
 router.get("/list/:id", adminAuthenticate, getRetailerDetails);
-router.patch("/update/:id", adminAuthenticate,
+router.patch("/update/:retailerId", adminAuthenticate,
     fileUploader("retailerDocuments", [
-        { name: "documentImage", maxCount: 5 },
+      { name: "aadhaarCard", maxCount: 5 },
+    { name: "panCard", maxCount: 5 },
+    { name: "license", maxCount: 5 },
+    { name: "other", maxCount: 5 },
     ]), updateRetailer);
 router.delete("/delete/:id", adminAuthenticate, deleteRetailer);
 router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);

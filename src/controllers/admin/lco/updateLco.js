@@ -29,7 +29,7 @@ exports.updateLco = catchAsync(async (req, res, next) => {
         }
     }
 
-    // Handle document uploads (aadhaarCard, panCard, license, other)
+    // Handle document uploads → REPLACE documents, NOT append
     const documentData = {};
     if (req.files) {
         if (req.files.aadhaarCard) {
@@ -58,13 +58,12 @@ exports.updateLco = catchAsync(async (req, res, next) => {
     const updateQuery = {};
     if (Object.keys(setFields).length > 0) updateQuery.$set = setFields;
 
-    // ✅ push new documents (append)
+    // 🔥 Replace documents completely (overwrite old)
     if (Object.keys(documentData).length > 0) {
-        const pushOps = {};
+        updateQuery.$set = updateQuery.$set || {};
         for (const key in documentData) {
-            pushOps[`document.${key}`] = { $each: documentData[key] };
+            updateQuery.$set[`document.${key}`] = documentData[key];
         }
-        updateQuery.$push = pushOps;
     }
 
     // validate if nothing to update

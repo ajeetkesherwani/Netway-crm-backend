@@ -173,6 +173,23 @@ exports.createUser = async (req, res, next) => {
       status: additional.status ? "active" : "Inactive"
     });
 
+    //
+
+    await createLog({
+      userId: newUser._id,
+      type: "User Created",
+      description: `New customer created: ${newUser.generalInformation.name}`,
+      details: {
+        email: newUser.generalInformation.email,
+        phone: newUser.generalInformation.phone
+      },
+      ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
+      addedBy: {
+        id: req.user._id,
+        role: req.user.role || "Admin"
+      }
+    });
+
     return res.status(201).json({
       success: true,
       message: "Customer created successfully!",

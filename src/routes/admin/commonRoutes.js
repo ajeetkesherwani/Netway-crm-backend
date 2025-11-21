@@ -19,7 +19,10 @@ const {
 const {
     getUserPurchasedPlans
 } = require("../../controllers/admin/common/UserPurchedPlanList");
-const { getAllReassignedTickets } = require("../../controllers/admin/common/reAssignTicketList");
+
+const { 
+    getAllReassignedTickets 
+} = require("../../controllers/admin/common/reAssignTicketList");
 
 const router = express.Router();
 

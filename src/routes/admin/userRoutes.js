@@ -40,7 +40,14 @@ router.post(
 
 router.get("/list", adminAuthenticate, getUserList);
 router.get("/:id", adminAuthenticate, getUserDetails);
-router.patch("/update/:userId", adminAuthenticate, updateUser);
+router.patch(
+  "/update/:userId",
+  adminAuthenticate,
+  fileUploader("user_documents", [
+    { name: "documents", maxCount: 10 }
+  ]),
+  updateUser
+);
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 
 

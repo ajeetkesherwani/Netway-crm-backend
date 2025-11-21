@@ -43,6 +43,24 @@ exports.updateUserStatus = catchAsync(async (req, res, next) => {
     user.status = status;
     await user.save();
 
+
+    //--- Log Activity ---
+    await createLog({
+        userId: user._id,
+        type: "User Status Updated",
+        description: `User status changed from ${oldStatus} to ${user.status}`,
+        details: {
+            oldStatus,
+            newStatus: user.status
+        },
+        ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
+        addedBy: {
+            id: req.user._id,
+            role: req.user.role || "Admin"
+        }
+    });
+
+
     // 5️⃣ Return response
     successResponse(res, "User status updated successfully", {
         userId: user._id,

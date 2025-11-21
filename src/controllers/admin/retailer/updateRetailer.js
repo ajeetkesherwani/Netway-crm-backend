@@ -5,26 +5,21 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.updateRetailer = catchAsync(async (req, res, next) => {
     const { retailerId } = req.params;
-    console.log("retailerId",retailerId);
     if (!retailerId) return next(new AppError("Retailer ID is required", 400));
 
     const body = req.body || {};
 
-    // prevent employee updates via this route
-    if (body.employeeAssociation) delete body.employeeAssociation;
-
-    // allowed fields to update
+    // Allowed fields update
     const updatableFields = [
-        "title", "phoneNo", "email", "resellerName", "district", "houseNo",
-        "pincode", "area", "subArea", "mobileNo", "fax", "messengerId",
-        "dob", "balance", "dashboard", "panNumber", "resellerCode",
-        "contactPersonNumber", "whatsAppNumber", "address", "taluka",
-        "state", "country", "website", "annversaryDate", "latitude",
-        "longitude", "gstNo", "contactPersonName", "supportEmail",
-        "nas", "description", "status", "role"
+        "title","phoneNo","email","resellerName","district","houseNo",
+        "pincode","area","subArea","mobileNo","fax","messengerId",
+        "dob","balance","dashboard","panNumber","resellerCode",
+        "contactPersonNumber","whatsAppNumber","address","taluka",
+        "state","country","website","annversaryDate","latitude",
+        "longitude","gstNo","contactPersonName","supportEmail",
+        "nas","description","status","role"
     ];
 
-    // prepare update object
     const setFields = {};
     for (const field of updatableFields) {
         if (body[field] !== undefined && body[field] !== "") {
@@ -32,49 +27,53 @@ exports.updateRetailer = catchAsync(async (req, res, next) => {
         }
     }
 
-    // Handle document uploads → REPLACE documents, NOT append
-    const documentData = {};
-    if (req.files) {
-        if (req.files.aadhaarCard) {
-            documentData.aadhaarCard = req.files.aadhaarCard.map(f =>
-                f.path.replace(/\\/g, "/")
-            );
-        }
-        if (req.files.panCard) {
-            documentData.panCard = req.files.panCard.map(f =>
-                f.path.replace(/\\/g, "/")
-            );
-        }
-        if (req.files.license) {
-            documentData.license = req.files.license.map(f =>
-                f.path.replace(/\\/g, "/")
-            );
-        }
-        if (req.files.other) {
-            documentData.other = req.files.other.map(f =>
-                f.path.replace(/\\/g, "/")
-            );
-        }
-    }
-
-    // build final query
     const updateQuery = {};
     if (Object.keys(setFields).length > 0) updateQuery.$set = setFields;
 
-    // 🔥 Replace documents completely (overwrite old)
-    if (Object.keys(documentData).length > 0) {
-        updateQuery.$set = updateQuery.$set || {};
-        for (const key in documentData) {
-            updateQuery.$set[`document.${key}`] = documentData[key];
+    // -----------------------------------
+    // DOCUMENT UPDATE / REPLACE / REMOVE
+    // -----------------------------------
+
+    const docFields = ["aadhaarCard", "panCard", "license", "other"];
+
+    docFields.forEach((doc) => {
+        const removeKey = `remove_${doc}`; // example: remove_aadhaarCard = true
+        if (body[removeKey] === "true") {
+            updateQuery.$set = updateQuery.$set || {};
+            updateQuery.$set[`document.${doc}`] = "";
+        }
+    });
+
+    if (req.files) {
+        if (req.files.aadhaarCard && req.files.aadhaarCard.length > 0) {
+            updateQuery.$set = updateQuery.$set || {};
+            updateQuery.$set["document.aadhaarCard"] =
+                req.files.aadhaarCard[0].path.replace(/\\/g, "/");
+        }
+
+        if (req.files.panCard && req.files.panCard.length > 0) {
+            updateQuery.$set = updateQuery.$set || {};
+            updateQuery.$set["document.panCard"] =
+                req.files.panCard[0].path.replace(/\\/g, "/");
+        }
+
+        if (req.files.license && req.files.license.length > 0) {
+            updateQuery.$set = updateQuery.$set || {};
+            updateQuery.$set["document.license"] =
+                req.files.license[0].path.replace(/\\/g, "/");
+        }
+
+        if (req.files.other && req.files.other.length > 0) {
+            updateQuery.$set = updateQuery.$set || {};
+            updateQuery.$set["document.other"] =
+                req.files.other[0].path.replace(/\\/g, "/");
         }
     }
 
-    // validate if nothing to update
     if (Object.keys(updateQuery).length === 0) {
-        return next(new AppError("No valid fields provided for update", 400));
+        return next(new AppError("Nothing to update", 400));
     }
 
-    // perform update
     const updatedRetailer = await Retailer.findByIdAndUpdate(retailerId, updateQuery, {
         new: true,
         runValidators: true,

@@ -1,6 +1,7 @@
 const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const bcrypt = require("bcryptjs");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.createUser = async (req, res, next) => {
   try {
@@ -74,6 +75,8 @@ exports.createUser = async (req, res, next) => {
       alternatePhone: customer.alternateMobile || "",
       ipactId: customer.accountId || "",
       connectionType: customer.connectionType?.toLowerCase() || "other",
+      selsExecutive: customer.selsExecutive || null,
+      installationBy: customer.installationBy || [],
       installationByName: customer.installationByManual || "",
       ipAdress: customer.ipAddress || "",
       ipType: customer.ipType || "static",
@@ -109,17 +112,23 @@ exports.createUser = async (req, res, next) => {
       billingAddress: {
         addressine1: addresses.billing.addressLine1 || "",
         addressine2: addresses.billing.addressLine2 || "",
-        city: addresses.billing.city || ""
+        city: addresses.billing.city || "",
+        state: addresses.billing.state || "",
+        pincode: addresses.billing.pincode || "",
       },
       permanentAddress: {
         addressine1: addresses.permanent.addressLine1 || "",
         addressine2: addresses.permanent.addressLine2 || "",
-        city: addresses.permanent.city || ""
+        city: addresses.permanent.city || "",
+        state: addresses.billing.state || "",
+        pincode: addresses.billing.pincode || "",
       },
       installationAddress: {
         addressine1: addresses.installation.addressLine1 || "",
         addressine2: addresses.installation.addressLine2 || "",
-        city: addresses.installation.city || ""
+        city: addresses.installation.city || "",
+        state: addresses.billing.state || "",
+        pincode: addresses.billing.pincode || "",
       },
 
       /** IMPORTANT — area must be ObjectId */

@@ -16,7 +16,7 @@ const sendEmail = async ({ email, subject, message, html }) => {
   // Define mail options
   const mailOptions = {
     from: `"Netway Internet" <${process.env.EMAIL_USER}>`,
-    to: 'kesherwaniajeet@gmail.com',
+    to: process.env.EMAIL_RECIVER,
     subject,
     text: message, // plain text body
     html: html || `<p>${message}</p>`, // optional HTML body

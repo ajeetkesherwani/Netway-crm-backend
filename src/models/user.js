@@ -25,7 +25,8 @@ const UserSchema = new mongoose.Schema({
     ],
     installationByName: { type: String, default: null},
     ipAdress: { type: String},
-    ipType: { type: String, enum: ["static", "dynamic"], default: "static" },
+    ipType: { type: String, default: "static" },
+      //  ipType: { type: String, enum: ["static", "dynamic"], default: "static" },
     serialNo: { type: String},
     macId: { type: String},
     serviceOpted: { type: String, enum: ["intercom", "broadband","coporate"], default: "intercom" },
@@ -101,7 +102,8 @@ const UserSchema = new mongoose.Schema({
 
   networkInformation: {
     networkType: { type: String, enum: ["PPPOE", "PPOE", "IP-Pass throw", "MAC_TAL", "ILL"] },
-    ipType: { type: String, enum: ["Static IP", "Dynamic IP Pool"] },
+    // ipType: { type: String, enum: ["Static IP", "Dynamic IP Pool"] },
+       ipType: { type: String,  },
     statisIp: {
       nas: { type: [String], enum: [""], default: "" },
       category: { type: String, enum: [""], default: "" }

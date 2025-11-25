@@ -77,7 +77,7 @@ exports.createUser = async (req, res, next) => {
       connectionType: customer.connectionType?.toLowerCase() || "other",
       selsExecutive: customer.selsExecutive || null,
       installationBy: customer.installationBy || [],
-      installationByName: customer.installationByManual || "",
+      installationByName: customer.installationByName || "",
       ipAdress: customer.ipAddress || "",
       ipType: customer.ipType || "static",
       serialNo: customer.serialNo || "",
@@ -132,7 +132,7 @@ exports.createUser = async (req, res, next) => {
       },
 
       /** IMPORTANT — area must be ObjectId */
-      area: addresses.billing.area || null
+      area: req.body.area && req.body.area.trim() !== "" ? req.body.area.trim() : null
     };
 
     /** ------------------------------

@@ -10,10 +10,13 @@ const sendEmail = async ({ email, subject, message, html }) => {
     },
   });
 
+  console.log("process.env.EMAIL_USER",process.env.EMAIL_USER);
+  console.log("process.env.EMAIL_PASS",process.env.EMAIL_PASS);
+  console.log("html",html);
   // Define mail options
   const mailOptions = {
-    from: `"Your App Name" <${process.env.EMAIL_USER}>`,
-    to: email,
+    from: `"Netway Internet" <${process.env.EMAIL_USER}>`,
+    to: 'kesherwaniajeet@gmail.com',
     subject,
     text: message, // plain text body
     html: html || `<p>${message}</p>`, // optional HTML body

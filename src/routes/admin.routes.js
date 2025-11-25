@@ -38,5 +38,6 @@ router.use("/lcoWise", require("./admin/lcoWiseDashboardRoutes"));
 router.use("/ticketReplyOption", require("./admin/ticketReplyOptionRoutes"));
 router.use("/ticketResolution", require("./admin/ticketResolutionRoutes"));
 
+router.use("/website", require("./website/MailRoutes"));
 
 module.exports = router;

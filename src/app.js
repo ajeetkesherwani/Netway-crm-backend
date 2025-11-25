@@ -9,6 +9,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const scheduleExpirePlansJob = require("./jobs/expirePurchasedPlans");
 
 const app = express();
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data (form data)
 app.use(cors());
 app.use(morgan("dev"));
 app.use(cookieParser());

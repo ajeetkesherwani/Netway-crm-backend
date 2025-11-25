@@ -5,6 +5,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 
 exports.createReplyOption = catchAsync(async (req, res, next) => {
     const { optionText } = req.body;
+    console.log("Request Body:", req.body);
 
     if (!optionText) return next(new AppError("optionText is required", 400));
 

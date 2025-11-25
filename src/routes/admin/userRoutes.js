@@ -25,6 +25,10 @@ const {
   deleteUser
 } = require('../../controllers/admin/user/deleteUser');
 
+const {
+  getUserFullDetails
+} = require('../../controllers/admin/user/userProfileDetails');
+
 
 
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
@@ -40,6 +44,7 @@ router.post(
 
 router.get("/list", adminAuthenticate, getUserList);
 router.get("/:id", adminAuthenticate, getUserDetails);
+router.get("/fullDetails/:userId", adminAuthenticate, getUserFullDetails);
 router.patch(
   "/update/:userId",
   adminAuthenticate,

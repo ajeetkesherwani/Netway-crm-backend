@@ -60,7 +60,11 @@ const UserSchema = new mongoose.Schema({
       type: String,
       enum: ["Cash", "Online"],
       default: "Cash"
-    }
+    },
+    otp: { 
+      code: String, 
+      expiresAt: Date, 
+    },
   },
   addressDetails:{
     billingAddress : {

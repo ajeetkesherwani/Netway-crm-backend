@@ -1,28 +1,56 @@
-const DealsOfTheDay = require("../../../models/dealsOfTheDay");
-const Vendor = require("../../../models/vendor");
-const Category = require("../../../models/category");
+const User = require("../../../models/user");
+const PurchasedPlan = require("../../../models/purchasedPlan");
+const Package = require("../../../models/package");
+const Retailer = require("../../../models/retailer");
+const Lco = require("../../../models/lco");
+const PriceBook = require("../../../models/priceBook");
 const catchAsync = require("../../../utils/catchAsync");
 
-const customCategories = [
-  { _id: "1", name: "Delivery Time" },
-  { _id: "2", name: "Shop Rating" },
-  { _id: "3", name: "Shop with offers" },
-  { _id: "4", name: "Distance" },
-  { _id: "5", name: "Fast Delivery" },
-];
-
 exports.getHomeData = catchAsync(async (req, res) => {
-  const type = req.params.type || "all";
-  const filter = type === "all" ? {} : { serviceId: type };
-  const vendorFilter = {
-    ...filter,
-    status: true,
-    isBlocked: false,
-  };
+  const user = await User.findById(req.user.id);
+  let createdModal = '';
+  let packages = '';
 
-  let deals = [];
-  let allVendor = [];
-  let categories = [];
+  // Find active purchased plan
+  const purchasedPlan = await PurchasedPlan.findOne({
+    userId: user._id,
+    status: "active"
+  }).populate(
+    "packageId",
+    "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv"
+  );
+
+  switch (user.generalInformation.createdFor.type) {
+    case "Admin":
+        createdModal = Admin.findById(user.generalInformation.createdFor.id);
+        // Fetch all active packages
+        const packageData = await Package.find({ status: "active" });
+
+        // Map the data to only return required fields
+        packages = packageData.map(pkg => ({
+          planName: pkg.name,
+          validity: pkg.validity,
+          basePrice: pkg.basePrice,
+          offerPrice: pkg.offerPrice,
+          typeOfPlan: pkg.typeOfPlan,
+          categoryOfPlan: pkg.categoryOfPlan,
+          isIptv: pkg.isIptv,
+          isOtt: pkg.isOtt
+        }));
+      break;
+    case "Retailer":
+      createdModal = Retailer.findById(user.generalInformation.createdFor.id);
+      const assignPackage = PriceBook.find({priceBookFor: "Reseller", assignedTo: createdModal._id});
+      break;
+    case "Lco":
+      createdModal = Lco.findById(user.generalInformation.createdFor.id);
+      break;
+  }
+  
+
+
+
+  // const packages = Packages.find
 
   try {
     deals = await DealsOfTheDay.find(filter).sort({ createdAt: -1 }).exec();

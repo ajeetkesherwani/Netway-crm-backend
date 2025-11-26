@@ -5,49 +5,39 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { mobileNo, otp, deviceInfo } = req.body;
 
-    if (!mobileNo || !otp)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Mobile number and OTP are required",
-        });
+    if (!mobileNo || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number and OTP are required",
+      });
+    }
 
-    const user = await User.findOne({ mobileNo });
+    const user = await User.findOne({ "generalInformation.phone": mobileNo }).select("generalInformation.name generalInformation.phone generalInformation.email generalInformation.otp");
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User not found!" });
+    }
 
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-
-    if (!user.otp || !user.otp.code || user.otp.code !== otp)
+    if (!user.generalInformation.otp || user.generalInformation.otp.code !== otp) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
 
-    if (user.otp.expiresAt < new Date())
-      return res
-        .status(400)
-        .json({ success: false, message: "OTP has expired" });
+    if (user.generalInformation.otp.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP has expired" });
+    }
 
-    user.isVerified = true;
-    user.lastLogin = new Date();
-
-    // Optionally save device info
-    // if (deviceInfo) user.deviceInfo = deviceInfo;
-
-    user.otp = undefined;
-
+    // Clear OTP after verification
+    user.generalInformation.otp = undefined;
     await user.save();
 
     // Generate and send token with user info
     return createToken(user, 200, res);
   } catch (error) {
     console.error("Error in verifyOtp controller:", error);
-    return res
-      .status(500)
-      .json({
-        status: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
+

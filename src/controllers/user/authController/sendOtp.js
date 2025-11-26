@@ -8,51 +8,35 @@ const generateOTP = () => {
 // Send OTP to mobile number
 const sendOtp = async (req, res) => {
   try {
-    const { mobileNo, userName } = req.body;
+    const { mobileNo } = req.body;
 
     if (!mobileNo) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Mobile number is required" });
+      return res.status(400).json({ success: false, message: "Mobile number is required" });
+    }
+
+    let user = await User.findOne({ "generalInformation.phone": mobileNo });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User not found!" });
     }
 
     // Generate OTP
-    const otp = "1234";
     // const otp = generateOTP();
+    const otp = "1234";
     const otpExpiry = new Date();
     otpExpiry.setMinutes(otpExpiry.getMinutes() + 10); // OTP valid for 10 minutes
 
-    // Check if user exists
-    let user = await User.findOne({ mobileNo });
-    let isNewUser = false;
+    // Update OTP in existing user
+    user.generalInformation.otp = {
+      code: otp,
+      expiresAt: otpExpiry,
+    };
 
-    if (!user) {
-      // Create new user if not exists
-      user = new User({
-        mobileNo,
-        otp: {
-          code: otp,
-          expiresAt: otpExpiry,
-        },
-        name: userName || "",
-      });
-      await user.save();
-      isNewUser = true;
-    } else {
-      // Update existing user's OTP
-      user.otp = {
-        code: otp,
-        expiresAt: otpExpiry,
-      };
-      await user.save();
-    }
+    await user.save();
 
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
-      // We're returning the OTP in the response for testing purposes
-      // In production, remove this and actually send it via SMS
-      otp,
+      otp, // Remove this in production, send via SMS instead
     });
   } catch (error) {
     console.error("Error in sendOtp controller:", error);
@@ -63,5 +47,6 @@ const sendOtp = async (req, res) => {
     });
   }
 };
+
 
 module.exports = sendOtp;

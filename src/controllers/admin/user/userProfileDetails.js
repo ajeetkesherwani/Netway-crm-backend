@@ -1,6 +1,8 @@
 const User = require("../../../models/user");
 const PurchasedPlan = require("../../../models/purchasedPlan");
 const Log = require("../../../models/activityLog");
+const Payment = require("../../../models/payment");
+const Ticket = require("../../../models/ticket");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 
@@ -22,12 +24,24 @@ exports.getUserFullDetails = catchAsync(async (req, res, next) => {
 
   // USER PURCHASED PLANS
   const purchasedPlans = await PurchasedPlan.find({ userId })
+    .populate("userId", "generalInformation.name generalInformation.username")  
     .populate("purchasedById")
     .populate("packageId")
     .lean();
+    console.log("purchedPlans", purchasedPlans)
+
+    //user payment histor
+    const payments = await Payment.find({ userId }).sort({ createdAt: -1 }).lean();
 
   // USER LOGS
   const logs = await Log.find({ userId }).sort({ createdAt: -1 }).lean();
+
+  //user Tickets
+  const tickets = await Ticket.find({ userId })  .populate({
+    path: "assignToId",
+    select: "name lcoName resellerName"
+  })
+  .sort({ createdAt: -1 }).lean();
 
   // RETURN RESPONSE WITHOUT EXTRA 'data' WRAPPER
   return res.status(200).json({
@@ -36,5 +50,8 @@ exports.getUserFullDetails = catchAsync(async (req, res, next) => {
     userDetails: user,
     purchasedPlans,
     logs,
+    payments,
+    tickets
   });
 });
+

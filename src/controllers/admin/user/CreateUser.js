@@ -3,6 +3,12 @@ const AppError = require("../../../utils/AppError");
 const bcrypt = require("bcryptjs");
 const { createLog } = require("../../../utils/userLogActivity");
 
+function generateUsername(name) {
+  const upperName = name.trim().toUpperCase().replace(/\s+/g, ""); 
+  const randomFour = Math.floor(1000 + Math.random() * 9000); 
+  return `${upperName}${randomFour}`;
+}
+
 exports.createUser = async (req, res, next) => {
   try {
     console.log("REQ BODY:", req.body);
@@ -67,7 +73,8 @@ exports.createUser = async (req, res, next) => {
       title: customer.title || "Mr",
       name: customer.name?.trim(),
       billingName: customer.billingName || customer.name,
-      username: customer.username || customer.phone,
+      // username: customer.username || customer.phone,
+      username: generateUsername(customer.name),
       password: "123456",
       plainPassword: "123456",
       email: customer.email,
@@ -190,7 +197,8 @@ exports.createUser = async (req, res, next) => {
       description: `New customer created: ${newUser.generalInformation.name}`,
       details: {
         email: newUser.generalInformation.email,
-        phone: newUser.generalInformation.phone
+        phone: newUser.generalInformation.phone,
+        userId: newUser.generalInformation.username
       },
       ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
       addedBy: {

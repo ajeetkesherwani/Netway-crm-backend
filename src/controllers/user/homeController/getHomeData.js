@@ -1,6 +1,7 @@
 const User = require("../../../models/user");
 const PurchasedPlan = require("../../../models/purchasedPlan");
-const Package = require("../../../models/package");
+// const Package = require("../../../models/package");
+const Package = require("../../../models/Package");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const PriceBook = require("../../../models/priceBook");
@@ -14,14 +15,15 @@ exports.getHomeData = catchAsync(async (req, res) => {
     let packages = [];
     let priceBooks = [];
 
-    console.log("user._id", user._id);
+    // console.log("user._id", user._id);
+  console.log("user", "home datauser");
 
     // Find active purchased plan
     const purchasedPlan = await PurchasedPlan.findOne({
       userId: user._id,
       status: "active",
     }).populate("packageId", "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv");
-
+     console.log("purchasedPlan", purchasedPlan);
     console.log("user.generalInformation", user.generalInformation);
     console.log("user.generalInformation.createdFor.type", user.generalInformation.createdFor.type);
 
@@ -32,6 +34,7 @@ exports.getHomeData = catchAsync(async (req, res) => {
 
         // Fetch all active packages for Admin
         const packageData = await Package.find({ status: "active" });
+
 
         // Map data to required fields
         packages = packageData.map((pkg) => ({

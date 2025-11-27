@@ -109,8 +109,15 @@ exports.createUser = async (req, res, next) => {
       createdBy: {
         id: req.user._id,
         type: req.user.role
-      }
+      },
+
+      createdFor: {
+    id: customer.createdForId || null,
+    type: customer.createdForType || "Self"
+  }
     };
+
+   
 
     /** ------------------------------
      * 4. Address Details

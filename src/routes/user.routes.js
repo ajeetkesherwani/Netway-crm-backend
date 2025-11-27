@@ -24,7 +24,7 @@ router.get("/test", (req, res) => {
 });
 
 //=================== UnAuthenticated End Points ===================================//
-router.get("/home/",userAuthenticate, getHomeData);
+router.get("/home",userAuthenticate, getHomeData);
 // router.get("/get-allServices", getAllServices);
 // router.get("/serviceCategory/list/:serviceId", getServiceCategory);
 
@@ -40,7 +40,7 @@ router.get("/home/",userAuthenticate, getHomeData);
 // );
 
 router.use("/auth", require("./user/authRoutes"));
-// router.use("/shop", require("./user/shopRoutes"));
+router.use("/recharge", require("./user/rechargeRoutes"));
 // router.use("/userAddress", require("./user/userAddressRoutes"));
 // router.use("/ratingReview", require("./user/reviewRoutes"));
 // router.use("/wishlist", require("./user/wishlistRoutes"));

@@ -4,30 +4,38 @@ const Package = require("../../../models/package");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const PriceBook = require("../../../models/priceBook");
+const Admin = require("../../../models/admin");
 const catchAsync = require("../../../utils/catchAsync");
 
 exports.getHomeData = catchAsync(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  let createdModal = '';
-  let packages = '';
+  try {
+    const user = await User.findById(req.user.id);
+    let createdModal;
+    let packages = [];
+    let priceBooks = [];
 
-  // Find active purchased plan
-  const purchasedPlan = await PurchasedPlan.findOne({
-    userId: user._id,
-    status: "active"
-  }).populate(
-    "packageId",
-    "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv"
-  );
+    console.log("user._id", user._id);
 
-  switch (user.generalInformation.createdFor.type) {
-    case "Admin":
-        createdModal = Admin.findById(user.generalInformation.createdFor.id);
-        // Fetch all active packages
+    // Find active purchased plan
+    const purchasedPlan = await PurchasedPlan.findOne({
+      userId: user._id,
+      status: "active",
+    }).populate("packageId", "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv");
+
+    console.log("user.generalInformation", user.generalInformation);
+    console.log("user.generalInformation.createdFor.type", user.generalInformation.createdFor.type);
+
+    // Fetch data based on createdFor type
+    switch (user.generalInformation.createdFor.type) {
+      case "Admin":
+        createdModal = await Admin.findById(user.generalInformation.createdFor.id);
+
+        // Fetch all active packages for Admin
         const packageData = await Package.find({ status: "active" });
 
-        // Map the data to only return required fields
-        packages = packageData.map(pkg => ({
+        // Map data to required fields
+        packages = packageData.map((pkg) => ({
+          id: pkg._id,
           planName: pkg.name,
           validity: pkg.validity,
           basePrice: pkg.basePrice,
@@ -35,56 +43,99 @@ exports.getHomeData = catchAsync(async (req, res) => {
           typeOfPlan: pkg.typeOfPlan,
           categoryOfPlan: pkg.categoryOfPlan,
           isIptv: pkg.isIptv,
-          isOtt: pkg.isOtt
+          isOtt: pkg.isOtt,
         }));
-      break;
-    case "Retailer":
-      createdModal = Retailer.findById(user.generalInformation.createdFor.id);
-      const assignPackage = PriceBook.find({priceBookFor: "Reseller", assignedTo: createdModal._id});
-      break;
-    case "Lco":
-      createdModal = Lco.findById(user.generalInformation.createdFor.id);
-      break;
-  }
-  
+        break;
 
+      case "Retailer":
+        createdModal = await Retailer.findById(user.generalInformation.createdFor.id);
 
+        // Fetch PriceBooks for Retailer
+        priceBooks = await PriceBook.find({
+          priceBookFor: "Reseller",
+          assignedTo: createdModal._id,
+        }).populate("package.packageId", "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv");
 
-  // const packages = Packages.find
+        // Map all packages from all PriceBooks
+        priceBooks.forEach((pb) => {
+          pb.package.forEach((pkg) => {
+            if (pkg.status === "active" && pkg.packageId) {
+              packages.push({
+                id: pkg.packageId._id,
+                planName: pkg.packageId.name,
+                validity: pkg.packageId.validity,
+                basePrice: pkg.packageId.basePrice,
+                offerPrice: pkg.packageId.offerPrice,
+                typeOfPlan: pkg.packageId.typeOfPlan,
+                categoryOfPlan: pkg.packageId.categoryOfPlan,
+                isIptv: pkg.packageId.isIptv,
+                isOtt: pkg.packageId.isOtt,
+              });
+            }
+          });
+        });
+        break;
 
-  try {
-    deals = await DealsOfTheDay.find(filter).sort({ createdAt: -1 }).exec();
-    allVendor = await Vendor.find(vendorFilter)
-      .select("_id shopName shopId serviceId shopAddress shopImages ") // include only these fields
-      .sort({ createdAt: -1 })
-      .populate("serviceId", "name")
-      .exec();
+      case "Lco":
+        createdModal = await Lco.findById(user.generalInformation.createdFor.id);
 
-    if (type === "all") {
-      categories = customCategories;
-    } else {
-      categories = await Category.find({
-        serviceId: type,
-        cat_id: { $exists: false },
-      })
-        .select("name")
-        .exec();
+        // Fetch PriceBooks for LCO
+        priceBooks = await PriceBook.find({
+          priceBookFor: "Lco",
+          assignedTo: createdModal._id,
+        }).populate("package.packageId", "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv");
+
+        // Map all packages from all PriceBooks
+        priceBooks.forEach((pb) => {
+          pb.package.forEach((pkg) => {
+            if (pkg.status === "active" && pkg.packageId) {
+              packages.push({
+                id: pkg.packageId._id,
+                planName: pkg.packageId.name,
+                validity: pkg.packageId.validity,
+                basePrice: pkg.packageId.basePrice,
+                offerPrice: pkg.packageId.offerPrice,
+                typeOfPlan: pkg.packageId.typeOfPlan,
+                categoryOfPlan: pkg.packageId.categoryOfPlan,
+                isIptv: pkg.packageId.isIptv,
+                isOtt: pkg.packageId.isOtt,
+              });
+            }
+          });
+        });
+        break;
     }
+
+    // Group packages by categoryOfPlan
+    const groupedPackages = packages.reduce((acc, pkg) => {
+      const category = pkg.categoryOfPlan;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(pkg);
+      return acc;
+    }, {});
+
+    // Convert grouped data into array format
+    const finalPackages = Object.keys(groupedPackages).map((category) => ({
+      categoryOfPlan: category,
+      packages: groupedPackages[category],
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Home data fetched successfully",
+      data: {
+        purchasedPlan: purchasedPlan,
+        packages: finalPackages,
+      },
+    });
   } catch (error) {
+    console.error("Error fetching home data:", error);
     return res.status(500).json({
       success: false,
-      message: "Error fetching data.",
+      message: "Error fetching home data.",
       error: error.message,
     });
   }
-
-  return res.status(200).json({
-    success: true,
-    message: "Home data fetched successfully",
-    data: {
-      dealsOfTheDay: deals,
-      ShopList: allVendor,
-      categories: categories, // Add categories later if you want
-    },
-  });
 });

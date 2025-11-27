@@ -127,7 +127,7 @@ exports.getHomeData = catchAsync(async (req, res) => {
       message: "Home data fetched successfully",
       data: {
         purchasedPlan: purchasedPlan,
-        packages: finalPackages,
+        packageData: finalPackages,
       },
     });
   } catch (error) {

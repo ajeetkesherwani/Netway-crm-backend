@@ -7,6 +7,6 @@ const {
 } = require("../../controllers/user/rechargeController/planPurchase");
 const router = express.Router();
 
-router.get("/planPurchase", userAuthenticate, planPurchase);
+router.post("/planPurchase", userAuthenticate, planPurchase);
 
 module.exports = router;

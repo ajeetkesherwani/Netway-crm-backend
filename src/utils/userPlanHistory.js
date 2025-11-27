@@ -7,7 +7,7 @@ exports.createHistory = async ({
   type, // purchase, renewal, upgrade
   paymentMethod,
   transactionId,
-  desciption
+  details
 }) => {
   await UserPlanHistory.create({
     userId,
@@ -16,6 +16,6 @@ exports.createHistory = async ({
     type,
     paymentMethod,
     transactionId,
-    desciption
+    details
   });
 };

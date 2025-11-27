@@ -22,9 +22,11 @@ const {
 router.get("/test", (req, res) => {
   res.status(200).json({ message: "this is user test route" });
 });
+const { getPlanHistoryByUserId } = require("../controllers/user/homeController/getUserPlanHistory");
 
 //=================== UnAuthenticated End Points ===================================//
 router.get("/home",userAuthenticate, getHomeData);
+router.get("/planHistory", userAuthenticate, getPlanHistoryByUserId);
 // router.get("/get-allServices", getAllServices);
 // router.get("/serviceCategory/list/:serviceId", getServiceCategory);
 

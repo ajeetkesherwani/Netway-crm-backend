@@ -14,7 +14,7 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
         package = Package.findById({packageId}).lean();
     }
     
-    if(user.generalInformation.createdFor.type == 'Admin'){
+    if(user.generalInformation.createdFor.type != 'Admin'){
         const priceBook = PriceBook.find({})
         package = Package.findById({packageId}).lean();
     }

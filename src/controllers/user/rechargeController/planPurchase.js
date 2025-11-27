@@ -7,6 +7,7 @@ const PurchasedPlan = require("../../../models/purchasedPlan");
 // const Package = require("../../../models/package");
 const Package = require("../../../models/Package");
 const { successResponse } = require("../../../utils/responseHandler");
+const { createHistory } = require("../../../utils/userPlanHistory");
 
 exports.planPurchase = catchAsync(async (req, res, next) => {
     const userId = req.user._id; // User ID of the logged-in user
@@ -64,20 +65,19 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
             amountPaid,
             transactionId,
             paymentMethod: "Online", // Assuming payment method is always Online for now
-            remarks: "", // Remarks can be passed from request body if needed
+            remarks: "",
             renewedOn,
         });
 
-        purchasedPlan.expiryDate = newExpiryDate; // Update the expiry date of the plan
-        purchasedPlan.isRenewed = true; // Mark the plan as renewed
+        purchasedPlan.expiryDate = newExpiryDate;
+        purchasedPlan.isRenewed = true; 
 
         // Save the updated PurchasedPlan document
         await purchasedPlan.save();
-
+        
+        await createHistory(userId,packageId,amountPaid,"renewal","Online","","");
         return successResponse(res, 200, { message: "Plan renewed successfully.", purchasedPlan });
     } else {
-        console.log("purchasedPlan",purchasedPlan);
-        console.log("matchedPackage",matchedPackage);
         const newExpiryDate = new Date(); 
         const newPurchasedPlan = new PurchasedPlan({
             userId,
@@ -96,6 +96,7 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
         // Save the new PurchasedPlan document
         await newPurchasedPlan.save();
 
+        await createHistory(userId,packageId,amountPaid,"purchase","Online","","");
         return successResponse(res, 201, { message: "New plan purchased successfully.", purchasedPlan: newPurchasedPlan });
     }
 });

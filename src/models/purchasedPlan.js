@@ -37,8 +37,8 @@ const purchasedPlanSchema = new Schema({
   },
   purchasedByRole: {
     type: String,
-    enum: ["Admin", "Reseller", "Lco"],
-    required: true
+    enum: ["Admin", "Reseller", "Lco", "User"],
+    default: "User"
   },
   purchasedById: {
     type: Schema.Types.ObjectId,

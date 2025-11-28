@@ -16,5 +16,6 @@ exports.ticketReplyList = catchAsync(async (req, res, next) => {
         return next(new AppError("ticket Reply not found", 404));
     }
 
+    console.log("ticketList", ticketList);
     successResponse(res, "ticketReply list found", ticketList);
 });

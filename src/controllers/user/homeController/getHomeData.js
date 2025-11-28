@@ -24,6 +24,11 @@ exports.getHomeData = catchAsync(async (req, res) => {
       status: "active",
     }).populate("packageId", "name validity basePrice offerPrice typeOfPlan categoryOfPlan isOtt isIptv");
      console.log("purchasedPlan", purchasedPlan);
+
+     if(!purchasedPlan){
+      console.log("No active purchased plan found for user:", user._id);
+     }
+
     console.log("user.generalInformation", user.generalInformation);
     console.log("user.generalInformation.createdFor.type", user.generalInformation.createdFor.type);
 

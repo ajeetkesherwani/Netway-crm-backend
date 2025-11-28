@@ -56,7 +56,8 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
     if (purchasedPlan) {
         // Renew the plan if it exists
         const renewedOn = new Date(); // Current date when the plan is renewed
-        const newExpiryDate = new Date(); // Set the new expiry date (you should calculate this based on your renewal logic)
+        const newExpiryDate = new Date();
+        newExpiryDate.setDate(newExpiryDate.getDate() + 30); // Set the new expiry date (you should calculate this based on your renewal logic)
         const previousExpiryDate = purchasedPlan.expiryDate; // Previous expiry date
 
         purchasedPlan.renewals.push({
@@ -75,7 +76,8 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
         // Save the updated PurchasedPlan document
         await purchasedPlan.save();
         
-        await createHistory(userId,packageId,amountPaid,"renewal","Online","","");
+    await createHistory(userId,packageId,amountPaid,"renewal","Online","","");
+      
         return successResponse(res, 200, { message: "Plan renewed successfully.", purchasedPlan });
     } else {
         const newExpiryDate = new Date(); 
@@ -95,7 +97,8 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
 
         // Save the new PurchasedPlan document
         await newPurchasedPlan.save();
-
+ 
+          console.log(userId,packageId,amountPaid,"purched plan")
         await createHistory(userId,packageId,amountPaid,"purchase","Online","","");
         return successResponse(res, 201, { message: "New plan purchased successfully.", purchasedPlan: newPurchasedPlan });
     }

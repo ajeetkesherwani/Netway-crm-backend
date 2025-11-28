@@ -8,6 +8,7 @@ exports.getPlanHistoryByUserId = catchAsync(async (req, res, next) => {
     const userId = req.user._id;
 
     const history = await UserPlanHistory.find({ userId })
+    .populate("planId")  
         .sort({ date: -1 })
         .lean();
 
@@ -15,5 +16,5 @@ exports.getPlanHistoryByUserId = catchAsync(async (req, res, next) => {
         return next(new AppError("No plan history found for this user", 404));
     }
 
-    return successResponse(res, 200, "User plan history fetched successfully", history);
+    return successResponse(res, "User plan history fetched successfully", history);
 });

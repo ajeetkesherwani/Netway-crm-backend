@@ -9,11 +9,11 @@ const {
 } = require("../../controllers/user/messageController/createMessage");  
 
 const { 
-    getMessageList
+    getSupportMessageList
 } = require("../../controllers/user/messageController/getMessageList");
 const router = express.Router();
 
 router.post("/create", userAuthenticate, createMessage);
-router.get("/list", userAuthenticate, getMessageList);
+router.get("/list", userAuthenticate, getSupportMessageList);
 
 module.exports = router;

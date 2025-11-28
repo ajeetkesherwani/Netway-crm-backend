@@ -1,6 +1,6 @@
 const UserPlanHistory = require("../models/userPlanHistory");
  
-exports.createHistory = async ({
+exports.createHistory = async (
   userId,
   planId,
   amount,
@@ -8,9 +8,18 @@ exports.createHistory = async ({
   paymentMethod,
   transactionId,
   details
-}) => {
-  await UserPlanHistory.create({
+) => {
+  console.log("Creating user plan history with details:", {
     userId,
+    planId,
+    amount,
+    type,
+    paymentMethod,
+    transactionId,
+    details
+  });
+  await UserPlanHistory.create({
+    userId: userId,
     planId,
     amount,
     type,

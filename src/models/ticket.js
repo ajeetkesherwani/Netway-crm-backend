@@ -13,11 +13,9 @@ const ticketSchema = new mongoose.Schema(
     },
     personName: {
       type: String,
-      required: true,
     },
     personNumber: {
       type: String,
-      required: true,
     },
     email: {
       type: String,
@@ -35,22 +33,22 @@ const ticketSchema = new mongoose.Schema(
 
     callSource: {
       type: String,
-      enum: ["Phone", "Email", "Web", "Walk-in", "Other"],
+      enum: ["Phone", "Email", "Web", "Walk-in", "Other","MobileApp"],
       default: "Phone",
     },
     severity: {
       type: String,
       enum: ["Low", "Medium", "High", "Critical"],
-      required: true,
+      default: "Medium",
     },
     assignToId: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "assignToModel", // 👈 can dynamically refer to Admin, Reseller, or LCO
-      default: null,
+      default: null
     },
     assignToModel: {
       type: String,
-      enum: ["Admin", "Reseller", "Lco", "Staff"],
+      enum: ["Admin", "Reseller", "Lco", "Staff", "User"],
       default: null,
     },
 
@@ -102,7 +100,7 @@ const ticketSchema = new mongoose.Schema(
     },
     createdByType: {
       type: String,
-      enum: ["Admin", "Reseller", "Lco"],
+      enum: ["Admin", "Reseller", "Lco", "User"],
       required: true,
     },
     lastModifiedBy: {

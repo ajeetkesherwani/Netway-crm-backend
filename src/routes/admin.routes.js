@@ -37,6 +37,9 @@ router.use("/resellerWise", require("./admin/resllerWiseDashboardRoutes"));
 router.use("/lcoWise", require("./admin/lcoWiseDashboardRoutes"));
 router.use("/ticketReplyOption", require("./admin/ticketReplyOptionRoutes"));
 router.use("/ticketResolution", require("./admin/ticketResolutionRoutes"));
+// router.use("/connectionRequest", require("./admin/connectionRequestRoutes"));
+router.use("/connectRequest", require("./admin/connectRequestRoutes"));
+
 
 router.use("/website", require("./website/MailRoutes"));
 

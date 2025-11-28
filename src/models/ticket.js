@@ -53,8 +53,8 @@ const ticketSchema = new mongoose.Schema(
     },
 
     callDescription: {
-      type: Number,
-      default: 0,
+      type: String,
+      default: "",
     },
     isChargeable: {
       type: Boolean,

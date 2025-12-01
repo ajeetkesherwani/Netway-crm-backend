@@ -39,6 +39,7 @@ router.use("/ticketReplyOption", require("./admin/ticketReplyOptionRoutes"));
 router.use("/ticketResolution", require("./admin/ticketResolutionRoutes"));
 // router.use("/connectionRequest", require("./admin/connectionRequestRoutes"));
 router.use("/connectRequest", require("./admin/connectRequestRoutes"));
+router.use("/userPackage", require("./admin/userPackageRoute"));
 
 
 router.use("/website", require("./website/MailRoutes"));

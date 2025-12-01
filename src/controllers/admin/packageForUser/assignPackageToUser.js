@@ -15,9 +15,21 @@ exports.assignPackageToUser = catchAsync(async (req, res, next) => {
   } = req.body;
 
   // Basic validation
-  if (!userId || !packageId || !packageName || !validity || !basePrice) {
-    return next(new AppError("All fields are required", 400));
-  }
+  // if (!packageId || !packageName || !validity || !basePrice) {
+  //   return next(new AppError("All fields are required", 400));
+  // }
+
+    // Check if the same package is already assigned and active
+    const existingAssignment = await UserPackage.findOne({
+        userId,
+        packageId,
+        status: "active"
+    });
+
+    if (existingAssignment) {
+        return next(new AppError("This package is already assigned to the user.", 400));
+    }
+
 
   // Save package entry
   const newAssignment = await UserPackage.create({
@@ -27,9 +39,7 @@ exports.assignPackageToUser = catchAsync(async (req, res, next) => {
     validity,
     basePrice,
     billType,
-    startDate,
     cutomePrice,
-    endDate,
     status: "active",
   });
 

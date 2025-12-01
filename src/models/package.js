@@ -19,7 +19,8 @@ const packageSchema = new Schema({
     isIptv: { type: Boolean, default: false },
     iptvPlanName: { type: String },
     isOtt: { type: Boolean, default: false },
-    ottPlanName: { type: String }
+    ottPlanName: { type: String },
+     billType: { type: String, enum: ["Monthly","Quarterly","HalfYear","Yearly","OneTime"], default: "Monthly" },
 
 
     // Timestamps

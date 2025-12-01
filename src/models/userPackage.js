@@ -11,20 +11,17 @@ const UserPackageSchema = new mongoose.Schema({
   packageId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Package",
-    required: true
   },
 
   packageName: {
     type: String,
-    required: true
   },
     validity: {
-        number: { type: Number, required: true }, // Enter number
-        unit: { type: String, enum: ["Day", "Week", "Month", "Year"], required: true } // Dropdown selection
+        number: { type: Number, }, // Enter number
+        unit: { type: String, enum: ["Day", "Week", "Month", "Year"], default: "Day"} // Dropdown selection
     },
   basePrice: {
     type: Number,
-    required: true
   },
   cutomePrice: {
     type: Number,

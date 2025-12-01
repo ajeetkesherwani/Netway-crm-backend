@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../../../models/user");
+const { createLog } = require("../../../utils/userLogActivity");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");

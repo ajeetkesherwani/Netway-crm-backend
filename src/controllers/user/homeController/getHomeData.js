@@ -156,13 +156,21 @@
 const User = require("../../../models/user");
 const UserPackage = require("../../../models/userPackage");
 const PurchasedPlan = require("../../../models/purchasedPlan");
+// const Package = require("../../../models/package");
+const Package = require("../../../models/package");
+const Retailer = require("../../../models/retailer");
+const Lco = require("../../../models/lco");
+const PriceBook = require("../../../models/priceBook");
+const Admin = require("../../../models/admin");
 const catchAsync = require("../../../utils/catchAsync");
 
 exports.getHomeData = catchAsync(async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
-    // Fetch active purchased plan for user
+  console.log("user", "home datauser");
+
+    // Find active purchased plan
     const purchasedPlan = await PurchasedPlan.findOne({
       userId: user._id,
       status: "active",

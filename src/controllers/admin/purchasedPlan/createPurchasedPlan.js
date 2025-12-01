@@ -144,6 +144,15 @@ await createLog({
   }
   // Case 2: Payment Received → Wallet Unchanged (record only)
   else {
+    if(transferAmount > amountPaid){
+      // Update user's current wallet balance
+      closingBalance = openingBalance + (amountPaid - openingBalance);
+      await User.findByIdAndUpdate(userId, { walletBalance: closingBalance });
+    }
+
+    if(transferAmount < amountPaid){
+      // closingBalance = openingBalance;
+    }
     closingBalance = openingBalance;
     transactionType = "credit";
     remarkText = "Plan purchased - payment received";

@@ -5,7 +5,6 @@ const User = require("../../../models/user");
 const PriceBook = require("../../../models/priceBook");
 const PurchasedPlan = require("../../../models/purchasedPlan");
 // const Package = require("../../../models/package");
-// const Package = require("../../../models/Package");
 const Package = require("../../../models/package");
 const { successResponse } = require("../../../utils/responseHandler");
 const { createHistory } = require("../../../utils/userPlanHistory");

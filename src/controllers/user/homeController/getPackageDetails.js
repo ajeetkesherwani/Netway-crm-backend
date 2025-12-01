@@ -1,4 +1,4 @@
-const Package = require("../../../models/Package");
+const Package = require("../../../models/package");
 const PriceBook = require("../../../models/priceBook");
 const User = require("../../../models/user");
 const catchAsync = require("../../../utils/catchAsync");

@@ -1,7 +1,7 @@
 const User = require("../../../models/user");
 const PurchasedPlan = require("../../../models/purchasedPlan");
 // const Package = require("../../../models/package");
-const Package = require("../../../models/Package");
+const Package = require("../../../models/package");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const PriceBook = require("../../../models/priceBook");
@@ -15,7 +15,6 @@ exports.getHomeData = catchAsync(async (req, res) => {
     let packages = [];
     let priceBooks = [];
 
-    // console.log("user._id", user._id);
   console.log("user", "home datauser");
 
     // Find active purchased plan

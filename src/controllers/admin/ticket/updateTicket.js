@@ -10,24 +10,14 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
   const { ticketId } = req.params;
   if (!ticketId) return next(new AppError("ticketId is required", 400));
 
+  console.log("Request Body:", req.body);
   const {
-    personName,
-    personNumber,
-    email,
-    address,
     category,
     severity,
-    callSource,
-    fileI,
-    fileII,
-    fileIII,
     isChargeable,
-    productId,
     price,
     callDescription,
     assignToId,
-    assignToModel,
-    status,
   } = req.body;
 
   const ticket = await Ticket.findById(ticketId);
@@ -35,9 +25,15 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
 
   const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
   const updaterId = req.user._id;
+  const assignToModel = 'Staff'; // Default, may change based on role
+  const fileI = req.files && req.files['fileI'] ? req.files['fileI'][0].path : ticket.fileI;
+  const fileII = req.files && req.files['fileII'] ? req.files['fileII'][0].path : ticket.fileII;
+  const fileIII = req.files && req.files['fileIII'] ? req.files['fileIII'][0].path : ticket.fileIII;
+
+
 
   let finalAssignToId = ticket.assignToId;
-  let finalAssignToModel = ticket.assignToModel;
+  let finalAssignToModel = 'Staff';
 
   // ✅ Role-based reassignment logic (same as create)
   if (assignToId && assignToModel) {
@@ -84,23 +80,21 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     }
   }
 
+  console.log("Final Assignment:", finalAssignToId, finalAssignToModel);
+  console.log("Files:", { fileI, fileII, fileIII });
+  
+
+
   // ✅ Update all editable fields
-  ticket.personName = personName || ticket.personName;
-  ticket.personNumber = personNumber || ticket.personNumber;
-  ticket.email = email || ticket.email;
-  ticket.address = address || ticket.address;
   ticket.category = category || ticket.category;
   ticket.severity = severity || ticket.severity;
-  ticket.callSource = callSource || ticket.callSource;
+  // ticket.callSource = callSource || ticket.callSource;
   ticket.fileI = fileI || ticket.fileI;
   ticket.fileII = fileII || ticket.fileII;
   ticket.fileIII = fileIII || ticket.fileIII;
   ticket.isChargeable = typeof isChargeable === "boolean" ? isChargeable : ticket.isChargeable;
-  ticket.productId = productId || ticket.productId;
   ticket.price = price || ticket.price;
   ticket.callDescription = callDescription || ticket.callDescription;
-  ticket.status = status || ticket.status;
-
   ticket.assignToId = finalAssignToId;
   ticket.assignToModel = finalAssignToModel;
 

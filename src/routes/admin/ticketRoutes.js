@@ -43,7 +43,15 @@ router.post("/create",
 router.get("/list", adminAuthenticate, getTicketList);
 router.get("/view/:ticketId", adminAuthenticate, getTicketDetails);
 router.patch("/status/:ticketId", adminAuthenticate, updateTicketStatus);
-router.patch("/update/:ticketId", adminAuthenticate, updateTicket);
+router.patch("/update/:ticketId", adminAuthenticate, 
+    fileUploader("ticket",
+        [
+            { name: "fileI", maxCount: 1 },
+            { name: "fileII", maxCount: 1 },
+            { name: "fileIII", maxCount: 1 }
+        ]
+    ),
+    updateTicket);
 router.delete("/delete/:ticketId", adminAuthenticate, deleteTicket);
 
 module.exports = router;

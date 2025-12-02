@@ -228,6 +228,7 @@ exports.getHomeData = catchAsync(async (req, res) => {
       data: {
         purchasedPlan: purchasedPlan, // same as before
         packageData: finalPackages,   // only assigned packages
+        walletBalance: user.walletBalance,
       },
     });
   } catch (error) {

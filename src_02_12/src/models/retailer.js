@@ -1,0 +1,90 @@
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+
+const retailerSchema = new mongoose.Schema({
+
+  title: {
+    type: String,
+    enum: ["Mr.", "Ms", "M/s", "Mrs", "Miss"],
+    default: "M/s"
+  },
+  phoneNo: { type: Number, match: /^[0-9]{10}$/ },
+  email: { type: String },
+  password: { type: String },
+  resellerName: { type: String },
+  houseNo: { type: String },
+  pincode: { type: String },
+  area: { type: String },
+  subArea: { type: String },
+  mobileNo: { type: Number },
+  messengerId: { type: String },
+  balance: { type: String },
+  dashboard: { type: String, enum: ["Admin", "Reseller", "Manager"], default: "Admin" },
+  panNumber: { type: String },
+  resellerCode: { type: String },
+  contactPersonNumber: { type: String },
+  whatsAppNumber: { type: String },
+  address: { type: String },
+  taluka: { type: String },
+  district: { type: String },
+  state: { type: String },
+  country: { type: String },
+  website: { type: String },
+  latitude: { type: String },
+  longitude: { type: String },
+  gstNo: { type: String },
+  contactPersonName: { type: String },
+  supportEmail: { type: String },
+  nas: { type: [String], default: [] },
+  description: { type: String },
+  role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
+  status: { type: String, default: "false" },
+  walletBalance: { type: Number, default: 0 },
+  creditBalance: { type: Number, default: 0 },
+  employeeAssociation: [{
+    type: {
+      type: String,
+      enum: ["Admin", "Manager", "Operator"],
+      default: "Admin"
+    },
+    status: {
+      type: String,
+      enum: ["active", "Inactive"],
+      default: "active"
+    },
+    employeeName: { type: String },
+    employeeUserName: { type: String },
+    password: { type: String },
+    plainPassword: { type: String },
+    mobile: { type: Number },
+    email: { type: String }
+  }],
+  document: {
+    aadhaarCard: { type: [String], default: "" },
+    panCard: { type: [String], default: "" },
+    license: { type: [String], default: "" },
+    other: { type: [String], default: "" },
+  },
+
+}, { timestamps: true });
+
+// Hash employeeAssociation passwords before saving
+retailerSchema.pre("save", async function (next) {
+  if (this.isModified("employeeAssociation")) {
+    for (let emp of this.employeeAssociation) {
+      if (emp.isNew || emp.isModified("password")) {
+        emp.plainPassword = emp.password;
+        emp.password = await bcrypt.hash(emp.password, 10);
+      }
+    }
+  }
+  next();
+});
+
+// Compare password for employeeAssociation login
+// retailerSchema.methods.compareEmployeePassword = async function (enteredPassword, empPassword) {
+//   return await bcrypt.compare(enteredPassword, empPassword);
+// };
+
+const Retailer = mongoose.model("Retailer", retailerSchema);
+module.exports = Retailer;

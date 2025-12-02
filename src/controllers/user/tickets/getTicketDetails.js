@@ -10,13 +10,13 @@ const Staff = require("../../../models/Staff")
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
-
+ 
 exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
-
+ 
   try {
     const userId = req.user._id;
   const ticketId = req.params.ticketId;
-
+ 
   // Fetch ticket
   const ticket = await Ticket.findOne({
     _id: ticketId,
@@ -24,19 +24,19 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
   })
     .populate("category", "name")
     .lean();
-
+ 
   if (!ticket) {
     return next(new AppError("Ticket not found or unauthorized", 404));
   }
-
+ 
   // Fetch all replies
   let replies = await TicketReply.find({ ticket: ticketId }).lean();
-
+ 
   const finalReplies = [];
-
+ 
   for (let reply of replies) {
     let name = "Unknown";
-
+ 
     // ============================
     // USER
     // ============================
@@ -46,7 +46,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
         .lean();
       name = user?.generalInformation?.name || "Unknown";
     }
-
+ 
     // ============================
     // STAFF → from User model
     // ============================
@@ -56,7 +56,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
         .lean();
       name = staff?.staffName|| reply.staffName || "Unknown";
     }
-
+ 
     // ============================
     // ADMIN
     // ============================
@@ -66,7 +66,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
         .lean();
       name = admin?.name || "Unknown";
     }
-
+ 
     // ============================
     // RESELLER EMPLOYEE
     // ============================
@@ -77,7 +77,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
       ).lean();
       name = reseller?.employeeAssociation?.[0]?.employeeName || "Unknown";
     }
-
+ 
     // ============================
     // LCO EMPLOYEE
     // ============================
@@ -88,7 +88,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
       ).lean();
       name = lco?.employeeAssociation?.[0]?.employeeName || "Unknown";
     }
-
+ 
     finalReplies.push({
       _id: reply._id,
       description: reply.description,
@@ -98,7 +98,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
        createdByType: reply.createdBy
     });
   }
-
+ 
   return successResponse(
     res,
     "Ticket details fetched successfully",

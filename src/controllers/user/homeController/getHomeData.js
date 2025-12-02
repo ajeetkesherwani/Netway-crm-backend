@@ -222,13 +222,18 @@ exports.getHomeData = catchAsync(async (req, res) => {
       packages: packagesMap[category],
     }));
 
+
+    const finalDue = user.walletBalance <= 0 ? user.walletBalance : 0;
+    console.log("finalDue", Math.abs(finalDue));
+
+
     return res.status(200).json({
       success: true,
       message: "Home data fetched successfully",
       data: {
         purchasedPlan: purchasedPlan, // same as before
         packageData: finalPackages,   // only assigned packages
-        walletBalance: (user.walletBalance <= 0) ? user.walletBalance : 0, // return 0 if wallet balance is positive 
+        walletBalance: Math.abs(finalDue),
       },
     });
   } catch (error) {

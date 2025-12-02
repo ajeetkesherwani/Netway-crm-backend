@@ -1,3 +1,4 @@
+
 {
   "name": "prefit-backend",
   "version": "1.0.0",
@@ -21,6 +22,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "handlebars": "^4.7.8",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "mongoose": "^8.16.4",
@@ -28,6 +30,7 @@
     "multer": "^2.0.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "puppeteer": "^24.31.0"
   }
 }

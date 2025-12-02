@@ -36,4 +36,5 @@ router.use("/message", require("./user/messageRoutes"));
 router.use("/cms", require("./user/cmsRoutes"));
 router.get("/userPlanHistory/:userId", userAuthenticate, getPlanHistoryByUserId);
 router.use("/ticket", require("./user/ticketRotes"));
+router.use("/dueAmount", require("./user/userDueRoutes"));
 module.exports = router;

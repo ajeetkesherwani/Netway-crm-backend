@@ -71,7 +71,9 @@ const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 
 exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
-  const userId = req.user._id;
+
+  try {
+    const userId = req.user._id;
   const ticketId = req.params.ticketId;
 
   // Fetch ticket of logged-in user
@@ -122,4 +124,9 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
     "Ticket details with replies fetched successfully",
     { ticket, replies }
   );
+  } catch (err) {
+    console.error("Error logging request details:", err);
+  }
+
+  
 });

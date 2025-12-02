@@ -51,7 +51,7 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
   // Ticket replies fetch (without modifying ticket schema)
    const replies = await TicketReply.find({
     ticket: ticketId,
-    createdById: userId
+    // createdById: userId
   }).lean();
 
   // Send ticket and replies separately in response

@@ -228,7 +228,7 @@ exports.getHomeData = catchAsync(async (req, res) => {
       data: {
         purchasedPlan: purchasedPlan, // same as before
         packageData: finalPackages,   // only assigned packages
-        walletBalance: user.walletBalance,
+        walletBalance: (user.walletBalance <= 0) ? user.walletBalance : 0, // return 0 if wallet balance is positive 
       },
     });
   } catch (error) {

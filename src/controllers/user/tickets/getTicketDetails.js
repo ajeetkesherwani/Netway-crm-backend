@@ -1,3 +1,5 @@
+
+
 const Ticket = require("../../../models/ticket");
 const TicketReply = require("../../../models/ticketReply");
 const User = require("../../../models/user");
@@ -105,5 +107,5 @@ exports.getUserTicketDetails = catchAsync(async (req, res, next) => {
   } catch (err) {
     console.error("Error logging request details:", err);
   }
- 
+
 });

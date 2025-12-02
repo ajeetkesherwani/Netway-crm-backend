@@ -2,6 +2,32 @@ const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const bcrypt = require("bcryptjs");
 const { createLog } = require("../../../utils/userLogActivity");
+const UserPackage = require("../../../models/userPackage");
+const Package = require("../../../models/package");
+
+// Assign package to user
+async function userPackageAssign(userId, packageInfo) {
+  const pkg = await Package.findById(packageInfo.packageId);
+  
+  if (!pkg) {
+    throw new AppError("Package not found", 404);
+  }
+
+  const userPackage = new UserPackage({
+    userId: userId,
+    packageId: packageInfo.packageId,
+    packageName: packageInfo.packageName,
+    basePrice: packageInfo.price,
+    cutomePrice: packageInfo.price,
+    validity: pkg.validity,
+    status: "active"
+  });
+
+  await userPackage.save();
+
+  return true;
+}
+
 
 function generateUsername(name) {
   const upperName = name.trim().toUpperCase().replace(/\s+/g, ""); 
@@ -112,9 +138,9 @@ exports.createUser = async (req, res, next) => {
       },
 
       createdFor: {
-    id: customer.createdForId || null,
-    type: customer.createdForType || "Self"
-  }
+        id: customer.createdFor?.id || null,
+        type: customer.createdFor?.type || "Self"
+      }
     };
 
    
@@ -158,6 +184,9 @@ exports.createUser = async (req, res, next) => {
       price: customer.packageDetails?.packageAmount || ""
     };
 
+    
+
+
     /** ------------------------------
      * 6. Network Information
      * ------------------------------*/
@@ -186,6 +215,7 @@ exports.createUser = async (req, res, next) => {
     /** ------------------------------
      * 8. Save User to DB
      * ------------------------------*/
+    console.log("generalInformation",generalInformation);
     const newUser = await User.create({
       generalInformation,
       addressDetails,
@@ -196,7 +226,8 @@ exports.createUser = async (req, res, next) => {
       status: additional.status ? "active" : "Inactive"
     });
 
-    //
+    // Assign package to user
+    userPackageAssign(newUser._id, packageInfomation);
 
     await createLog({
       userId: newUser._id,

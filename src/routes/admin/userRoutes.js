@@ -29,6 +29,10 @@ const {
   getUserFullDetails
 } = require('../../controllers/admin/user/userProfileDetails');
 
+const {
+  getCurrentPlan
+} = require('../../controllers/admin/useData/getUserCurrentPlan');
+
 
 
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
@@ -54,6 +58,7 @@ router.patch(
   updateUser
 );
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);
+router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
 
 
 module.exports = router;

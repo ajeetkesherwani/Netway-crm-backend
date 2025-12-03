@@ -6,6 +6,7 @@ const UserDueAmountSchema = new mongoose.Schema({
     dueAmount: { type: Number, required: true, default: 0 },
     modefPayment: { type: String, enum: ['Cash', 'Online'], default: 'Online' },
     status: { type: String, enum: ['Pending', 'Paid'], default: 'Paid' },
+     receiptNo: { type: String }
 }, { timestamps: true });
  
 const UserDueAmount = mongoose.model('UserDueAmount', UserDueAmountSchema);

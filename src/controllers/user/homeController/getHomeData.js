@@ -224,6 +224,7 @@ exports.getHomeData = catchAsync(async (req, res) => {
 
 
     const finalDue = user.walletBalance <= 0 ? user.walletBalance : 0;
+    console.log(finalDue, "finalDue");
     console.log("finalDue", Math.abs(finalDue));
 
 

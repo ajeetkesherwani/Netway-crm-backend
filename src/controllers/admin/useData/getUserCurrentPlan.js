@@ -13,7 +13,7 @@ exports.getCurrentPlan = catchAsync(async (req, res, next) => {
   // Fetch the latest active purchased plan
   const plan = await PurchasedPlan.findOne({
     userId,
-    status: "active",
+    status: "active"
   })
     .sort({ startDate: -1 })
     .populate(
@@ -25,26 +25,42 @@ exports.getCurrentPlan = catchAsync(async (req, res, next) => {
     return next(new AppError("No active purchased plan found", 404));
   }
 
-  // If plan is not renewed, return as is
+  // ---- CASE 1: Plan is NOT renewed ----
   if (!plan.isRenewed || plan.renewals.length === 0) {
-    return successResponse(res, "Current plan fetched successfully", plan);
+    return successResponse(res, "Current plan fetched successfully", {
+      ...plan.toObject(),
+      latestRenewal: false
+    });
   }
 
-  // If plan is renewed, get the latest renewal
-  const latestRenewal = plan.renewals.sort(
-    (a, b) => new Date(b.renewedOn) - new Date(a.renewedOn)
-  )[0];
+  // ---- CASE 2: Plan IS renewed – return only the latest renewal ----
+  const latestRenewal = plan.renewals
+    .sort((a, b) => new Date(b.renewedOn) - new Date(a.renewedOn))[0];
 
   const currentPlan = {
-    ...plan.toObject(),
-    startDate: latestRenewal.previousExpiryDate, // or original startDate if preferred
+    _id: plan._id,
+    userId: plan.userId,
+    packageId: plan.packageId,
+    purchasedByRole: plan.purchasedByRole,
+    purchasedById: plan.purchasedById,
+    purchaseDate: plan.purchaseDate,
+
+    // From latest renewal
+    startDate: latestRenewal.previousExpiryDate,
     expiryDate: latestRenewal.newExpiryDate,
+
     amountPaid: latestRenewal.amountPaid,
-    transactionId: latestRenewal.transactionId,
     paymentMethod: latestRenewal.paymentMethod,
+    transactionId: latestRenewal.transactionId,
     remarks: latestRenewal.remarks,
-    latestRenewal: true,
+
+    isRenewed: true,
+    latestRenewal: true
   };
 
-  return successResponse(res, "Current plan fetched successfully (renewed)", currentPlan);
+  return successResponse(
+    res,
+    "Current plan fetched successfully (renewed)",
+    currentPlan
+  );
 });

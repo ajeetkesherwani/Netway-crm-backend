@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 140px;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 16px;
+        }
+
+        table, th, td {
+            border: 1px solid #444;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            width: 40%;
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .footer-text {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <img class="logo" src="{{logoUrl}}" alt="logo"/>
+    <div class="title">Payment Receipt</div>
+</div>
+
+<table>
+    <tr>
+        <th>Receipt No.</th>
+        <td>{{refNo}}</td>
+    </tr>
+    <tr>
+        <th>Payment Type</th>
+        <td>{{modeOfPayment}}</td>
+    </tr>
+    <tr>
+        <th>Customer Id</th>
+        <td>{{username}}</td>
+    </tr>
+    <tr>
+        <th>Customer Name</th>
+        <td>{{name}}</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>{{status}}</td>
+    </tr>
+    <tr>
+        <th>Paid Amount</th>
+        <td>{{amount}}</td>
+    </tr>
+    <tr>
+        <th>Payment Date</th>
+        <td>{{date}}</td>
+    </tr>
+</table>
+
+<div class="footer-text">
+    * This is system generated receipt.
+</div>
+
+</body>
+</html>

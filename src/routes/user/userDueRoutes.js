@@ -16,11 +16,16 @@ const {
 const {
     getPaymentHistoryPdf
 } = require("../../controllers/user/userDueAmount/getHistoryPdf");
+
+const {
+    getPaidDueAmountHistoryDetails
+} = require("../../controllers/user/userDueAmount/getPaidHistoryDetails")
  
 const router = express.Router();
  
 router.post("/create", userAuthenticate, createUserDueAmountPayment);
 router.get("/history/list", userAuthenticate, getPaidDueAmountHistory);
-router.get("/history/pdf", userAuthenticate, getPaymentHistoryPdf);
+router.get("/history/list/:paymentId", userAuthenticate, getPaidDueAmountHistoryDetails);
+router.get("/history/pdf/:paymentId", userAuthenticate, getPaymentHistoryPdf);
  
 module.exports = router;

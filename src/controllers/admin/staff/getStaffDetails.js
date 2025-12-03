@@ -10,7 +10,7 @@ exports.getStaffDetails = catchAsync(async (req, res, next) => {
         return next(new AppError("Staff ID is required", 400));
     }
 
-    const staff = await Staff.findById(staffId).populate("role", "roleName");
+    const staff = await Staff.findById(staffId).lean();
     console.log("staff", staff);
     if (!staff) {
         return next(new AppError("Staff not found", 404));

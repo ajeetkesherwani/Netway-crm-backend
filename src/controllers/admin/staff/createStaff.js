@@ -17,6 +17,7 @@ exports.createStaff = catchAsync(async (req, res, next) => {
   const { name, email, phoneNo, password, address, bio,
     role, logId, staffName, salary, comment, area, staffIp, status } = req.body;
 
+    console.log("Creating staff with data:", req.body);
   if (!name) return next(new AppError("name is required", 400));
   if (!email) return next(new AppError("email is required", 400));
   if (!phoneNo) return next(new AppError("phoneNo is required", 400));

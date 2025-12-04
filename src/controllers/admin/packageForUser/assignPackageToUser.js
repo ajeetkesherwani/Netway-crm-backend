@@ -10,10 +10,11 @@ exports.assignPackageToUser = catchAsync(async (req, res, next) => {
     packageName,
     validity,
     basePrice,
-    cutomePrice,
+    customPrice,
     billType
   } = req.body;
 
+  console.log("req.body", req.body);
   // Basic validation
   // if (!packageId || !packageName || !validity || !basePrice) {
   //   return next(new AppError("All fields are required", 400));
@@ -39,7 +40,7 @@ exports.assignPackageToUser = catchAsync(async (req, res, next) => {
     validity,
     basePrice,
     billType,
-    cutomePrice,
+    customPrice,
     status: "active",
   });
 

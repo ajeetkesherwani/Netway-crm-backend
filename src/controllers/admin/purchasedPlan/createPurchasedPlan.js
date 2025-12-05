@@ -2,10 +2,12 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
 const PurchasedPlan = require("../../../models/purchasedPlan");
+const UserPackage = require("../../../models/userPackage")
 const Package = require("../../../models/package");
 const User = require("../../../models/user");
 const UserWalletHistory = require("../../../models/userWalletHistory");
 const { createLog } = require("../../../utils/userLogActivity");
+
 
 exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const purchaser = req.user; // Admin / Reseller / LCO performing the purchase
@@ -27,8 +29,28 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   }
 
   // ---------------- Fetch Package ---------------- //
-  const selectedPackage = await Package.findById(packageId);
-  if (!selectedPackage) return next(new AppError("Package not found", 404));
+  // const selectedPackage = await Package.findById(packageId);
+  // if (!selectedPackage) return next(new AppError("Package not found", 404));
+  // ---------------- Fetch Package from User Assigned Package ---------------- //
+  const alreadyPurchased = await PurchasedPlan.findOne({
+  userId,
+  packageId
+});
+console.log(alreadyPurchased, "apurched plan");
+
+if (alreadyPurchased) {
+  return next(new AppError("User already purchased this package — cannot purchase again. you can review not", 400));
+}
+
+
+  const selectedPackage = await UserPackage.findOne({
+    userId,
+    packageId,
+    status: "active"
+  });
+
+  if (!selectedPackage) return next(new AppError("Assigned active package not found", 404));
+
 
   // const packagePrice = Number(selectedPackage.basePrice || selectedPackage.offerPrice || 0);
   let packagePrice = 0;
@@ -77,6 +99,7 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
       return next(new AppError("Invalid validity unit in package", 400));
   }
 
+
   // ---------------- Create Purchased Plan ---------------- //
   const newPurchase = await PurchasedPlan.create({
     userId,
@@ -96,21 +119,21 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
 
   // ---------------- Create Activity Log ---------------- //
 
-await createLog({
-  userId: userId,
-  type: "Plan Purchased",
-  description: `Plan purchased: ${selectedPackage.name}`,
-  details: {
-    packageId: selectedPackage._id,
-    packageName: selectedPackage.name,
-    amountPaid:amountPaid
-  },
-  ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
-  addedBy: {
-    id: purchaser._id,           
-    role: purchaser.role || "Admin",
-  }
-});
+  await createLog({
+    userId: userId,
+    type: "Plan Purchased",
+    description: `Plan purchased: ${selectedPackage.name}`,
+    details: {
+      packageId: selectedPackage._id,
+      packageName: selectedPackage.name,
+      amountPaid: amountPaid
+    },
+    ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
+    addedBy: {
+      id: purchaser._id,
+      role: purchaser.role || "Admin",
+    }
+  });
 
 
   // ---------------- Fetch Target User ---------------- //
@@ -144,13 +167,13 @@ await createLog({
   }
   // Case 2: Payment Received → Wallet Unchanged (record only)
   else {
-    if(transferAmount > amountPaid){
+    if (transferAmount > amountPaid) {
       // Update user's current wallet balance
       closingBalance = openingBalance + (amountPaid - openingBalance);
       await User.findByIdAndUpdate(userId, { walletBalance: closingBalance });
     }
 
-    if(transferAmount < amountPaid){
+    if (transferAmount < amountPaid) {
       // closingBalance = openingBalance;
     }
     closingBalance = openingBalance;

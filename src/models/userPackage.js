@@ -23,9 +23,10 @@ const UserPackageSchema = new mongoose.Schema({
   basePrice: {
     type: Number,
   },
-  cutomePrice: {
-    type: Number,
-  },
+  // cutomPrice: {
+  //   type: Number,
+  // },
+   customPrice:{type:  Number },
   status: {
     type: String,
     enum: ["active", "expired", "inactive"],

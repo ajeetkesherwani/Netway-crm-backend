@@ -113,6 +113,20 @@ const ticketSchema = new mongoose.Schema(
       enum: ["Admin", "Reseller", "Lco"],
       default: null,
     },
+    fixedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "fixedByType",
+      default: null,
+    },
+    fixedByType: {
+      type: String,
+      enum: ["Admin", "Reseller", "Lco"],
+      default: null,
+    },
+    fixedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

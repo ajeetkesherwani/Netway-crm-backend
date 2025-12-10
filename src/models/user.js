@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String },
     alternatePhone: { type: String },
     ipactId: { type: String},
-    connectionType: { type: String, enum: ["iil", "ftth", "wireless", "other"], default: "other" },
+    connectionType: { type: String, enum: ["ill", "ftth", "rf", "other"], default: "other" },
     selsExecutive: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Staff"
@@ -29,7 +29,7 @@ const UserSchema = new mongoose.Schema({
       //  ipType: { type: String, enum: ["static", "dynamic"], default: "static" },
     serialNo: { type: String},
     macId: { type: String},
-    serviceOpted: { type: String, enum: ["intercom", "broadband","coporate"], default: "intercom" },
+    serviceOpted: { type: String, enum: ["intercom", "broadband","corporate"], default: "intercom" },
     stbNo: { type: String},
     vcNo: { type: String},
     circuitId: { type: String},
@@ -92,6 +92,7 @@ const UserSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Zone"
     },
+    customArea: { type: String }
   },
 
   packageInfomation: {
@@ -126,7 +127,7 @@ const UserSchema = new mongoose.Schema({
 
   document: [
     {
-      documentType: { type: String, enum: ["ID proof", "Profile Id", "Aadhar Card", "Insurence Paper", "Signature","Pan Card", "Other"], default: "Other" },
+      documentType: { type: String, enum: ["Address Proof", "Profile Photo", "Addhar Card", "Passport", "Signature","Pan Card", "Driving Licence", "GST", "Other"], default: "Other" },
       documentImage: { type: String, default: "" }
     }
   ],

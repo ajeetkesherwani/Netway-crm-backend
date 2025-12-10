@@ -102,8 +102,8 @@ if (alreadyPurchased) {
 
   // ---------------- Create Purchased Plan ---------------- //
   const newPurchase = await PurchasedPlan.create({
-    userId,
     userModel,
+    userId,
     packageId,
     purchasedByRole: purchaser.role,
     purchasedById: purchaser._id,
@@ -114,7 +114,15 @@ if (alreadyPurchased) {
     expiryDate: expiry,
     status: "active",
     remarks,
-    isPaymentRecived
+  paymentDetails: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
+    ? {
+        date: req.body.paymentDate ? new Date(req.body.paymentDate) : new Date(),
+        method: req.body.paymentMethod || "Cash",
+        amount: Number(req.body.amountPaid || req.body.paymentAmount || 0),
+        remark: req.body.paymentRemark || ""
+      }
+    : null,
+  isPaymentRecived: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
   });
 
   // ---------------- Create Activity Log ---------------- //

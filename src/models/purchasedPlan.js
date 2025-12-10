@@ -26,6 +26,18 @@ const renewalSchema = new Schema({
     enum: ["Online", "Cash", "Upi", "Wallet", "Other"],
     default: "Online"
   },
+
+  paymentDetails: {
+    date: { type: Date, default: null },
+    method: {
+      type: String,
+      enum: ["Cash", "UPI", "Bank Transfer", "Cheque", "Online", "Wallet"],
+      default: "Cash"
+    },
+    amount: { type: Number, default: 0 },
+    remark: { type: String, default: "" }
+  },
+
   remarks: String
 }, { _id: false });
 
@@ -86,9 +98,23 @@ const purchasedPlanSchema = new Schema({
     type: Boolean,
     default: false
   },
+  paymentDetails: {
+    type: {
+      date: { type: Date, default: null },
+      method: {
+        type: String,
+        enum: ["Cash", "UPI", "Bank Transfer", "Cheque", "Online", "Wallet"],
+        default: "Cash"
+      },
+      amount: { type: Number, default: 0 },
+      remark: { type: String, default: "" }
+    },
+    default: null 
+  },
+
   renewals: [renewalSchema],
   isPaymentRecived: {
-    type: Boolean, enum: ["true", "false"], default: "false"
+    type: Boolean, default: false
   }
 
 }, { timestamps: true });

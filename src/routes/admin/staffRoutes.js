@@ -19,6 +19,7 @@ const {
 const {
     getStaffDetails
 } = require("../../controllers/admin/staff/getStaffDetails");
+
 const { updateStaff } = require("../../controllers/admin/staff/updateStaff");
 
 const router = express.Router();

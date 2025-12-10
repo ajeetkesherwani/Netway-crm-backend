@@ -172,7 +172,7 @@
 //     });
 // });
 
-
+const Admin = require("../../../models/admin");
 const Ticket = require("../../../models/ticket");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
@@ -193,7 +193,7 @@ exports.getTicketList = catchAsync(async (req, res, next) => {
 
     // Fields to return
     const selectFields =
-        "personName personNumber email address callSource status ticketNumber severity assignToId createdAt";
+        "personName personNumber email address callSource status ticketNumber severity assignToId createdAt fixedBy fixedAt ";
 
     // Population
     const populateAssignTo = {
@@ -233,7 +233,9 @@ exports.getTicketList = catchAsync(async (req, res, next) => {
     } else if (filter === "Fixed") {
         fixedTickets = await Ticket.find({ status: "Fixed" })
             .select(selectFields)
+            .populate("fixedBy")
             .populate(populateAssignTo);
+            console.log("Fixed Tickets:", fixedTickets);
     } else if (filter === "Closed") {
         closedTickets = await Ticket.find({ status: "Closed" })
             .select(selectFields)

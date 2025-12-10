@@ -18,6 +18,8 @@ exports.createPackage = catchAsync(async (req, res, next) => {
         iptvPlanName,
         isOtt,
         ottPlanName,
+        basePrice,
+        offerPrice
     } = req.body;
 
     // ✅ Basic validation
@@ -46,6 +48,8 @@ exports.createPackage = catchAsync(async (req, res, next) => {
         iptvPlanName,
         isOtt,
         ottPlanName,
+         basePrice,
+        offerPrice
     });
 
     successResponse(res, "Package created successfully", newPackage);

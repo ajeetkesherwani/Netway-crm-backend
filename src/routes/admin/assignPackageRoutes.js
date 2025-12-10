@@ -24,6 +24,8 @@ const {
     updateAssignPackageStatus
 } = require("../../controllers/admin/assignPackage/updateAssignPackagesStatus");
 
+
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, assignPackageToReseller);
@@ -31,5 +33,6 @@ router.get("/list", adminAuthenticate, getPackages);
 router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);
 router.get("/packageList/:assignToId/:packageId", adminAuthenticate, getAssignedPackageDetails);
 router.patch("/update/status/:packageItemId", adminAuthenticate, updateAssignPackageStatus);
+
 
 module.exports = router;

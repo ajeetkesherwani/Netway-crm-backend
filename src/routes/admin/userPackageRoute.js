@@ -25,6 +25,10 @@ const {
     deleteAssignedPackage
 } = require("../../controllers/admin/packageForUser/assginPackageDelete");
 
+const {
+    getUserWalletBalance
+} = require("../../controllers/admin/packageForUser/getUserWalletBalance");
+
 
 const router = express.Router(); 
 
@@ -33,5 +37,6 @@ router.get("/assign/list/:userId", adminAuthenticate, assignPackageListByUserId)
 router.patch("/update/:packageId", adminAuthenticate, updateUserPackageStatus);
 router.get("/package/list/:userId", adminAuthenticate, getAvailablePackagesForUser);
 router.delete("/delete/:packageId", adminAuthenticate, deleteAssignedPackage);
+router.get("/walletBalance/:userId", adminAuthenticate, getUserWalletBalance);
 
 module.exports = router;

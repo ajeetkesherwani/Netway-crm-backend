@@ -35,7 +35,7 @@ exports.getAvailablePackagesForUser = catchAsync(async (req, res, next) => {
     const userId = req.params.userId;
 
     // Fetch all active packages assigned to the user
-    const assignedPackages = await UserPackage.find({ userId, status: "active" }).select("packageId");
+    const assignedPackages = await UserPackage.find({ userId }).select("packageId");
     console.log("assignedPackages", assignedPackages);
 
     // Only include valid packageIds (remove null/undefined)

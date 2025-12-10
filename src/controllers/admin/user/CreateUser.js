@@ -6,6 +6,7 @@ const UserPackage = require("../../../models/userPackage");
 const Package = require("../../../models/package");
 
 // Assign package to user
+
 async function userPackageAssign(userId, packageInfo) {
   const pkg = await Package.findById(packageInfo.packageId);
   
@@ -17,8 +18,10 @@ async function userPackageAssign(userId, packageInfo) {
     userId: userId,
     packageId: packageInfo.packageId,
     packageName: packageInfo.packageName,
-    basePrice: packageInfo.price,
-    cutomePrice: packageInfo.price,
+    // basePrice: packageInfo.price,
+    // cutomePrice: packageInfo.price,
+    basePrice: Number(pkg.basePrice || pkg.offerPrice || 0),
+    customPrice: Number(packageInfo.price || pkg.basePrice || pkg.offerPrice || 0), 
     validity: pkg.validity,
     status: "active"
   });
@@ -172,7 +175,8 @@ exports.createUser = async (req, res, next) => {
       },
 
       /** IMPORTANT — area must be ObjectId */
-      area: req.body.area && req.body.area.trim() !== "" ? req.body.area.trim() : null
+      area: req.body.area && req.body.area.trim() !== "" ? req.body.area.trim() : null,
+      customArea: customer.customArea || ""
     };
 
     /** ------------------------------
@@ -227,7 +231,10 @@ exports.createUser = async (req, res, next) => {
     });
 
     // Assign package to user
-    userPackageAssign(newUser._id, packageInfomation);
+    // userPackageAssign(newUser._id, packageInfomation);
+    if (packageInfomation.packageId && packageInfomation.packageId !== "null") {
+      await userPackageAssign(newUser._id, packageInfomation);
+    }
 
     await createLog({
       userId: newUser._id,

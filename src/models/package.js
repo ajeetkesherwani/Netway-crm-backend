@@ -8,7 +8,7 @@ const packageSchema = new Schema({
         unit: { type: String, enum: ["Day", "Week", "Month", "Year"], required: true } // Dropdown selection
     },
     basePrice: { type: Number },
-    offerPrice: { type: String },
+    offerPrice: { type: Number },
     sacCode: { type: String },
     fromDate: { type: Date },
     toDate: { type: Date },

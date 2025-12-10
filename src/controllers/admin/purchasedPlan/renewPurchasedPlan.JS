@@ -6,12 +6,17 @@ const Package = require("../../../models/package");
 
 exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
   const user = req.user; // Authenticated user (Admin/Reseller/LCO)
+const planId = req.params.id;
+
   const {
-    planId,           // Existing plan ID to renew
+    // planId,           // Existing plan ID to renew
     amountPaid,
     paymentMethod = "Online",
     remarks = "",
-    transactionId
+    transactionId,
+    paymentDate,       
+    paymentRemark = "", 
+    paymentReceived
   } = req.body;
 
   if (!planId || !amountPaid) {
@@ -19,7 +24,10 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
   }
 
   // 1️⃣ Find the existing plan
-  const plan = await PurchasedPlan.findById(planId).populate("packageId");
+  const plan = await PurchasedPlan.findById(planId)
+  .populate("packageId");
+console.log(plan, "plan")
+
   if (!plan) return next(new AppError("Plan not found", 404));
 
   // 2️⃣ Check status eligibility
@@ -56,20 +64,41 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
 
   // 4️⃣ Push renewal history
   plan.renewals.push({
-    renewedOn: new Date(),
-    previousExpiryDate: previousExpiry,
-    newExpiryDate: newExpiry,
-    amountPaid,
-    transactionId,
-    paymentMethod,
-    remarks
-  });
+  renewedOn: new Date(),
+  previousExpiryDate: previousExpiry,
+  newExpiryDate: newExpiry,
+  amountPaid: Number(amountPaid),
+  transactionId: transactionId || "",
+  paymentMethod: paymentMethod,
+  remarks: remarks || "Renewed",
+
+  // हर renewal की अपनी payment details यहाँ save होगी!
+  ...(paymentReceived === "Yes" && {
+    paymentDetails: {
+      date: paymentDate ? new Date(paymentDate) : new Date(),
+      method: paymentMethod,
+      amount: Number(amountPaid),
+      remark: paymentRemark || ""
+    }
+  })
+});
+  // plan.renewals.push({
+  //   renewedOn: new Date(),
+  //   previousExpiryDate: previousExpiry,
+  //   newExpiryDate: newExpiry,
+  //   amountPaid,
+  //   transactionId,
+  //   paymentMethod,
+  //   remarks
+  // });
 
   // 5️⃣ Update main plan fields
   plan.expiryDate = newExpiry;
   plan.isRenewed = true;
   plan.amountPaid += amountPaid; // optional: keep cumulative total
   plan.status = "active";
+
+  plan.isPaymentRecived = paymentReceived === "Yes";
 
   await plan.save();
 

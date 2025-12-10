@@ -469,6 +469,8 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     if (parsedAddresses.installation) updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
 
     if (area !== undefined) user.addressDetails.area = area || null;
+    if (req.body.customArea !== undefined)
+    user.addressDetails.customArea = req.body.customArea || "";
 
     user.markModified("addressDetails");
   }

@@ -16,12 +16,26 @@ const packageSchema = new Schema({
     typeOfPlan: { type: String, enum: ["Renew", "Speed Booster Plan", "Valume Booster"], default: "Renew" },
     categoryOfPlan: { type: String, enum: ["Unlimited", "Limited", "Fup", "DayNight"], required: true },
     description: { type: String },
-    isIptv: { type: Boolean, default: false },
-    iptvPlanName: { type: String },
-    isOtt: { type: Boolean, default: false },
-    ottPlanName: { type: String },
+    // isIptv: { type: Boolean, default: false },
+    // iptvPlanName: { type: String },
+    // isOtt: { type: Boolean, default: false },
+    // ottPlanName: { type: String },
      billType: { type: String, enum: ["Monthly","Quarterly","HalfYear","Yearly","OneTime"], default: "Monthly" },
 
+
+       
+    packageAvailable: { type: Boolean, default: false },   
+    offerPackage: { type: Boolean, default: false },  
+
+       // Bundle with OTT
+    isOtt: { type: Boolean, default: false },
+    ottType: { type: String, enum:["playBox"], default: "playBox"},      
+    ottPackageId: { type: Schema.Types.ObjectId, ref: "Package" },
+
+    // Bundle with IPTV
+    isIptv: { type: Boolean, default: false },
+    iptvType: { type: String, enum:["ziggTv"], default: "ziggTv" },       
+    iptvPackageId: { type: Schema.Types.ObjectId, ref: "Package" },
 
     // Timestamps
 }, { timestamps: true });

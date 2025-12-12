@@ -29,6 +29,10 @@ const {
     deleteTicket
 } = require("../../controllers/admin/ticket/deleteTicket");
 
+const { 
+    filterTickets
+} = require("../../controllers/admin/ticket/getTicketWithFilter");
+
 const router = express.Router();
 
 router.post("/create",
@@ -53,5 +57,6 @@ router.patch("/update/:ticketId", adminAuthenticate,
     ),
     updateTicket);
 router.delete("/delete/:ticketId", adminAuthenticate, deleteTicket);
+router.get("/filterTicket/list", adminAuthenticate, filterTickets)
 
 module.exports = router;

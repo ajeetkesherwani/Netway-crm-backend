@@ -41,6 +41,7 @@ staffSchema.methods.comparePassword = async function (enteredPassword) {
 };
 
 
-const Staff = mongoose.model('Staff', staffSchema);
+// const Staff = mongoose.model('Staff', staffSchema);
+module.exports = mongoose.models.Staff || mongoose.model('Staff', staffSchema);
 
-module.exports = Staff;
+// module.exports = Staff;

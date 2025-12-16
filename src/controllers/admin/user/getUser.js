@@ -1,27 +1,72 @@
+const { default: mongoose } = require("mongoose");
 const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
-const sendEmail = require("../../../utils/sendEmail");
+// const sendEmail = require("../../../utils/sendEmail");
 
-exports.getUserList = catchAsync(async(req, res, next) => {
+exports.getUserList = catchAsync(async (req, res, next) => {
+  const {
+    searchQuery,
+    status,
+    area,
+    ekyc,
+    startDate,
+    endDate,
+    serviceOpted,
+    reseller,
+    lco,
+  } = req.query;
 
-    // const username = 'JohnDoe';
-    // const emailSubject = `Welcome User!`;
-    // const emailText = `Hi User,\n\nThank you for signing up! We're glad to have you on board.`;
+  const query = {};
+  if (searchQuery && searchQuery.trim()) {
+    const safeSearch = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    // // Call sendEmail with the correct object structure
-    // sendEmail({
-    //     email: 'kesherwaniajeet@gmail.com',  // The recipient's email
-    //     subject: emailSubject,               // The subject of the email
-    //     message: emailText,                  // The plain text message
-    //     html: `<p>${emailText}</p>`          // HTML body for email (optional)
-    // });
+    query.$or = [
+      { "generalInformation.name": { $regex: safeSearch, $options: "i" } },
+      { "generalInformation.username": { $regex: safeSearch, $options: "i" } },
+      { "generalInformation.email": { $regex: safeSearch, $options: "i" } },
+      { "generalInformation.phone": { $regex: safeSearch, $options: "i" } },
+    ];
+  }
+  if (area) {
+    query["addressDetails.area"] = new mongoose.Types.ObjectId(area);
+  }
 
-    
-    const user = await User.find();
-    if(!user) return next(new AppError("user not found",404));
+  if (status) {
+    query.status = status;
+  }
 
-    successResponse(res, "user found successfully", user);
+  if (ekyc) {
+    query["additionalInformation.ekyc"] = ekyc;
+  }
 
+  if (serviceOpted) {
+    query["generalInformation.serviceOpted"] = serviceOpted;
+  }
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) query.createdAt.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt.$lte = end;
+    }
+  }
+  if (reseller) {
+    query["generalInformation.createdFor.type"] = "Retailer";
+    query["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(
+      reseller
+    );
+  } else if (lco) {
+    query["generalInformation.createdFor.type"] = "Lco";
+    query["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(
+      lco
+    );
+  }
+
+  const user = await User.find(query);
+  if (!user) return next(new AppError("User not found", 404));
+
+  successResponse(res, "User found successfully", user);
 });

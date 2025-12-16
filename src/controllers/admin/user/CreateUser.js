@@ -90,7 +90,7 @@ exports.createUser = async (req, res, next) => {
       documentType: validDocTypes.includes(documentTypes[i])
         ? documentTypes[i]
         : "Other",
-      documentImage: file.filename
+      documentImage: `${file.path}`
     }));
 
     console.log("FINAL DOCUMENTS:", finalDocuments);

@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 const cors = require("cors");
 const morgan = require("morgan");
 
@@ -10,7 +11,8 @@ const scheduleExpirePlansJob = require("./jobs/expirePurchasedPlans");
 
 const app = express();
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data (form data)
-app.use(express.static('public')); 
+// app.use(express.static('public')); 
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
 app.use(morgan("dev"));
 app.use(cookieParser());

@@ -1,79 +1,8 @@
-// const Package = require("../../../models/package");
-// const catchAsync = require("../../../utils/catchAsync");
-// const AppError = require("../../../utils/AppError");
-// const { successResponse } = require("../../../utils/responseHandler");
-
-// exports.updatePackage = catchAsync(async (req, res, next) => {
-//     const { packageId } = req.params;
-//     const {
-//         name,
-//         validity,   // { number: Number, unit: String }
-//         sacCode,
-//         fromDate,
-//         toDate,
-//         status,
-//         typeOfPlan,
-//         categoryOfPlan,
-//         description,
-//         basePrice,
-//         offerPrice,
-//         packageAvailable,
-//         offerPackage,
-//         isOtt,
-//         ottType,
-//         ottPackageId,
-//         isIptv,
-//         iptvType,
-//         iptvPackageId
-//         // isIptv,
-//         // iptvPlanName,
-//         // isOtt,
-//         // ottPlanName,
-//     } = req.body;
-
-//     if (!packageId) {
-//         return next(new AppError("Package ID is required", 400));
-//     }
-
-//     const packageToUpdate = await Package.findById(packageId);
-//     if (!packageToUpdate) {
-//         return next(new AppError("Package not found", 404));
-//     }
-
-//     // Update fields only if provided
-//     if (name) packageToUpdate.name = name;
-//     if (validity) packageToUpdate.validity = validity;
-//     if (sacCode !== undefined) packageToUpdate.sacCode = sacCode;
-//     if (fromDate) packageToUpdate.fromDate = fromDate;
-//     if (toDate) packageToUpdate.toDate = toDate;
-//     if (status) packageToUpdate.status = status;
-//     if (typeOfPlan) packageToUpdate.typeOfPlan = typeOfPlan;
-//     if (categoryOfPlan) packageToUpdate.categoryOfPlan = categoryOfPlan;
-//     if (description !== undefined) packageToUpdate.description = description;
-//         if (basePrice !== undefined) packageToUpdate.basePrice = basePrice;
-//     if (offerPrice !== undefined) packageToUpdate.offerPrice = offerPrice;
-//       if (packageAvailable !== undefined) packageToUpdate.packageAvailable = packageAvailable;
-//     if (offerPackage !== undefined) packageToUpdate.offerPackage = offerPackage;
-
-//     if (isOtt !== undefined) packageToUpdate.isOttBundle = isOtt;
-//     if (ottType !== undefined) packageToUpdate.ottType = ottType;
-//     if (ottPackageId !== undefined) packageToUpdate.ottPackageId = ottPackageId;
-
-//     if (isIptv !== undefined) packageToUpdate.isIptvBundle = isIptv;
-//     if (iptvType !== undefined) packageToUpdate.iptvType = iptvType;
-//     if (iptvPackageId !== undefined) packageToUpdate.iptvPackageId = iptvPackageId;
-
-//     await packageToUpdate.save();
-
-//     successResponse(res, "Package updated successfully", packageToUpdate);
-// });
-
-
-
 const mongoose = require("mongoose");
 const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
+const CreateLog = require("../../../utils/createLog");
 const { successResponse } = require("../../../utils/responseHandler");
 
 exports.updatePackage = catchAsync(async (req, res, next) => {
@@ -185,6 +114,35 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
 
     // Save final updated model
     await packageToUpdate.save();
+
+    // Build package details for the log
+let packageDetails = `
+Package Name: ${packageToUpdate.name}
+Validity: ${packageToUpdate.validity?.number || '-'} ${packageToUpdate.validity?.unit || ''}
+SAC Code: ${packageToUpdate.sacCode || '-'}
+Base Price: ${packageToUpdate.basePrice || 0}
+Offer Price: ${packageToUpdate.offerPrice || 0}
+Type: ${packageToUpdate.typeOfPlan || '-'}
+Category: ${packageToUpdate.categoryOfPlan || '-'}
+Status: ${packageToUpdate.status || '-'}
+Package Available: ${packageToUpdate.packageAvailable ? 'Yes' : 'No'}
+Offer Package: ${packageToUpdate.offerPackage ? 'Yes' : 'No'}
+OTT Bundle: ${packageToUpdate.isOtt ? `${packageToUpdate.ottType} (${packageToUpdate.ottPackageId})` : 'No'}
+IPTV Bundle: ${packageToUpdate.isIptv ? `${packageToUpdate.iptvType} (${packageToUpdate.iptvPackageId})` : 'No'}
+Description: ${packageToUpdate.description || '-'}`.trim();
+
+
+// Replace newlines with commas
+packageDetails = packageDetails.replace(/\n/g, ', ');
+
+      // ✅ ACTIVITY LOG
+    await CreateLog({
+        createdById: req.user._id,
+        createdByRole: req.user.role,
+        action: "Update Package successfully",
+        description: `${packageDetails}`
+    });
+
 
     successResponse(res, "Package updated successfully", packageToUpdate);
 });

@@ -1,92 +1,118 @@
 const express = require("express");
 
 const {
-    adminAuthenticate
+  adminAuthenticate,
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
 const {
-    createRetailer
+  createRetailer,
 } = require("../../controllers/admin/retailer/createRetailer");
 
-const {
-    getRetailer
-} = require("../../controllers/admin/retailer/getRetailer");
+const { getRetailer } = require("../../controllers/admin/retailer/getRetailer");
 
 const {
-    deleteRetailer
+  deleteRetailer,
 } = require("../../controllers/admin/retailer/deleteRetailer");
 
 const {
-    updateRetailer
+  updateRetailer,
 } = require("../../controllers/admin/retailer/updateRetailer");
 
 const {
-    getRetailerDetails
+  getRetailerDetails,
 } = require("../../controllers/admin/retailer/getRetailerDetail");
 const {
-    getAssignedPackagesByAssignToId
+  getAssignedPackagesByAssignToId,
 } = require("../../controllers/admin/retailer/getAssignPackageByToId");
 
 const {
-    addResellerEmployee
+  addResellerEmployee,
 } = require("../../controllers/admin/retailer/addResellerEmployee");
 
 const {
-    getResellerEmployees
+  getResellerEmployees,
 } = require("../../controllers/admin/retailer/getResellerEmployee");
 
 const {
-    updateResellerEmployee
+  updateResellerEmployee,
 } = require("../../controllers/admin/retailer/updateResellerEmployee");
 
 const {
-    deleteResellerEmployee
+  deleteResellerEmployee,
 } = require("../../controllers/admin/retailer/deleteResellerEmployee");
 
 const {
-    getResellerEmployeeDetails
+  getResellerEmployeeDetails,
 } = require("../../controllers/admin/retailer/getResellerEmployeeDetail");
 
 const {
-    getResellerLcos
+  getResellerLcos,
 } = require("../../controllers/admin/retailer/resellerGetOwnLco");
 
 const fileUploader = require("../../middlewares/fileUploader");
 
 const {
-    deleteRetailerDocument
+  deleteRetailerDocument,
 } = require("../../controllers/admin/retailer/deleteResellerDocument");
-
-
+const {
+  getRetailers,
+} = require("../../controllers/admin/retailer/getRetailers");
 
 const router = express.Router();
 
-
-router.post("/create", adminAuthenticate,
-    fileUploader("retailerDocuments", [
-        { name: "aadhaarCard", maxCount: 2 },
-        { name: "panCard", maxCount: 2 },
-        { name: "license", maxCount: 2 },
-        { name: "other", maxCount: 6 },
-    ]),
-    createRetailer);
+router.get("/", adminAuthenticate, getRetailers);
+router.post(
+  "/create",
+  adminAuthenticate,
+  fileUploader("retailerDocuments", [
+    { name: "aadhaarCard", maxCount: 2 },
+    { name: "panCard", maxCount: 2 },
+    { name: "license", maxCount: 2 },
+    { name: "other", maxCount: 6 },
+  ]),
+  createRetailer
+);
 router.get("/list", adminAuthenticate, getRetailer);
 router.get("/list/:id", adminAuthenticate, getRetailerDetails);
-router.patch("/update/:retailerId", adminAuthenticate,
-    fileUploader("retailerDocuments", [
-      { name: "aadhaarCard", maxCount: 5 },
+router.patch(
+  "/update/:retailerId",
+  adminAuthenticate,
+  fileUploader("retailerDocuments", [
+    { name: "aadhaarCard", maxCount: 5 },
     { name: "panCard", maxCount: 5 },
     { name: "license", maxCount: 5 },
     { name: "other", maxCount: 5 },
-    ]), updateRetailer);
+  ]),
+  updateRetailer
+);
 router.delete("/delete/:id", adminAuthenticate, deleteRetailer);
-router.get("/packageList/:assignToId", adminAuthenticate, getAssignedPackagesByAssignToId);
+router.get(
+  "/packageList/:assignToId",
+  adminAuthenticate,
+  getAssignedPackagesByAssignToId
+);
 router.patch("/addEmployee/:id", adminAuthenticate, addResellerEmployee);
 router.get("/employee/:resllerId", adminAuthenticate, getResellerEmployees);
-router.patch("/update/:resellerId/:employeeId", adminAuthenticate, updateResellerEmployee);
-router.delete("/delete/:resellerId/:employeeId", adminAuthenticate, deleteResellerEmployee);
-router.get("/employee/:resellerId/:employeeId", adminAuthenticate, getResellerEmployeeDetails);
+router.patch(
+  "/update/:resellerId/:employeeId",
+  adminAuthenticate,
+  updateResellerEmployee
+);
+router.delete(
+  "/delete/:resellerId/:employeeId",
+  adminAuthenticate,
+  deleteResellerEmployee
+);
+router.get(
+  "/employee/:resellerId/:employeeId",
+  adminAuthenticate,
+  getResellerEmployeeDetails
+);
 router.get("/lcoList", adminAuthenticate, getResellerLcos);
-router.delete("/document/delete/:retailerId", adminAuthenticate, deleteRetailerDocument);
+router.delete(
+  "/document/delete/:retailerId",
+  adminAuthenticate,
+  deleteRetailerDocument
+);
 
 module.exports = router;

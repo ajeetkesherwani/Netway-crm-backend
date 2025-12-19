@@ -32,6 +32,10 @@ const {
     getLogsByRoleAndId
 } = require("../../controllers/admin/common/getLogsActivity");
 
+const {
+    getPackageList
+} = require("../../controllers/admin/common/getPackageList");
+
 const router = express.Router();
 
 router.get("/user/details", adminAuthenticate, searchUsersByName);
@@ -41,4 +45,5 @@ router.get("/user/purchedPlan", adminAuthenticate, getUserPurchasedPlans);
 router.get("/reassign/ticket/list", adminAuthenticate, getAllReassignedTickets);
 router.get("/user/Global/details/:id", adminAuthenticate, userGlobalDetails);
 router.get("/logList/:role/:id", adminAuthenticate, getLogsByRoleAndId);
+router.get("/filterPackage/list", adminAuthenticate, getPackageList);
 module.exports = router;

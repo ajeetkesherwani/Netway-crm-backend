@@ -48,6 +48,10 @@ exports.updatePriceBook = catchAsync(async (req, res, next) => {
     if (packageList) priceBook.package = packageList;
     if (assignedTo) priceBook.assignedTo = assignedTo;
 
+      //Automatically track who modified the PriceBook
+    priceBook.modifiedBy = req.user.role;
+    priceBook.modifiedById = req.user._id;
+
     await priceBook.save();
 
     // Update assigned packages

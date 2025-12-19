@@ -78,7 +78,7 @@ const ticketSchema = new mongoose.Schema(
       {
         staffId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Staff",
+          // ref: "Staff",
         },
         currentStatus: {
           type: String,
@@ -125,6 +125,11 @@ const ticketSchema = new mongoose.Schema(
     },
     fixedAt: {
       type: Date,
+      default: null,
+    },
+    resolution: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "TicketResolution",
       default: null,
     },
   },

@@ -21,7 +21,6 @@ const priceBookSchema = new mongoose.Schema({
     assignedTo: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Retailer"
         }
     ],
     priceBookForModel: {
@@ -30,7 +29,9 @@ const priceBookSchema = new mongoose.Schema({
         enum: ["Reseller", "Lco"]
     },
     createdBy: { type: String }, // e.g., "Admin", "Reseller"
-    createdById: { type: mongoose.Schema.Types.ObjectId, refPath: "createdBy" }
+    createdById: { type: mongoose.Schema.Types.ObjectId, refPath: "createdBy" },
+    modifiedBy: { type: String }, // e.g., "Admin", "Reseller"
+    modifiedById: { type: mongoose.Schema.Types.ObjectId, refPath: "modifiedBy" }
 }, { timestamps: true })
 
 const PriceBook = mongoose.model("PriceBook", priceBookSchema);

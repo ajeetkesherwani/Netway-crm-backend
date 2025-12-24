@@ -36,6 +36,14 @@ const {
     getPackageList
 } = require("../../controllers/admin/common/getPackageList");
 
+const {
+    getInvoiceList
+} = require("../../controllers/admin/common/getInvoiceList");
+
+const {
+    getInvoiceDetails
+} = require("../../controllers/admin/common/getInvoiceDetails");
+
 const router = express.Router();
 
 router.get("/user/details", adminAuthenticate, searchUsersByName);
@@ -46,4 +54,6 @@ router.get("/reassign/ticket/list", adminAuthenticate, getAllReassignedTickets);
 router.get("/user/Global/details/:id", adminAuthenticate, userGlobalDetails);
 router.get("/logList/:role/:id", adminAuthenticate, getLogsByRoleAndId);
 router.get("/filterPackage/list", adminAuthenticate, getPackageList);
+router.get("/invoiceList", adminAuthenticate, getInvoiceList);
+router.get("/invoice/:invoiceId", getInvoiceDetails);
 module.exports = router;

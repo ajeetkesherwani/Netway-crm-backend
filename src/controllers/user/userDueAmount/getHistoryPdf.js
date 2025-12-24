@@ -93,7 +93,11 @@ exports.getPaymentHistoryPdf = cathAsync(async (req, res, next) => {
         })
     };
 
-    const pdf = await generatePdf(data);
+    // const pdf = await generatePdf(data);
+    const pdf = await generatePdf({
+      templateName: "invoiceTemplate",
+      data: data
+    });
 
     // PDF Response
     res.set({

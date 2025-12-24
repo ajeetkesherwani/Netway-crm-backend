@@ -340,7 +340,7 @@ if (!createdFrom && createdTo) {
       case "Resolved": resolvedTickets.push(t); break;
       case "Approval": approvalTickets.push(t); break;
     }
-  });
+  });  
 
   successResponse(res, "Ticket list fetched successfully", {
     totalCount,

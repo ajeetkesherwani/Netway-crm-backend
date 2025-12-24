@@ -44,7 +44,7 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
     if (!mobileNo) return next(new AppError("mobileNo is required", 400));
     if (!state) return next(new AppError("state is required", 400));
     if (!role) return next(new AppError("role is required", 400));
-    if (!password) return next(new AppError("password is required for new retailer", 400));
+    // if (!password) return next(new AppError("password is required for new retailer", 400));
     if (
         !employeeAssociation ||
         !Array.isArray(employeeAssociation) ||

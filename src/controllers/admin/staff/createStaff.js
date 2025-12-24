@@ -23,7 +23,7 @@ exports.createStaff = catchAsync(async (req, res, next) => {
   if (!phoneNo) return next(new AppError("phoneNo is required", 400));
   if (!password) return next(new AppError("password is required", 400));
   if (!role) return next(new AppError("roleId is required", 400));
-  if (!staffName) return next(new AppError("staffName is required", 400));
+  // if (!staffName) return next(new AppError("staffName is required", 400));
 
   const userName = generateUserName(name);
 

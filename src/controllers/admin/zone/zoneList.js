@@ -9,5 +9,4 @@ exports.getZoneList = catchAsync(async (req, res, next) => {
     if (!zone) return next(new AppError("zone not found", 404));
 
     successResponse(res, "zone list found successfully", zone);
-
 });

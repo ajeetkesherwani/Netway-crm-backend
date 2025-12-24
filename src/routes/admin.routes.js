@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const subZoneRoutes = require("./admin/subZoneRoutes");
 
 // Route modules
 router.use("/auth", require("./admin/authRoutes"));
@@ -18,9 +19,10 @@ router.use("/resellerWallet", require("./admin/resellerWalletRoutes"));
 router.use("/lcoWallet", require("./admin/lcoWalletRoutes"));
 router.use("/ticketAssign", require("./admin/ticketAssignRoutes"));
 router.use("/zone", require("./admin/ZoneRoutes"));
+router.use("/subZone", subZoneRoutes);
 router.use("/category", require("./admin/categoryRoutes"));
 router.use("/common", require("./admin/commonRoutes"));
-router.use("/ticketReply", require("./admin/ticketReplyRoutes"));              
+router.use("/ticketReply", require("./admin/ticketReplyRoutes"));
 router.use("/timeLine", require("./admin/timeLineRoutes"));
 router.use("/resellerConfig", require("./admin/resellerConfigRoutes"));
 
@@ -40,7 +42,6 @@ router.use("/ticketResolution", require("./admin/ticketResolutionRoutes"));
 // router.use("/connectionRequest", require("./admin/connectionRequestRoutes"));
 router.use("/connectRequest", require("./admin/connectRequestRoutes"));
 router.use("/userPackage", require("./admin/userPackageRoute"));
-
 
 router.use("/website", require("./website/MailRoutes"));
 

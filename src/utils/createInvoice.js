@@ -1,8 +1,8 @@
-const Invoice = require("../../models/Invoice");
-const Package = require("../models/Package");
-const User = require("../../../models/User");
-const Retailer = require("../../../models/retailer");
-const Lco = require("../../../models/lco");
+const Invoice = require("../models/invoice");
+const Package = require("../models/package");
+const User = require("../models/user");
+const Retailer = require("../models/retailer");
+const Lco = require("../models/lco");
 const AppError = require("../utils/AppError");
 
 /* ───────────── GENERATE INVOICE NUMBER ───────────── */
@@ -34,8 +34,9 @@ const generateInvoiceNumber = async () => {
 exports.createInvoice = async ({
   userId,
   packageId,
-  duration,
-  amount,
+  packageName="",
+  duration="",
+  amount="",
   adminAmount = 0,
   lcoAmount = 0,
   resellerAmount = 0,
@@ -43,9 +44,9 @@ exports.createInvoice = async ({
   addedByType,
   comment = ""
 }) => {
-  if (!userId || !packageId || !amount) {
-    throw new AppError("userId, packageId and amount are required", 400);
-  }
+  // if (!userId || !packageId || !amount) {
+  //   throw new AppError("userId, packageId and amount are required", 400);
+  // }
 
   /* ───────────── FETCH USER ───────────── */
   const user = await User.findById(userId).lean();
@@ -55,7 +56,7 @@ exports.createInvoice = async ({
 
   /* ───────────── FETCH PACKAGE ───────────── */
   const pkg = await Package.findById(packageId);
-  if (!pkg) throw new AppError("Package not found", 404);
+  if (pkg) throw new AppError("Package not found", 404);
 
   /* ───────────── INVOICE NUMBER ───────────── */
   const invoiceNumber = await generateInvoiceNumber();
@@ -104,12 +105,12 @@ exports.createInvoice = async ({
   const invoice = await Invoice.create({
     invoiceNumber,
     userId,
-    package: pkg._id,
-    packageName: pkg.name,
+    package: packageId,
+    packageName: packageName,
     packageType: {
-      isOtt: pkg.isOtt || false,
-      isIptv: pkg.isIptv || false,
-      internet: pkg.internet || false
+      // isOtt: isOtt || false,
+      // isIptv: isIptv || false,
+      // internet: internet || false
     },
     duration: { startDate, endDate },
     amount,

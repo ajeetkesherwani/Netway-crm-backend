@@ -1,4 +1,3 @@
-
 {
   "name": "prefit-backend",
   "version": "1.0.0",
@@ -31,6 +30,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.10",
+    "number-to-words": "^1.2.4",
     "puppeteer": "^24.31.0"
   }
 }

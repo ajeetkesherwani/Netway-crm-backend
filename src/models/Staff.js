@@ -19,7 +19,7 @@ const staffSchema = new mongoose.Schema({
     required: true
   },
   logId: { type: String, required: true, unique: true },
-  staffName: { type: String, required: true },
+  staffName: { type: String, },
   salary: { type: Number },
   comment: { type: String },
   area: { type: String },

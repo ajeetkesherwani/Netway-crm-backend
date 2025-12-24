@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice</title>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+    }
+
+    .main-heading {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      width: 180px;
+    }
+
+    .invoice-info {
+      text-align: right;
+    }
+
+    .paid {
+      background: #e6f4ea;
+      color: #2e7d32;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .box-row {
+      display: flex;
+      justify-content: space-between;
+      border: 1px solid #000;
+      margin-top: 15px;
+    }
+
+    .box {
+      width: 50%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .box h4 {
+      margin: 0 0 10px 0;
+      text-decoration: underline;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f5f5;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    /* PAYMENT SECTION (RIGHT SIDE) */
+    .payment-section {
+      width: 40%;
+      margin-left: auto;
+      margin-top: 20px;
+    }
+
+    .summary {
+      width: 100%;
+      border: 1px solid #000;
+      border-collapse: collapse;
+    }
+
+    .summary td {
+      border: none;
+      padding: 6px 8px;
+    }
+
+    .summary td:first-child {
+      font-weight: bold;
+    }
+
+    /* AMOUNT IN WORDS */
+    .amount-words {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: right;
+    }
+
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 10px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADING -->
+  <h1 class="main-heading">TAX INVOICE</h1>
+
+  <!-- HEADER -->
+  <div class="header">
+    <img class="logo" src="{{logoUrl}}" alt="Netway Logo" />
+
+    <div class="invoice-info">
+      <div class="paid">Paid</div>
+      <div><strong>Invoice No:</strong> {{invoiceNumber}}</div>
+      <div><strong>Invoice Date:</strong> {{invoiceDate}}</div>
+      <div><strong>Due Date:</strong> {{dueDate}}</div>
+    </div>
+  </div>
+
+  <!-- COMPANY & CUSTOMER DETAILS -->
+  <div class="box-row">
+    <div class="box">
+      <h4>Company Details</h4>
+      <strong>{{companyName}}</strong><br />
+      {{companyAddress}}<br />
+      <strong>GST No:</strong> {{companyGst}}
+    </div>
+
+    <div class="box">
+      <h4>Customer Details</h4>
+      <strong>Customer ID:</strong> {{username}}<br />
+      <strong>Name:</strong> {{customerName}}<br />
+      <strong>Address:</strong> {{customerAddress}}<br />
+      <strong>Contact No:</strong> {{mobile}}<br />
+      <strong>Email:</strong> {{email}}
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <h3 style="margin-top: 25px;">Service Details</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Description</th>
+        <th class="right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>{{packageName}} ({{period}})</td>
+        <td class="right">₹ {{amount}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAYMENT DETAILS (RIGHT SIDE) -->
+  <div class="payment-section">
+
+    <table class="summary">
+      <tr>
+        <td>Taxable Amount</td>
+        <td class="right">₹ {{amount}}</td>
+      </tr>
+      <tr>
+        <td>SGST (9%)</td>
+        <td class="right">₹ {{sgst}}</td>
+      </tr>
+      <tr>
+        <td>CGST (9%)</td>
+        <td class="right">₹ {{cgst}}</td>
+      </tr>
+      <tr>
+        <td><strong>Grand Total</strong></td>
+        <td class="right"><strong>₹ {{total}}</strong></td>
+      </tr>
+    </table>
+
+    <!-- AMOUNT IN WORDS (BOTTOM OF PAYMENT DETAILS) -->
+    <div class="amount-words">
+      Amount in Words: {{totalInWords}}
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    * This is a system generated invoice.
+  </div>
+
+</body>
+</html>

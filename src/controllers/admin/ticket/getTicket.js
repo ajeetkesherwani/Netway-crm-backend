@@ -134,7 +134,6 @@ exports.getTicketList = catchAsync(async (req, res) => {
     ticketNumber,
     createdFrom,
     createdTo,
-    zoneName,
     fixedBy,
     category,
     assignTo,
@@ -198,16 +197,6 @@ exports.getTicketList = catchAsync(async (req, res) => {
     match.category = new mongoose.Types.ObjectId(category);
   }
 
-  const userQuery = {};
-  if (zoneName) {
-    userQuery["addressDetails.area"] = new mongoose.Types.ObjectId(zoneName);
-  }
-
-  const categoryQuery = {};
-  if (category) {
-    categoryQuery["category._id"] = new mongoose.Types.ObjectId(category);
-  }
-
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const pipeline = [
@@ -223,9 +212,21 @@ exports.getTicketList = catchAsync(async (req, res) => {
     {
       $unwind: { path: "$ticketCategory", preserveNullAndEmptyArrays: false },
     },
+    // {
+    //   $lookup: {
+    //     from: "TicketResolution",
+    //     localField: "resolution",
+    //     foreignField: "_id",
+    //     as: "ticketResolution",
+    //   },
+    // },
+    // {
+    //   $unwind: { path: "$ticketResolution", preserveNullAndEmptyArrays: false },
+    // },
     {
       $addFields: {
         category: "$ticketCategory.name",
+        resolution: "$ticketResolution.name",
       },
     },
     {
@@ -244,6 +245,7 @@ exports.getTicketList = catchAsync(async (req, res) => {
         fixedByType: 1,
         fixedAt: 1,
         category: 1,
+        resolution: 1,
       },
     },
 

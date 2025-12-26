@@ -3,33 +3,41 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
+const { isValidObjectId } = require("mongoose");
 
 exports.updateTicketStatus = catchAsync(async (req, res, next) => {
-    const { ticketId } = req.params;
-    const { status } = req.body;
+  const { ticketId } = req.params;
+  const { status, resolution } = req.body;
 
-    if (!ticketId) return next(new AppError("ticketId is required", 400));
-    if (!status) return next(new AppError("status is required", 400));
+  if (!ticketId) return next(new AppError("ticketId is required", 400));
+  if (!status) return next(new AppError("status is required", 400));
+  if (resolution && !isValidObjectId(resolution)) {
+    return next(new AppError("resolutionId is not valid", 400));
+  }
 
-    const updatedTicket = await Ticket.findByIdAndUpdate(
-        ticketId,
-        {
-            $set: {
-                status,
-                lastModifiedBy: req.user._id,
-                lastModifiedByType: req.user.role,
-            },
-        },
-        { new: true, runValidators: false } // ✅ skip full validation
-    );
+  const updateQuery = {
+    status,
+    lastModifiedBy: req.user._id,
+    lastModifiedByType: req.user.role,
+  };
 
-    if (!updatedTicket) return next(new AppError("Ticket not found", 404));
+  if (resolution) updateQuery["resolution"] = resolution;
 
-    await logTicketActivity({
-        ticketId,
-        activityType: 1, // Status change
-        performedBy: req.user._id,
-    });
+  const updatedTicket = await Ticket.findByIdAndUpdate(
+    ticketId,
+    {
+      $set: updateQuery,
+    },
+    { new: true, runValidators: false }
+  );
 
-    successResponse(res, "✅ Ticket status updated successfully", updatedTicket);
+  if (!updatedTicket) return next(new AppError("Ticket not found", 404));
+
+  await logTicketActivity({
+    ticketId,
+    activityType: 1, // Status change
+    performedBy: req.user._id,
+  });
+
+  successResponse(res, "✅ Ticket status updated successfully", updatedTicket);
 });

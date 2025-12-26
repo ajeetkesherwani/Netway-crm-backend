@@ -31,136 +31,154 @@
 
 // });
 
-
 const Ticket = require("../../../models/ticket");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const User = require("../../../models/user");
 
 exports.createTicket = catchAsync(async (req, res, next) => {
-    const {
-        userId,
-        personName,
-        personNumber,
-        email,
-        address,
-        category,
-        severity,
-        callSource,
-        fileI,
-        fileII,
-        fileIII,
-        isChargeable,
-        productId,
-        price,
-        callDescription,
-        assignToId,
-        assignToModel,
-    } = req.body;
+  const {
+    userId,
+    personName,
+    personNumber,
+    email,
+    address,
+    category,
+    severity,
+    callSource,
+    fileI,
+    fileII,
+    fileIII,
+    isChargeable,
+    productId,
+    price,
+    callDescription,
+    assignToId,
+    assignToModel,
+  } = req.body;
 
-    // ✅ Step 1: Basic validation
-    if (!userId || !personName || !personNumber || !severity) {
+  // ✅ Step 1: Basic validation
+  if (!userId || !personName || !personNumber || !severity) {
+    return next(
+      new AppError(
+        " userId  personName, personNumber, and severity are required",
+        400
+      )
+    );
+  }
+
+  // const ticketNumber = `TCKT-${Date.now()}`;
+  // Generate ticket number WEB + 8 random digits
+  const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+  const ticketNumber = `WEB${randomNumber}`;
+  const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
+  const creatorId = req.user._id;
+
+  let finalAssignToId = null;
+  let finalAssignToModel = null;
+
+  // ✅ Step 2: Handle assignment role rules
+  if (assignToId && assignToModel) {
+    if (userRole === "Admin") {
+      // Admin can assign only to Staff
+      if (assignToModel !== "Staff") {
+        return next(new AppError("Admin can assign only to Staff", 403));
+      }
+      finalAssignToId = assignToId;
+      finalAssignToModel = "Staff";
+    } else if (userRole === "Reseller") {
+      // Reseller can assign only to their own employees
+      const reseller = await Retailer.findById(creatorId);
+      if (!reseller) return next(new AppError("Reseller not found", 404));
+
+      const emp = reseller.employeeAssociation.id(assignToId);
+      if (!emp) {
         return next(
-            new AppError(" userId  personName, personNumber, and severity are required", 400)
+          new AppError("You can assign tickets only to your own employees", 403)
         );
+      }
+
+      finalAssignToId = emp._id;
+      finalAssignToModel = "Employee"; // "Admin" | "Manager" | "Operator"
+    } else if (userRole === "Lco") {
+      // Lco can assign only to their own employees
+      const lco = await Lco.findById(creatorId);
+      if (!lco) return next(new AppError("LCO not found", 404));
+
+      const emp = lco.employeeAssociation.id(assignToId);
+      if (!emp) {
+        return next(
+          new AppError("You can assign tickets only to your own employees", 403)
+        );
+      }
+
+      finalAssignToId = emp._id;
+      finalAssignToModel = emp.type;
+    } else {
+      return next(new AppError("Unauthorized role to assign tickets", 403));
     }
+  }
 
-    // const ticketNumber = `TCKT-${Date.now()}`;
-    // Generate ticket number WEB + 8 random digits
-    const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
-    const ticketNumber = `WEB${randomNumber}`;
-    const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
-    const creatorId = req.user._id;
+  let lcoId = null;
+  let resellerId = null;
 
-    let finalAssignToId = null;
-    let finalAssignToModel = null;
+  const user = await User.findById(userId).select(
+    "createdFor addressDetails.area"
+  );
+  if (!user) return next(new AppError("User not found", 404));
 
-    // ✅ Step 2: Handle assignment role rules
-    if (assignToId && assignToModel) {
-        if (userRole === "Admin") {
-            // Admin can assign only to Staff
-            if (assignToModel !== "Staff") {
-                return next(new AppError("Admin can assign only to Staff", 403));
-            }
-            finalAssignToId = assignToId;
-            finalAssignToModel = "Staff";
-        }
+  if (user.createdFor.type === "Lco") {
+    lcoId = user.createdFor.id;
+    const retailerOfLco = await Lco.findById(lcoId).select("retailerId");
+    resellerId = retailerOfLco.retailerId;
+  } else if (user.createdFor.type === "Retailer") {
+    resellerId = user.createdFor.id;
+  }
 
-        else if (userRole === "Reseller") {
-            // Reseller can assign only to their own employees
-            const reseller = await Retailer.findById(creatorId);
-            if (!reseller) return next(new AppError("Reseller not found", 404));
+  const zoneId = user.addressDetails?.area;
 
-            const emp = reseller.employeeAssociation.id(assignToId);
-            if (!emp) {
-                return next(
-                    new AppError("You can assign tickets only to your own employees", 403)
-                );
-            }
+  // ✅ Step 3: Create the ticket with all schema fields
+  const newTicket = await Ticket.create({
+    userId,
+    ticketNumber,
+    personName,
+    personNumber,
+    email,
+    address,
+    category,
+    fileI,
+    fileII,
+    fileIII,
+    callSource,
+    severity,
+    callDescription,
+    isChargeable,
+    productId,
+    price,
+    createdById: creatorId,
+    createdByType: userRole,
+    assignToId: finalAssignToId,
+    assignToModel: finalAssignToModel,
+    status: finalAssignToId ? "Assigned" : "Open",
+    lcoId,
+    resellerId,
+    zoneId,
+  });
 
-            finalAssignToId = emp._id;
-            finalAssignToModel = "Employee"; // "Admin" | "Manager" | "Operator"
-        }
-
-        else if (userRole === "Lco") {
-            // Lco can assign only to their own employees
-            const lco = await Lco.findById(creatorId);
-            if (!lco) return next(new AppError("LCO not found", 404));
-
-            const emp = lco.employeeAssociation.id(assignToId);
-            if (!emp) {
-                return next(
-                    new AppError("You can assign tickets only to your own employees", 403)
-                );
-            }
-
-            finalAssignToId = emp._id;
-            finalAssignToModel = emp.type;
-        }
-
-        else {
-            return next(new AppError("Unauthorized role to assign tickets", 403));
-        }
-    }
-
-    // ✅ Step 3: Create the ticket with all schema fields
-    const newTicket = await Ticket.create({
-        userId,
-        ticketNumber,
-        personName,
-        personNumber,
-        email,
-        address,
-        category,
-        fileI,
-        fileII,
-        fileIII,
-        callSource,
-        severity,
-        callDescription,
-        isChargeable,
-        productId,
-        price,
-        createdById: creatorId,
-        createdByType: userRole,
-        assignToId: finalAssignToId,
-        assignToModel: finalAssignToModel,
-        status: finalAssignToId ? "Assigned" : "Open",
+  // ✅ Step 4: Return complete ticket info
+  const populatedTicket = await Ticket.findById(newTicket._id)
+    .populate("category")
+    .populate({
+      path: "assignToId",
+      select: "name email type employeeUserName",
+    })
+    .populate({
+      path: "createdById",
+      select: "resellerName email phoneNo",
     });
 
-    // ✅ Step 4: Return complete ticket info
-    const populatedTicket = await Ticket.findById(newTicket._id)
-        .populate("category")
-        .populate({
-            path: "assignToId",
-            select: "name email type employeeUserName",
-        })
-        .populate({
-            path: "createdById",
-            select: "resellerName email phoneNo",
-        });
-
-    return successResponse(res, "Ticket created successfully", populatedTicket);
+  return successResponse(res, "Ticket created successfully", populatedTicket);
 });

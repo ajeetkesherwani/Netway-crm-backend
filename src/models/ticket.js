@@ -30,10 +30,9 @@ const ticketSchema = new mongoose.Schema(
     fileI: { type: String },
     fileII: { type: String },
     fileIII: { type: String },
-
     callSource: {
       type: String,
-      enum: ["Phone", "Email", "Web", "Walk-in", "Other","MobileApp"],
+      enum: ["Phone", "Email", "Web", "Walk-in", "Other", "MobileApp"],
       default: "Phone",
     },
     severity: {
@@ -44,14 +43,13 @@ const ticketSchema = new mongoose.Schema(
     assignToId: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "assignToModel", // 👈 can dynamically refer to Admin, Reseller, or LCO
-      default: null
+      default: null,
     },
     assignToModel: {
       type: String,
       enum: ["Admin", "Reseller", "Lco", "Staff", "User"],
       default: null,
     },
-
     callDescription: {
       type: String,
       default: "",
@@ -70,10 +68,18 @@ const ticketSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned", "Approval"],
+      enum: [
+        "Open",
+        "Closed",
+        "Fixed",
+        "Assigned",
+        "Resolved",
+        "NonAssigned",
+        "Reassigned",
+        "Approval",
+      ],
       default: "Open",
     },
-
     reassign: [
       {
         staffId: {
@@ -82,7 +88,16 @@ const ticketSchema = new mongoose.Schema(
         },
         currentStatus: {
           type: String,
-          enum: ["Open", "Closed", "Fixed", "Assigned", "Resolved", "NonAssigned", "Reassigned", "Approval"],
+          enum: [
+            "Open",
+            "Closed",
+            "Fixed",
+            "Assigned",
+            "Resolved",
+            "NonAssigned",
+            "Reassigned",
+            "Approval",
+          ],
           default: "Open",
         },
         assignedAt: {
@@ -91,7 +106,6 @@ const ticketSchema = new mongoose.Schema(
         },
       },
     ],
-
     // ✅ NEW FIELDS
     createdById: {
       type: mongoose.Schema.Types.ObjectId,
@@ -120,7 +134,7 @@ const ticketSchema = new mongoose.Schema(
     },
     fixedByType: {
       type: String,
-      enum: ["Admin", "Reseller", "Lco"],
+      enum: ["Admin", "Reseller", "Lco", "Staff"],
       default: null,
     },
     fixedAt: {
@@ -131,6 +145,18 @@ const ticketSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       refPath: "TicketResolution",
       default: null,
+    },
+    lcoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lco",
+    },
+    resellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Retailer",
+    },
+    zoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Zone",
     },
   },
   {

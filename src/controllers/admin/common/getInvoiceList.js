@@ -99,7 +99,7 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
     areaId,
     resellerId,
     lcoId,
-    packageId,       // ✅ already supported
+    packageId,
     status,
     createdBy,
   } = req.query;
@@ -112,21 +112,24 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
   if (type === "iptv") filter["packageType.isIptv"] = true;
   if (type === "internet") filter["packageType.internet"] = true;
 
-  /* ───────────── DATE FILTER ───────────── */
-  if (fromDate && !toDate) {
+  /* ───────────── DATE FILTER (FROM / TO / BOTH) ───────────── */
+  if (fromDate || toDate) {
+    const startDate = fromDate
+      ? parseDDMMYYYY(fromDate)
+      : parseDDMMYYYY(toDate);
+
+    const endDate = fromDate
+      ? parseDDMMYYYY(fromDate, true)
+      : parseDDMMYYYY(toDate, true);
+
+    if (fromDate && toDate) {
+      startDate = parseDDMMYYYY(fromDate);
+      endDate = parseDDMMYYYY(toDate, true);
+    }
+
     filter.createdAt = {
-      $gte: parseDDMMYYYY(fromDate),
-      $lte: parseDDMMYYYY(fromDate, true),
-    };
-  } else if (!fromDate && toDate) {
-    filter.updatedAt = {
-      $gte: parseDDMMYYYY(toDate),
-      $lte: parseDDMMYYYY(toDate, true),
-    };
-  } else if (fromDate && toDate) {
-    filter.createdAt = {
-      $gte: parseDDMMYYYY(fromDate),
-      $lte: parseDDMMYYYY(toDate, true),
+      $gte: startDate,
+      $lte: endDate,
     };
   }
 
@@ -163,9 +166,9 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
   }
 
   /* ───────────── OTHER FILTERS ───────────── */
-if (packageId) {
-  filter.package = new mongoose.Types.ObjectId(packageId);
-}
+  if (packageId) {
+    filter.package = new mongoose.Types.ObjectId(packageId);
+  }
   if (status) filter.status = status;
   if (createdBy) filter.addedByType = createdBy;
 
@@ -177,7 +180,7 @@ if (packageId) {
     .populate({
       path: "userId",
       select:
-        "generalInformation.name generalInformation.email generalInformation.phone generalInformation.createdFor addressDetails.area",
+        "generalInformation.name generalInformation.username generalInformation.email generalInformation.phone generalInformation.createdFor addressDetails.area",
       populate: {
         path: "addressDetails.area",
         select: "zoneName",

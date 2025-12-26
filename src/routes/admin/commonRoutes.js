@@ -44,6 +44,14 @@ const {
     getInvoiceDetails
 } = require("../../controllers/admin/common/getInvoiceDetails");
 
+const { 
+    getUserInvoice 
+} = require("../../controllers/admin/common/gerUserInoiveList");
+
+const {
+    getUserAssignedHardware
+} = require("../../controllers/admin/common/getAssignedHardwareList");
+
 const router = express.Router();
 
 router.get("/user/details", adminAuthenticate, searchUsersByName);
@@ -56,4 +64,6 @@ router.get("/logList/:role/:id", adminAuthenticate, getLogsByRoleAndId);
 router.get("/filterPackage/list", adminAuthenticate, getPackageList);
 router.get("/invoiceList", adminAuthenticate, getInvoiceList);
 router.get("/invoice/:invoiceId", getInvoiceDetails);
+router.get("/user/invoice/:userId", adminAuthenticate, getUserInvoice);
+router.get("/user/hardware/:userId", adminAuthenticate, getUserAssignedHardware);
 module.exports = router;

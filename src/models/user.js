@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require("bcryptjs");
 
 const UserSchema = new mongoose.Schema({
   generalInformation: {
@@ -53,7 +54,7 @@ const UserSchema = new mongoose.Schema({
     // Track for whom it was created
     createdFor: {
       id: { type: mongoose.Schema.Types.ObjectId, refPath: "generalInformation.createdFor.type" },
-      type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self"],  }
+      type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self", "Reseller"],  }
     },
 
     paymentMethod: {
@@ -140,6 +141,22 @@ const UserSchema = new mongoose.Schema({
     }
   ]
 }, { timestamps: true });
+
+
+UserSchema.pre("save", async function (next) {
+  try {
+    if (!this.isModified("generalInformation.password")) {
+      return next();
+    }
+   
+    const hashedPassword = await bcrypt.hash( this.generalInformation.password, 12 );
+    this.generalInformation.password = hashedPassword;
+   
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const User = mongoose.model("User", UserSchema);
 

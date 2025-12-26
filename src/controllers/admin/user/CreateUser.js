@@ -98,14 +98,17 @@ exports.createUser = async (req, res, next) => {
     /** ------------------------------
      * 3. General Information
      * ------------------------------*/
+
+    const rawPassword = customer.password;
+
     const generalInformation = {
       title: customer.title || "Mr",
       name: customer.name?.trim(),
       billingName: customer.billingName || customer.name,
       // username: customer.username || customer.phone,
       username: generateUsername(customer.name),
-      password: "123456",
-      plainPassword: "123456",
+      password: rawPassword,
+      plainPassword: rawPassword,
       email: customer.email,
       phone: customer.mobile,
       alternatePhone: customer.alternateMobile || "",

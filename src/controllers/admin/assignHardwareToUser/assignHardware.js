@@ -6,6 +6,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 exports.assignHardwareToUser = (async (req, res, next) => {
 
     const { userId, hardwareId } = req.body;
+    console.log(req.body, "req.body")
 
     if (!userId || !hardwareId) return next(new AppError("userId & hardwareId are required", 400));
 

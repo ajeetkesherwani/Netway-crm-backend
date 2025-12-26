@@ -20,12 +20,17 @@ const {
     getUserWalletHistoryList
 } = require("../../controllers/admin/user/userWalletHistoryList");
 
+const {
+    changeUserPassword
+} = require("../../controllers/admin/user/changePassword");
+
 const router = express.Router();
 
 router.patch("/change-expiryDate", adminAuthenticate, changePlanExpiry);
 router.patch("/update-status", adminAuthenticate, updateUserStatus);
 router.get("/view-passowrd/:userId", adminAuthenticate, getUserPassword);
 router.get("/wallet/list/:userId", adminAuthenticate, getUserWalletHistoryList);
+router.patch("/password-reset/:userId", adminAuthenticate, changeUserPassword);
 
 
 module.exports = router;

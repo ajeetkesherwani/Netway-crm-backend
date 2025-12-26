@@ -9,7 +9,7 @@ const Package = require("../../../models/package");
 
 async function userPackageAssign(userId, packageInfo) {
   const pkg = await Package.findById(packageInfo.packageId);
-  
+
   if (!pkg) {
     throw new AppError("Package not found", 404);
   }
@@ -21,9 +21,15 @@ async function userPackageAssign(userId, packageInfo) {
     // basePrice: packageInfo.price,
     // cutomePrice: packageInfo.price,
     basePrice: Number(pkg.basePrice || pkg.offerPrice || 0),
-    customPrice: Number(packageInfo.price || pkg.basePrice || pkg.offerPrice || 0), 
+    customPrice: Number(
+      packageInfo.price || pkg.basePrice || pkg.offerPrice || 0
+    ),
     validity: pkg.validity,
-    status: "active"
+    status: "active",
+    startDate: pkg.fromDate,
+    endDate: pkg.toDate,
+    hasOtt: pkg.isOtt,
+    hasIptv: pkg.isIptv,
   });
 
   await userPackage.save();
@@ -31,10 +37,9 @@ async function userPackageAssign(userId, packageInfo) {
   return true;
 }
 
-
 function generateUsername(name) {
-  const upperName = name.trim().toUpperCase().replace(/\s+/g, ""); 
-  const randomFour = Math.floor(1000 + Math.random() * 9000); 
+  const upperName = name.trim().toUpperCase().replace(/\s+/g, "");
+  const randomFour = Math.floor(1000 + Math.random() * 9000);
   return `${upperName}${randomFour}`;
 }
 
@@ -82,7 +87,7 @@ exports.createUser = async (req, res, next) => {
       "Other",
       "Pan Card",
       "Aadhar Card",
-      "Address Proof"
+      "Address Proof",
     ];
 
     // Map files + types
@@ -90,7 +95,7 @@ exports.createUser = async (req, res, next) => {
       documentType: validDocTypes.includes(documentTypes[i])
         ? documentTypes[i]
         : "Other",
-      documentImage: `${file.path}`
+      documentImage: `${file.path}`,
     }));
 
     console.log("FINAL DOCUMENTS:", finalDocuments);
@@ -121,7 +126,9 @@ exports.createUser = async (req, res, next) => {
       ipType: customer.ipType || "static",
       serialNo: customer.serialNo || "",
       macId: customer.macId || "",
-      serviceOpted: ["intercom", "broadband", "coporate"].includes(customer.serviceOpted?.toLowerCase())
+      serviceOpted: ["intercom", "broadband", "coporate"].includes(
+        customer.serviceOpted?.toLowerCase()
+      )
         ? customer.serviceOpted.toLowerCase()
         : "broadband",
       stbNo: customer.stbNo || "",
@@ -135,21 +142,18 @@ exports.createUser = async (req, res, next) => {
       state: "",
       district: "",
 
-
       country: "India",
 
       createdBy: {
         id: req.user._id,
-        type: req.user.role
+        type: req.user.role,
       },
 
       createdFor: {
         id: customer.createdFor?.id || null,
-        type: customer.createdFor?.type || "Self"
-      }
+        type: customer.createdFor?.type || "Self",
+      },
     };
-
-   
 
     /** ------------------------------
      * 4. Address Details
@@ -178,8 +182,11 @@ exports.createUser = async (req, res, next) => {
       },
 
       /** IMPORTANT — area must be ObjectId */
-      area: req.body.area && req.body.area.trim() !== "" ? req.body.area.trim() : null,
-      customArea: customer.customArea || ""
+      area:
+        req.body.area && req.body.area.trim() !== ""
+          ? req.body.area.trim()
+          : null,
+      customArea: customer.customArea || "",
     };
 
     /** ------------------------------
@@ -188,11 +195,8 @@ exports.createUser = async (req, res, next) => {
     const packageInfomation = {
       packageId: customer.packageDetails?.packageId || null,
       packageName: customer.packageDetails?.packageName || "",
-      price: customer.packageDetails?.packageAmount || ""
+      price: customer.packageDetails?.packageAmount || "",
     };
-
-    
-
 
     /** ------------------------------
      * 6. Network Information
@@ -204,7 +208,7 @@ exports.createUser = async (req, res, next) => {
         customer.ipType === "Static IP"
           ? { nas: [""], category: "" }
           : undefined,
-      dynamicIpPool: customer.dynamicIpPool || ""
+      dynamicIpPool: customer.dynamicIpPool || "",
     };
 
     /** ------------------------------
@@ -216,13 +220,13 @@ exports.createUser = async (req, res, next) => {
       ekyc: additional.ekYC ? "yes" : "no",
       notification: true,
       addPlan: true,
-      addCharges: false
+      addCharges: false,
     };
 
     /** ------------------------------
      * 8. Save User to DB
      * ------------------------------*/
-    console.log("generalInformation",generalInformation);
+    console.log("generalInformation", generalInformation);
     const newUser = await User.create({
       generalInformation,
       addressDetails,
@@ -230,7 +234,7 @@ exports.createUser = async (req, res, next) => {
       networkInformation,
       additionalInformation,
       document: finalDocuments,
-      status: additional.status ? "active" : "Inactive"
+      status: additional.status ? "active" : "Inactive",
     });
 
     // Assign package to user
@@ -246,27 +250,26 @@ exports.createUser = async (req, res, next) => {
       details: {
         email: newUser.generalInformation.email,
         phone: newUser.generalInformation.phone,
-        userId: newUser.generalInformation.username
+        userId: newUser.generalInformation.username,
       },
       ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
       addedBy: {
         id: req.user._id,
-        role: req.user.role || "Admin"
-      }
+        role: req.user.role || "Admin",
+      },
     });
 
     return res.status(201).json({
       success: true,
       message: "Customer created successfully!",
-      data: newUser
+      data: newUser,
     });
-
   } catch (err) {
     console.error("CREATE USER ERROR:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to create customer",
-      error: err.message
+      error: err.message,
     });
   }
 };

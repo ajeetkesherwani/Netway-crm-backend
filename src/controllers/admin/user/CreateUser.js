@@ -91,12 +91,42 @@ exports.createUser = async (req, res, next) => {
     ];
 
     // Map files + types
-    const finalDocuments = uploadedFiles.map((file, i) => ({
-      documentType: validDocTypes.includes(documentTypes[i])
-        ? documentTypes[i]
-        : "Other",
-      documentImage: `${file.path}`,
-    }));
+    const documentMap = {};
+
+uploadedFiles.forEach((file, i) => {
+  const type = validDocTypes.includes(documentTypes[i])
+    ? documentTypes[i]
+    : "Other";
+
+  if (!documentMap[type]) {
+    documentMap[type] = [];
+  }
+
+  documentMap[type].push(file.path);
+});
+
+const finalDocuments = [];
+
+for (const type in documentMap) {
+  const files = documentMap[type];
+
+  //block multiple files for non-Other
+  if (type !== "Other" && files.length > 1) {
+    throw new AppError(`${type} allows only ONE file`, 400);
+  }
+
+  finalDocuments.push({
+    documentType: type,          
+    documentImage: files,       
+  });
+}
+
+    // const finalDocuments = uploadedFiles.map((file, i) => ({
+    //   documentType: validDocTypes.includes(documentTypes[i])
+    //     ? documentTypes[i]
+    //     : "Other",
+    //   documentImage: `${file.path}`,
+    // }));
 
     console.log("FINAL DOCUMENTS:", finalDocuments);
 

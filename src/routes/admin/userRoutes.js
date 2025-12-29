@@ -29,7 +29,7 @@ const {
 router.post(
   "/create",
   adminAuthenticate,
-  fileUploader("user_documents", [{ name: "documents", maxCount: 10 }]),
+  fileUploader("user_documents", [{ name: "documents", maxCount: 15 }]),
   createUser
 );
 

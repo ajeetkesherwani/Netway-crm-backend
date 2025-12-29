@@ -162,7 +162,7 @@ const UserSchema = new mongoose.Schema(
           ],
           default: "Other",
         },
-        documentImage: { type: String, default: "" },
+        documentImage: { type: [String], default: [] },
       },
     ],
     status: {

@@ -5,7 +5,7 @@ const {
 } = require("../../controllers/admin/auth/adminAuthenticate");
 const {
   createSubzone,
-} = require("../../controllers/admin/subZone/createSubZone");
+} = require("../../controllers/admin/subZone/createSubzone");
 const {
   getSubzonesByZoneId,
 } = require("../../controllers/admin/subZone/getSubzonesByZoneId");

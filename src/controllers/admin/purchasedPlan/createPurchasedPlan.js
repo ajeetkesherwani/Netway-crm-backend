@@ -2,12 +2,13 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
 const PurchasedPlan = require("../../../models/purchasedPlan");
-const UserPackage = require("../../../models/userPackage")
+const UserPackage = require("../../../models/userPackage");
 const Package = require("../../../models/package");
 const User = require("../../../models/user");
 const UserWalletHistory = require("../../../models/userWalletHistory");
 const { createLog } = require("../../../utils/userLogActivity");
-
+const { getPackageDays } = require("../../../utils/getPackageDays");
+const { calculateDays } = require("../../../utils/calculateDays");
 
 exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const purchaser = req.user; // Admin / Reseller / LCO performing the purchase
@@ -18,14 +19,17 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     packageId,
     amountPaid,
     paymentMethod,
-    startDate, // optional
+    startDate,
     remarks,
-    isPaymentRecived
+    isPaymentRecived,
+    isRenew,
   } = req.body;
 
   // ---------------- Validation ---------------- //
   if (!userId || !packageId || !amountPaid) {
-    return next(new AppError("userId, packageId and amountPaid are required", 400));
+    return next(
+      new AppError("userId, packageId and amountPaid are required", 400)
+    );
   }
 
   // ---------------- Fetch Package ---------------- //
@@ -33,36 +37,41 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   // if (!selectedPackage) return next(new AppError("Package not found", 404));
   // ---------------- Fetch Package from User Assigned Package ---------------- //
   const alreadyPurchased = await PurchasedPlan.findOne({
-  userId,
-  packageId
-});
-console.log(alreadyPurchased, "apurched plan");
+    userId,
+    packageId,
+  });
 
-if (alreadyPurchased) {
-  return next(new AppError("User already purchased this package — cannot purchase again. you can review not", 400));
-}
-
+  if (alreadyPurchased) {
+    return next(
+      new AppError(
+        "User already purchased this package — cannot purchase again. you can review not",
+        400
+      )
+    );
+  }
 
   const selectedPackage = await UserPackage.findOne({
     userId,
     packageId,
-    status: "active"
+    status: "active",
   });
 
-  if (!selectedPackage) return next(new AppError("Assigned active package not found", 404));
-
+  if (!selectedPackage)
+    return next(new AppError("Assigned active package not found", 404));
 
   // const packagePrice = Number(selectedPackage.basePrice || selectedPackage.offerPrice || 0);
   let packagePrice = 0;
 
   if (selectedPackage.basePrice && Number(selectedPackage.basePrice) > 0) {
     packagePrice = Number(selectedPackage.basePrice);
-  } else if (selectedPackage.offerPrice && Number(selectedPackage.offerPrice) > 0) {
+  } else if (
+    selectedPackage.offerPrice &&
+    Number(selectedPackage.offerPrice) > 0
+  ) {
     packagePrice = Number(selectedPackage.offerPrice);
   } else {
     packagePrice = 0;
   }
-
 
   // Check if the purchaser has enough wallet balance
   if (purchaser.role === "Reseller" || purchaser.role === "Lco") {
@@ -70,35 +79,92 @@ if (alreadyPurchased) {
     console.log("Purchaser wallet balance:", walletBalance);
 
     if (walletBalance < packagePrice) {
-      return next(new AppError("Insufficient wallet balance in purchaser account", 400));
+      return next(
+        new AppError("Insufficient wallet balance in purchaser account", 400)
+      );
     }
   }
-
 
   // ---------------- Calculate validity ---------------- //
   const validityNumber = selectedPackage.validity.number;
   const validityUnit = selectedPackage.validity.unit.toLowerCase();
+  let paidAmount = amountPaid;
 
-  const start = startDate ? new Date(startDate) : new Date();
-  const expiry = new Date(start);
+  let start = startDate ? new Date(startDate) : new Date();
+  let expiry = new Date(start);
+  let status = "active";
 
-  switch (validityUnit) {
-    case "day":
-      expiry.setDate(expiry.getDate() + validityNumber);
-      break;
-    case "week":
-      expiry.setDate(expiry.getDate() + validityNumber * 7);
-      break;
-    case "month":
-      expiry.setMonth(expiry.getMonth() + validityNumber);
-      break;
-    case "year":
-      expiry.setFullYear(expiry.getFullYear() + validityNumber);
-      break;
-    default:
-      return next(new AppError("Invalid validity unit in package", 400));
+  const currentActivePlan = await PurchasedPlan.findOne({
+    userId,
+    status: "active",
+  });
+
+  if (isRenew && currentActivePlan) {
+    start = new Date(currentActivePlan.expiryDate);
+
+    const packageDays = getPackageDays(validityNumber, validityUnit);
+    expiry = new Date(start);
+    expiry.setDate(expiry.getDate() + packageDays);
+
+    status = "active";
+    paidAmount = amountPaid;
   }
 
+  if (!isRenew && currentActivePlan) {
+    const oldStart = new Date(currentActivePlan.startDate);
+    const oldExpiry = new Date(currentActivePlan.expiryDate);
+    const today = new Date();
+
+    const totalDays = calculateDays(oldStart, oldExpiry);
+    const usedDays = calculateDays(oldStart, today);
+
+    let remainingAmount = currentActivePlan.amountPaid;
+
+    if (usedDays > 3) {
+      const perDayCost = currentActivePlan.amountPaid / totalDays;
+      remainingAmount = Math.ceil((totalDays - usedDays) * perDayCost);
+    }
+
+    currentActivePlan.status = "expired";
+    currentActivePlan.expiryDate = today;
+    await currentActivePlan.save();
+
+    const newPackageDays = getPackageDays(validityNumber, validityUnit);
+    const perDayNewPlan = selectedPackage.basePrice / newPackageDays;
+
+    const newPlanDays = Math.floor(remainingAmount / perDayNewPlan);
+
+    start = today;
+    expiry = new Date(start);
+    expiry.setDate(expiry.getDate() + newPlanDays);
+
+    paidAmount = remainingAmount || amountPaid;
+  }
+
+  // switch (validityUnit) {
+  //   case "day":
+  //     expiry.setDate(expiry.getDate() + validityNumber);
+  //     break;
+  //   case "week":
+  //     expiry.setDate(expiry.getDate() + validityNumber * 7);
+  //     break;
+  //   case "month":
+  //     expiry.setMonth(expiry.getMonth() + validityNumber);
+  //     break;
+  //   case "year":
+  //     expiry.setFullYear(expiry.getFullYear() + validityNumber);
+  //     break;
+  //   default:
+  //     return next(new AppError("Invalid validity unit in package", 400));
+  // }
+
+  if (!currentActivePlan) {
+    const packageDays = getPackageDays(validityNumber, validityUnit);
+    start = startDate ? new Date(startDate) : new Date();
+    expiry = new Date(start);
+    expiry.setDate(expiry.getDate() + packageDays);
+    paidAmount = amountPaid;
+  }
 
   // ---------------- Create Purchased Plan ---------------- //
   const newPurchase = await PurchasedPlan.create({
@@ -107,22 +173,26 @@ if (alreadyPurchased) {
     packageId,
     purchasedByRole: purchaser.role,
     purchasedById: purchaser._id,
-    amountPaid,
+    amountPaid: paidAmount,
     paymentMethod,
     purchaseDate: new Date(),
     startDate: start,
     expiryDate: expiry,
-    status: "active",
+    status: status,
     remarks,
-  paymentDetails: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
-    ? {
-        date: req.body.paymentDate ? new Date(req.body.paymentDate) : new Date(),
-        method: req.body.paymentMethod || "Cash",
-        amount: Number(req.body.amountPaid || req.body.paymentAmount || 0),
-        remark: req.body.paymentRemark || ""
-      }
-    : null,
-  isPaymentRecived: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
+    paymentDetails:
+      req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
+        ? {
+            date: req.body.paymentDate
+              ? new Date(req.body.paymentDate)
+              : new Date(),
+            method: req.body.paymentMethod || "Cash",
+            amount: Number(req.body.amountPaid || req.body.paymentAmount || 0),
+            remark: req.body.paymentRemark || "",
+          }
+        : null,
+    isPaymentRecived:
+      req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes",
   });
 
   // ---------------- Create Activity Log ---------------- //
@@ -134,15 +204,14 @@ if (alreadyPurchased) {
     details: {
       packageId: selectedPackage._id,
       packageName: selectedPackage.name,
-      amountPaid: amountPaid
+      amountPaid: amountPaid,
     },
     ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
     addedBy: {
       id: purchaser._id,
       role: purchaser.role || "Admin",
-    }
+    },
   });
-
 
   // ---------------- Fetch Target User ---------------- //
   const targetUser = await User.findById(userId);
@@ -201,7 +270,6 @@ if (alreadyPurchased) {
     paymentMode: paymentMethod === "Online" ? "onlineTrancation" : "cash",
     remark: remarkText,
   });
-
 
   // ---------------- Response ---------------- //
   return successResponse(res, "Plan purchased successfully", {

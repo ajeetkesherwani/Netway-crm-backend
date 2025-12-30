@@ -5,18 +5,24 @@ const PurchasedPlan = require("../../../models/purchasedPlan");
 const Package = require("../../../models/package");
 
 exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
-  const user = req.user; // Authenticated user (Admin/Reseller/LCO)
-const planId = req.params.id;
+  const user = req.user;
+  const planId = req.params.id;
 
   const {
-    // planId,           // Existing plan ID to renew
     amountPaid,
     paymentMethod = "Online",
     remarks = "",
     transactionId,
-    paymentDate,       
-    paymentRemark = "", 
-    paymentReceived
+    paymentDate,
+    paymentRemark = "",
+    paymentReceived,
+    userId,
+    packageId,
+    assignedPackageId,
+    startDate,
+    expiryDate,
+    paymentStatus,
+    remark,
   } = req.body;
 
   if (!planId || !amountPaid) {
@@ -24,9 +30,7 @@ const planId = req.params.id;
   }
 
   // 1️⃣ Find the existing plan
-  const plan = await PurchasedPlan.findById(planId)
-  .populate("packageId");
-console.log(plan, "plan")
+  const plan = await PurchasedPlan.findById(planId).populate("packageId");
 
   if (!plan) return next(new AppError("Plan not found", 404));
 
@@ -36,7 +40,8 @@ console.log(plan, "plan")
   }
 
   const selectedPackage = plan.packageId;
-  if (!selectedPackage) return next(new AppError("Package details not found", 404));
+  if (!selectedPackage)
+    return next(new AppError("Package details not found", 404));
 
   // 3️⃣ Calculate new expiry date based on package validity
   const validityNumber = selectedPackage.validity.number;
@@ -64,24 +69,24 @@ console.log(plan, "plan")
 
   // 4️⃣ Push renewal history
   plan.renewals.push({
-  renewedOn: new Date(),
-  previousExpiryDate: previousExpiry,
-  newExpiryDate: newExpiry,
-  amountPaid: Number(amountPaid),
-  transactionId: transactionId || "",
-  paymentMethod: paymentMethod,
-  remarks: remarks || "Renewed",
+    renewedOn: new Date(),
+    previousExpiryDate: previousExpiry,
+    newExpiryDate: newExpiry,
+    amountPaid: Number(amountPaid),
+    transactionId: transactionId || "",
+    paymentMethod: paymentMethod,
+    remarks: remarks || "Renewed",
 
-  // हर renewal की अपनी payment details यहाँ save होगी!
-  ...(paymentReceived === "Yes" && {
-    paymentDetails: {
-      date: paymentDate ? new Date(paymentDate) : new Date(),
-      method: paymentMethod,
-      amount: Number(amountPaid),
-      remark: paymentRemark || ""
-    }
-  })
-});
+    // हर renewal की अपनी payment details यहाँ save होगी!
+    ...(paymentReceived === "Yes" && {
+      paymentDetails: {
+        date: paymentDate ? new Date(paymentDate) : new Date(),
+        method: paymentMethod,
+        amount: Number(amountPaid),
+        remark: paymentRemark || "",
+      },
+    }),
+  });
   // plan.renewals.push({
   //   renewedOn: new Date(),
   //   previousExpiryDate: previousExpiry,

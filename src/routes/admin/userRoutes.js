@@ -22,6 +22,10 @@ const {
 } = require("../../controllers/admin/user/userProfileDetails");
 
 const {
+  getPurchasedPlanList,
+} = require("../../controllers/admin/user/purchedPlanList");
+
+const {
   getCurrentPlan,
 } = require("../../controllers/admin/useData/getUserCurrentPlan");
 
@@ -44,5 +48,6 @@ router.patch(
 );
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
+router.get("/purchedPlan/list/:userId", adminAuthenticate, getPurchasedPlanList);
 
 module.exports = router;

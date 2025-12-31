@@ -68,11 +68,11 @@ const UserSchema = new mongoose.Schema(
         type: { type: String, enum: ["Admin", "Retailer", "Lco"] },
       },
 
-    // Track for whom it was created
-    createdFor: {
-      id: { type: mongoose.Schema.Types.ObjectId, refPath: "generalInformation.createdFor.type" },
-      type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self", "Reseller"],  }
-    },
+      // Track for whom it was created
+      createdFor: {
+        id: { type: mongoose.Schema.Types.ObjectId, refPath: "generalInformation.createdFor.type" },
+        type: { type: String, enum: ["Admin", "Retailer", "Lco", "Self", "Reseller"], }
+      },
 
       paymentMethod: {
         type: String,
@@ -187,10 +187,10 @@ UserSchema.pre("save", async function (next) {
     if (!this.isModified("generalInformation.password")) {
       return next();
     }
-   
-    const hashedPassword = await bcrypt.hash( this.generalInformation.password, 12 );
+
+    const hashedPassword = await bcrypt.hash(this.generalInformation.password, 12);
     this.generalInformation.password = hashedPassword;
-   
+
     next();
   } catch (err) {
     next(err);

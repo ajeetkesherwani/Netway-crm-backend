@@ -57,7 +57,8 @@ exports.authorize = (moduleName, action) => {
         const lco = await Lco.findById(user._id);
         if (!lco) return next(new AppError("LCO not found", 404));
 
-        const lcoConfig = await LcoConfig.findOne({ typeId: lco._id });
+        // const lcoConfig = await LcoConfig.findOne({ typeId: lco._id });
+        const lcoConfig = await ResellerConfig.findOne({ typeId: lco._id }); 
         if (!lcoConfig) return next(new AppError("LCO config not found", 500));
 
         let employeeRole = "admin";

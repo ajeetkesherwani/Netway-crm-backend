@@ -33,6 +33,10 @@ const {
 //     filterTickets
 // } = require("../../controllers/admin/ticket/getTicketWithFilter");
 
+const {
+    getManageTicketList
+} = require("../../controllers/admin/ticket/getManageTikcet");  
+
 const router = express.Router();
 
 router.post("/create",
@@ -58,5 +62,6 @@ router.patch("/update/:ticketId", adminAuthenticate,
     updateTicket);
 router.delete("/delete/:ticketId", adminAuthenticate, deleteTicket);
 // router.get("/filterTicket/list", adminAuthenticate, filterTickets)
+router.get("/manageTicket/list", adminAuthenticate, getManageTicketList);
 
 module.exports = router;

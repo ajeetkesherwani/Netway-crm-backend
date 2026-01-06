@@ -29,11 +29,16 @@ const {
     getUserWalletBalance
 } = require("../../controllers/admin/packageForUser/getUserWalletBalance");
 
+const {
+    updateAssignedPackage
+} = require("../../controllers/admin/packageForUser/assignedPackageUpdate");
+
 
 const router = express.Router(); 
 
 router.post("/assign/:userId", adminAuthenticate, assignPackageToUser);
 router.get("/assign/list/:userId", adminAuthenticate, assignPackageListByUserId);
+router.patch("/assignPackage/update/:assignedPackageId", adminAuthenticate, updateAssignedPackage);
 router.patch("/update/:packageId", adminAuthenticate, updateUserPackageStatus);
 router.get("/package/list/:userId", adminAuthenticate, getAvailablePackagesForUser);
 router.delete("/delete/:packageId", adminAuthenticate, deleteAssignedPackage);

@@ -88,6 +88,7 @@ exports.createUser = async (req, res, next) => {
       "Pan Card",
       "Driving Licence",
       "GST",
+       "Caf Form",
       "Other",
     ];
     // const validDocTypes = [

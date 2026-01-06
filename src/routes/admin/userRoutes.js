@@ -29,6 +29,10 @@ const {
   getCurrentPlan,
 } = require("../../controllers/admin/useData/getUserCurrentPlan");
 
+const {
+  toggleAutoRecharge,
+} = require("../../controllers/admin/user/autoRecharge");
+
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
 router.post(
   "/create",
@@ -49,5 +53,6 @@ router.patch(
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
 router.get("/purchedPlan/list/:userId", adminAuthenticate, getPurchasedPlanList);
+router.patch("/auto-recharge/:userId", adminAuthenticate, toggleAutoRecharge);
 
 module.exports = router;

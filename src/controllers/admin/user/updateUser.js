@@ -291,118 +291,263 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   // 1. DOCUMENTS UPDATE - SAME LOGIC AS CREATE (RELIABLE & ROBUST)
   // ====================================================================
 
-  const uploadedFiles = req.files?.documents || [];
+  // ====================================================================
+// 1. DOCUMENTS UPDATE - FULLY ROBUST & RELIABLE
+// ====================================================================
 
-  // Robust parsing of documentTypes[] (handles single or multiple)
-  let documentTypes = [];
-  const rawTypes = req.body["documentTypes[]"];
+const uploadedFiles = req.files?.documents || [];
 
-  if (rawTypes) {
-    documentTypes = Array.isArray(rawTypes) ? rawTypes : [rawTypes];
-  }
+// --- STEP 1: Parse documentTypes in ALL possible ways (just like createUser) ---
+let documentTypes = [];
 
-  const validDocTypes = [
-    "Address Proof",
-    "Profile Photo",
-    "Addhar Card",
-    "Passport",
-    "Signature",
-    "Pan Card",
-    "Driving Licence",
-    "GST",
-    "Other",
-  ];
+// Case 1: documentTypes[]
+if (req.body["documentTypes[]"]) {
+  const arr = req.body["documentTypes[]"];
+  documentTypes = Array.isArray(arr) ? arr : [arr];
+}
 
-  // Get list of filenames the frontend wants to KEEP
-  const existingDocuments = req.body.existingDocuments || [];
-  const filesToKeep = (Array.isArray(existingDocuments) ? existingDocuments : [existingDocuments])
-    .map(path => {
-      if (typeof path === "string") {
-        return path.split("/").pop(); // extract filename only
-      }
-      return null;
-    })
-    .filter(Boolean);
+// Case 2: plain documentTypes (single or array)
+if (req.body.documentTypes) {
+  const val = req.body.documentTypes;
+  const arr = Array.isArray(val) ? val : [val];
+  documentTypes = [...documentTypes, ...arr];
+}
 
-  // Step 1: Filter & retain existing documents (only those marked to keep)
-  const retainedDocuments = [];
-
-  for (const doc of user.document || []) {
-    let images = Array.isArray(doc.documentImage)
-      ? doc.documentImage
-      : doc.documentImage ? [doc.documentImage] : [];
-
-    const keptImages = images.filter(img => {
-      const filename = typeof img === "string" ? img.split("/").pop() : null;
-      return filename && filesToKeep.includes(filename);
-    });
-
-    if (keptImages.length > 0) {
-      retainedDocuments.push({
-        documentType: doc.documentType,
-        documentImage: doc.documentType === "Other" ? keptImages : keptImages[0],
-      });
+// Case 3: Indexed like documentTypes[0], documentTypes[1] (common in dynamic forms)
+if (!documentTypes.length && uploadedFiles.length > 0) {
+  for (let i = 0; i < uploadedFiles.length; i++) {
+    const key = `documentTypes[${i}]`;
+    if (req.body[key]) {
+      documentTypes.push(req.body[key]);
     }
   }
+}
 
-  // Step 2: Group new uploaded files by type (same as createUser)
-  const newDocumentMap = {};
+// Clean and trim
+documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
 
-  uploadedFiles.forEach((file, i) => {
-    let type = "Other"; // fallback
+const validDocTypes = [
+  "Address Proof",
+  "Profile Photo",
+  "Addhar Card",
+  "Passport",
+  "Signature",
+  "Pan Card",
+  "Driving Licence",
+  "GST",
+  "Caf Form",
+  "Other",
+];
 
-    if (i < documentTypes.length && documentTypes[i]?.trim()) {
-      const submittedType = documentTypes[i].trim();
-      if (validDocTypes.includes(submittedType)) {
-        type = submittedType;
-      }
-    }
+// --- STEP 2: Parse existing documents to keep (sent as JSON string) ---
+let filesToKeep = [];
+if (req.body.existingDocuments) {
+  try {
+    const parsed = JSON.parse(req.body.existingDocuments);
+    filesToKeep = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    // Fallback: if not JSON, try array
+    filesToKeep = Array.isArray(req.body.existingDocuments)
+      ? req.body.existingDocuments
+      : [];
+  }
+}
 
-    if (!newDocumentMap[type]) {
-      newDocumentMap[type] = [];
-    }
-    newDocumentMap[type].push(file.path || file.filename);
+// Extract just filenames for comparison
+filesToKeep = filesToKeep
+  .map(f => (typeof f === "string" ? f.split("/").pop() : null))
+  .filter(Boolean);
+
+// --- STEP 3: Retain existing documents that user wants to keep ---
+const retainedDocuments = [];
+
+for (const doc of user.document || []) {
+  let images = Array.isArray(doc.documentImage)
+    ? doc.documentImage
+    : [doc.documentImage].filter(Boolean);
+
+  const keptImages = images.filter(img => {
+    const filename = typeof img === "string" ? img.split("/").pop() : null;
+    return filename && filesToKeep.includes(filename);
   });
 
-  // Validate: only "Other" allows multiple files
-  for (const [type, files] of Object.entries(newDocumentMap)) {
-    if (type !== "Other" && files.length > 1) {
-      return next(
-        new AppError(
-          `Multiple files not allowed for '${type}'. Only 'Other' supports multiple images.`,
-          400
-        )
-      );
+  if (keptImages.length > 0) {
+    retainedDocuments.push({
+      documentType: doc.documentType,
+      documentImage: doc.documentType === "Other" ? keptImages : keptImages[0],
+    });
+  }
+}
+
+// --- STEP 4: Process new uploaded files ---
+const newDocumentMap = {};
+
+uploadedFiles.forEach((file, i) => {
+  let type = "Other"; // fallback
+
+  if (i < documentTypes.length && documentTypes[i]) {
+    const submittedType = documentTypes[i];
+    if (validDocTypes.includes(submittedType)) {
+      type = submittedType;
     }
   }
 
-  // Step 3: Merge new files into retained documents
-  for (const [type, newFiles] of Object.entries(newDocumentMap)) {
-    let existingDoc = retainedDocuments.find(d => d.documentType === type);
+  if (!newDocumentMap[type]) newDocumentMap[type] = [];
+  newDocumentMap[type].push(file.path || file.location || file.filename);
+});
 
-    if (!existingDoc) {
-      existingDoc = {
-        documentType: type,
-        documentImage: type === "Other" ? [] : null,
-      };
-      retainedDocuments.push(existingDoc);
-    }
+// Validate: only "Other" can have multiple new files
+for (const [type, files] of Object.entries(newDocumentMap)) {
+  if (type !== "Other" && files.length > 1) {
+    return next(
+      new AppError(
+        `Multiple files not allowed for '${type}'. Only 'Other' supports multiple images.`,
+        400
+      )
+    );
+  }
+}
 
-    if (type === "Other") {
-      // Append all new files
-      existingDoc.documentImage = [
-        ...(Array.isArray(existingDoc.documentImage) ? existingDoc.documentImage : []),
-        ...newFiles,
-      ];
-    } else {
-      // Replace with the new single file
-      existingDoc.documentImage = newFiles[0];
-    }
+// --- STEP 5: Merge new files into retained documents ---
+for (const [type, newFiles] of Object.entries(newDocumentMap)) {
+  let existingDoc = retainedDocuments.find(d => d.documentType === type);
+
+  if (!existingDoc) {
+    existingDoc = {
+      documentType: type,
+      documentImage: type === "Other" ? [] : null,
+    };
+    retainedDocuments.push(existingDoc);
   }
 
-  // Final assignment
-  user.document = retainedDocuments;
-  user.markModified("document");
+  if (type === "Other") {
+    // Append new files
+    const current = Array.isArray(existingDoc.documentImage)
+      ? existingDoc.documentImage
+      : [];
+    existingDoc.documentImage = [...current, ...newFiles];
+  } else {
+    // Replace single file
+    existingDoc.documentImage = newFiles[0];
+  }
+}
+
+// Final assignment
+user.document = retainedDocuments;
+user.markModified("document");
+
+  // const uploadedFiles = req.files?.documents || [];
+
+  // // Robust parsing of documentTypes[] (handles single or multiple)
+  // let documentTypes = [];
+  // const rawTypes = req.body["documentTypes[]"];
+
+  // if (rawTypes) {
+  //   documentTypes = Array.isArray(rawTypes) ? rawTypes : [rawTypes];
+  // }
+
+  // const validDocTypes = [
+  //   "Address Proof",
+  //   "Profile Photo",
+  //   "Addhar Card",
+  //   "Passport",
+  //   "Signature",
+  //   "Pan Card",
+  //   "Driving Licence",
+  //   "GST",
+  //   "Other",
+  // ];
+
+  // // Get list of filenames the frontend wants to KEEP
+  // const existingDocuments = req.body.existingDocuments || [];
+  // const filesToKeep = (Array.isArray(existingDocuments) ? existingDocuments : [existingDocuments])
+  //   .map(path => {
+  //     if (typeof path === "string") {
+  //       return path.split("/").pop(); // extract filename only
+  //     }
+  //     return null;
+  //   })
+  //   .filter(Boolean);
+
+  // // Step 1: Filter & retain existing documents (only those marked to keep)
+  // const retainedDocuments = [];
+
+  // for (const doc of user.document || []) {
+  //   let images = Array.isArray(doc.documentImage)
+  //     ? doc.documentImage
+  //     : doc.documentImage ? [doc.documentImage] : [];
+
+  //   const keptImages = images.filter(img => {
+  //     const filename = typeof img === "string" ? img.split("/").pop() : null;
+  //     return filename && filesToKeep.includes(filename);
+  //   });
+
+  //   if (keptImages.length > 0) {
+  //     retainedDocuments.push({
+  //       documentType: doc.documentType,
+  //       documentImage: doc.documentType === "Other" ? keptImages : keptImages[0],
+  //     });
+  //   }
+  // }
+
+  // // Step 2: Group new uploaded files by type (same as createUser)
+  // const newDocumentMap = {};
+
+  // uploadedFiles.forEach((file, i) => {
+  //   let type = "Other"; // fallback
+
+  //   if (i < documentTypes.length && documentTypes[i]?.trim()) {
+  //     const submittedType = documentTypes[i].trim();
+  //     if (validDocTypes.includes(submittedType)) {
+  //       type = submittedType;
+  //     }
+  //   }
+
+  //   if (!newDocumentMap[type]) {
+  //     newDocumentMap[type] = [];
+  //   }
+  //   newDocumentMap[type].push(file.path || file.filename);
+  // });
+
+  // // Validate: only "Other" allows multiple files
+  // for (const [type, files] of Object.entries(newDocumentMap)) {
+  //   if (type !== "Other" && files.length > 1) {
+  //     return next(
+  //       new AppError(
+  //         `Multiple files not allowed for '${type}'. Only 'Other' supports multiple images.`,
+  //         400
+  //       )
+  //     );
+  //   }
+  // }
+
+  // // Step 3: Merge new files into retained documents
+  // for (const [type, newFiles] of Object.entries(newDocumentMap)) {
+  //   let existingDoc = retainedDocuments.find(d => d.documentType === type);
+
+  //   if (!existingDoc) {
+  //     existingDoc = {
+  //       documentType: type,
+  //       documentImage: type === "Other" ? [] : null,
+  //     };
+  //     retainedDocuments.push(existingDoc);
+  //   }
+
+  //   if (type === "Other") {
+  //     // Append all new files
+  //     existingDoc.documentImage = [
+  //       ...(Array.isArray(existingDoc.documentImage) ? existingDoc.documentImage : []),
+  //       ...newFiles,
+  //     ];
+  //   } else {
+  //     // Replace with the new single file
+  //     existingDoc.documentImage = newFiles[0];
+  //   }
+  // }
+
+  // // Final assignment
+  // user.document = retainedDocuments;
+  // user.markModified("document");
 
   // ====================================================================
   // 2. GENERAL INFORMATION UPDATE

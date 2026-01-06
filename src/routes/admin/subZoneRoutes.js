@@ -16,10 +16,13 @@ const {
   deleteSubzone,
 } = require("../../controllers/admin/subZone/deleteSubzone");
 
+const { getAllSubZone } = require("../../controllers/admin/subZone/getAllSubZone");
+
 const router = express.Router();
 router.use(adminAuthenticate);
 
 router.post("/", createSubzone);
+router.get("/list", getAllSubZone);
 router.get("/:zoneId", getSubzonesByZoneId);
 router.patch("/:subzoneId", updateSubzone);
 router.delete("/:subzoneId", deleteSubzone);

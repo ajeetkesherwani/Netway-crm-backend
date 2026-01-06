@@ -110,7 +110,8 @@ const UserSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Zone",
       },
-      customArea: { type: String },
+      subZone: { type: mongoose.Schema.Types.ObjectId,
+       ref: "SubZone" },
     },
 
     packageInfomation: {
@@ -158,6 +159,7 @@ const UserSchema = new mongoose.Schema(
             "Pan Card",
             "Driving Licence",
             "GST",
+            "Caf Form",
             "Other",
           ],
           default: "Other",
@@ -171,6 +173,7 @@ const UserSchema = new mongoose.Schema(
       default: "Inactive",
     },
     walletBalance: { type: Number, default: 0 },
+    isAutoRecharge: { type: Boolean, default: false },
     assignedHardware: [
       {
         type: mongoose.Schema.Types.ObjectId,

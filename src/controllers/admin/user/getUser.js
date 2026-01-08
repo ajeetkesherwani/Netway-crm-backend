@@ -10,12 +10,14 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     searchQuery,
     status,
     area,
+    subZone,
     ekyc,
     startDate,
     endDate,
     serviceOpted,
     reseller,
     lco,
+    cafUploaded,
   } = req.query;
 
   const query = {};
@@ -31,6 +33,10 @@ exports.getUserList = catchAsync(async (req, res, next) => {
   }
   if (area) {
     query["addressDetails.area"] = new mongoose.Types.ObjectId(area);
+  }
+
+   if (subZone) {
+    query["addressDetails.subZone"] = new mongoose.Types.ObjectId(subZone);
   }
 
   if (status) {
@@ -63,6 +69,31 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     query["generalInformation.createdFor.id"] = new mongoose.Types.ObjectId(
       lco
     );
+  }
+
+  
+  /* ---------------- CAF FORM FILTER ---------------- */
+  if (cafUploaded === "yes") {
+    query.document = {
+      $elemMatch: {
+        documentType: "Caf Form",
+        documentImage: { $exists: true, $ne: [] },
+      },
+    };
+  }
+
+  if (cafUploaded === "no") {
+    query.$or = [
+      { document: { $not: { $elemMatch: { documentType: "Caf Form" } } } },
+      {
+        document: {
+          $elemMatch: {
+            documentType: "Caf Form",
+            documentImage: { $size: 0 },
+          },
+        },
+      },
+    ];
   }
 
   const user = await User.find(query);

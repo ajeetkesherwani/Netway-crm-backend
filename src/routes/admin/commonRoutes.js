@@ -52,6 +52,10 @@ const {
     getUserAssignedHardware
 } = require("../../controllers/admin/common/getAssignedHardwareList");
 
+const {
+    getCountSummary
+} = require("../../controllers/admin/common/getCounts");
+
 const router = express.Router();
 
 router.get("/user/details", adminAuthenticate, searchUsersByName);
@@ -66,4 +70,5 @@ router.get("/invoiceList", adminAuthenticate, getInvoiceList);
 router.get("/invoice/:invoiceId", getInvoiceDetails);
 router.get("/user/invoice/:userId", adminAuthenticate, getUserInvoice);
 router.get("/user/hardware/:userId", adminAuthenticate, getUserAssignedHardware);
+router.get("/count/summary", adminAuthenticate, getCountSummary);
 module.exports = router;

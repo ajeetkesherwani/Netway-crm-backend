@@ -623,6 +623,7 @@ user.markModified("document");
     if (parsedAddresses.installation) updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
 
     if (area !== undefined) user.addressDetails.area = area || null;
+    if(subZone !== undefined) user.addressDetails.subZone = subZone || null;
     if (req.body.customArea !== undefined) user.addressDetails.customArea = req.body.customArea || "";
 
     user.markModified("addressDetails");

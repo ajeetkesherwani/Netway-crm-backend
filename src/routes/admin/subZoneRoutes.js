@@ -18,6 +18,11 @@ const {
 
 const { getAllSubZone } = require("../../controllers/admin/subZone/getAllSubZone");
 
+const {
+  getSubzoneListByZoneId,
+} = require("../../controllers/admin/subZone/getSubzoneByZoneId");
+
+
 const router = express.Router();
 router.use(adminAuthenticate);
 
@@ -26,5 +31,6 @@ router.get("/list", getAllSubZone);
 router.get("/:zoneId", getSubzonesByZoneId);
 router.patch("/:subzoneId", updateSubzone);
 router.delete("/:subzoneId", deleteSubzone);
+router.get("/subzone/list/:zoneId", getSubzoneListByZoneId);
 
 module.exports = router;

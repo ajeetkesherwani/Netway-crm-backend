@@ -293,7 +293,11 @@ exports.createUser = async (req, res, next) => {
         req.body.area && req.body.area.trim() !== ""
           ? req.body.area.trim()
           : null,
-      customArea: customer.customArea || "",
+
+          subZone:
+    req.body.subZone && req.body.subZone.trim() !== ""
+      ? req.body.subZone.trim()
+      : null,
     };
 
     /** ------------------------------

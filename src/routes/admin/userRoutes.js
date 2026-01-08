@@ -33,6 +33,8 @@ const {
   toggleAutoRecharge,
 } = require("../../controllers/admin/user/autoRecharge");
 
+const { addUserWalletPayment } = require("../../controllers/admin/user/addPayment");
+
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
 router.post(
   "/create",
@@ -54,5 +56,11 @@ router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
 router.get("/purchedPlan/list/:userId", adminAuthenticate, getPurchasedPlanList);
 router.patch("/auto-recharge/:userId", adminAuthenticate, toggleAutoRecharge);
+router.post(
+  "/addPayment/:userId",
+  adminAuthenticate,
+  fileUploader("wallet_payments", [{ name: "imageProof", maxCount: 1 }]),
+ addUserWalletPayment
+);
 
 module.exports = router;

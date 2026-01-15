@@ -1,6 +1,17 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const iptvPackageSchema = new Schema({
+  plan_id: { type: Number, required: true },
+  plan_code: { type: String, required: true },
+  plan_name: { type: String, required: true, trim: true },
+  plan_type: { type: String },
+  plan_cat: { type: String },
+  plan_period: { type: String },
+  customer_price: { type: String },
+  lco_price: { type: String },
+}, { _id: false });
+
 const packageSchema = new Schema({
     name: { type: String, required: true, trim: true }, // e.g. "Premium WiFi + OTT"
     validity: {
@@ -16,10 +27,6 @@ const packageSchema = new Schema({
     typeOfPlan: { type: String, enum: ["Renew", "Speed Booster Plan", "Valume Booster"], default: "Renew" },
     categoryOfPlan: { type: String, enum: ["Unlimited", "Limited", "Fup", "DayNight"], required: true },
     description: { type: String },
-    // isIptv: { type: Boolean, default: false },
-    // iptvPlanName: { type: String },
-    // isOtt: { type: Boolean, default: false },
-    // ottPlanName: { type: String },
      billType: { type: String, enum: ["Monthly","Quarterly","HalfYear","Yearly","OneTime"], default: "Monthly" },
 
 
@@ -35,7 +42,7 @@ const packageSchema = new Schema({
     // Bundle with IPTV
     isIptv: { type: Boolean, default: false },
     iptvType: { type: String, enum:["ziggTv"], default: "ziggTv" },       
-    iptvPackageId: { type: Schema.Types.ObjectId, ref: "Package" },
+    iptvPackageId: { type: iptvPackageSchema },
 
     // Timestamps
 }, { timestamps: true });

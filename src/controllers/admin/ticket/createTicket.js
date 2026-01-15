@@ -126,19 +126,20 @@ exports.createTicket = catchAsync(async (req, res, next) => {
   let resellerId = null;
 
   const user = await User.findById(userId).select(
-    "createdFor addressDetails.area"
+    "createdFor addressDetails.area addressDetails.subZone"
   );
   if (!user) return next(new AppError("User not found", 404));
 
-  if (user.createdFor.type === "Lco") {
-    lcoId = user.createdFor.id;
+  if (user.createdFor?.type === "Lco") {
+    lcoId = user.createdFor?.id;
     const retailerOfLco = await Lco.findById(lcoId).select("retailerId");
     resellerId = retailerOfLco.retailerId;
-  } else if (user.createdFor.type === "Retailer") {
-    resellerId = user.createdFor.id;
+  } else if (user.createdFor?.type === "Retailer") {
+    resellerId = user.createdFor?.id;
   }
 
   const zoneId = user.addressDetails?.area;
+  const subZoneId = user.addressDetails?.subZone;
 
   // ✅ Step 3: Create the ticket with all schema fields
   const newTicket = await Ticket.create({
@@ -166,6 +167,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
     lcoId,
     resellerId,
     zoneId,
+    subZoneId
   });
 
   // ✅ Step 4: Return complete ticket info

@@ -25,10 +25,15 @@ const {
   deletePackage
 } = require("../../controllers/admin/Package/deletePackage");
 
+const {
+  getIptvPackages
+} = require("../../controllers/admin/Package/getIpTvPackageList");
+
 
 
 router.get("/list", adminAuthenticate, getPackages);
-router.post("/create", adminAuthenticate, createPackage);
+router.get("/iptv-packages/list",  getIptvPackages);
+router.post("/create",  createPackage);
 router.get("/:id", adminAuthenticate, getPackagesDetails);
 router.patch("/update/:packageId", adminAuthenticate, updatePackage);
 router.delete("/delete/:packageId", adminAuthenticate, deletePackage);

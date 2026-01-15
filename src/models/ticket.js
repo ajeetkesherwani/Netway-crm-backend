@@ -158,6 +158,10 @@ const ticketSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Zone",
     },
+    subZoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubZone",
+    },
   },
   {
     timestamps: true,

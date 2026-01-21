@@ -121,6 +121,7 @@ const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
+require("dotenv").config();
 
 exports.createPackage = catchAsync(async (req, res, next) => {
   const {
@@ -177,12 +178,12 @@ if (isIptv) {
   try {
     // API
     const apiResponse = await axios.get(
-      "http://localhost:5004/api/admin/package/iptv-packages/list",
-      { timeout: 5000 }
+      `${process.env.API_BASE_URL}/package/iptv-packages/list`,
+      { timeout: 3000 }
     );
 
     const packages = apiResponse.data?.data?.packages;
-
+    console.log("package", packages);
     if (!Array.isArray(packages)) {
       return next(new AppError("Invalid IPTV package response", 500));
     }

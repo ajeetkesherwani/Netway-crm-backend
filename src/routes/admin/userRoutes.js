@@ -34,6 +34,7 @@ const {
 } = require("../../controllers/admin/user/autoRecharge");
 
 const { addUserWalletPayment } = require("../../controllers/admin/user/addPayment");
+const { getPaymentReceiptDetails } = require("../../controllers/admin/user/PaymentRecieptById");
 
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
 router.post(
@@ -62,5 +63,6 @@ router.post(
   fileUploader("wallet_payments", [{ name: "imageProof", maxCount: 1 }]),
  addUserWalletPayment
 );
+router.get("/receipt/:userId/:receiptId", adminAuthenticate, getPaymentReceiptDetails);
 
 module.exports = router;

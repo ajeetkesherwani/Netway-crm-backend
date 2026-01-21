@@ -4,13 +4,14 @@ const {
     adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-const {
-    renewPurchasedPlan
-} = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan");
+// const {
+//     renewPurchasedPlan
+// } = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan");
 
 const {
     createPurchasedPlan
 } = require("../../controllers/admin/purchasedPlan/createPurchasedPlan");
+
 
 const {
     getPurchasedPlanList
@@ -23,6 +24,10 @@ const {
 const {
     deletePurchasedPlan
 } = require("../../controllers/admin/purchasedPlan/deletePurchasedPlan");
+
+const { 
+    renewPurchasedPlan 
+} = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan.JS");
 
 const router = express.Router();
 

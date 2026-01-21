@@ -7,7 +7,23 @@ const Package = require("../../../models/package");
 const User = require("../../../models/user");
 const UserWalletHistory = require("../../../models/userWalletHistory");
 const { createLog } = require("../../../utils/userLogActivity");
+const Payment = require("../../../models/payment");
+const mongoose = require("mongoose");
 
+const generateReceiptNo = async () => {
+  let receiptNo;
+  let exists = true;
+
+  while (exists) {
+    const randomFourDigit = Math.floor(1000 + Math.random() * 9000);
+    receiptNo = `RCPT-${randomFourDigit}`;
+
+    const paymentExists = await Payment.findOne({ ReceiptNo: receiptNo });
+    exists = !!paymentExists;
+  }
+
+  return receiptNo;
+};
 
 exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const purchaser = req.user; // Admin / Reseller / LCO performing the purchase
@@ -20,27 +36,30 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     paymentMethod,
     startDate, // optional
     remarks,
-    isPaymentRecived
+    advanceRenewal,
+    isPaymentReceived
   } = req.body;
 
+  const isAdvance = Boolean(advanceRenewal);
+  const planStatus = isAdvance ? "pending" : "active";
+  const paymentStatus = isPaymentReceived ? "Completed" : "Pending";
+
   // ---------------- Validation ---------------- //
-  if (!userId || !packageId || !amountPaid) {
-    return next(new AppError("userId, packageId and amountPaid are required", 400));
+  if (!userId || !packageId) {
+    return next(new AppError("userId, packageId and are required", 400));
   }
 
-  // ---------------- Fetch Package ---------------- //
-  // const selectedPackage = await Package.findById(packageId);
-  // if (!selectedPackage) return next(new AppError("Package not found", 404));
-  // ---------------- Fetch Package from User Assigned Package ---------------- //
-  const alreadyPurchased = await PurchasedPlan.findOne({
-  userId,
-  packageId
-});
-console.log(alreadyPurchased, "apurched plan");
 
-if (alreadyPurchased) {
-  return next(new AppError("User already purchased this package — cannot purchase again. you can review not", 400));
-}
+  const existingActivePlan = await PurchasedPlan.findOne({
+    userId,
+    status: "active"
+  }).sort({ expiryDate: -1 });
+
+  if (!isAdvance && existingActivePlan) {
+    await PurchasedPlan.findByIdAndUpdate(existingActivePlan._id, {
+      status: "expired"
+    });
+  }
 
 
   const selectedPackage = await UserPackage.findOne({
@@ -48,6 +67,8 @@ if (alreadyPurchased) {
     packageId,
     status: "active"
   });
+
+  console.log("selected package ", selectedPackage);
 
   if (!selectedPackage) return next(new AppError("Assigned active package not found", 404));
 
@@ -62,7 +83,6 @@ if (alreadyPurchased) {
   } else {
     packagePrice = 0;
   }
-
 
   // Check if the purchaser has enough wallet balance
   if (purchaser.role === "Reseller" || purchaser.role === "Lco") {
@@ -107,23 +127,58 @@ if (alreadyPurchased) {
     packageId,
     purchasedByRole: purchaser.role,
     purchasedById: purchaser._id,
-    amountPaid,
+    amountPaid: packagePrice,
     paymentMethod,
     purchaseDate: new Date(),
     startDate: start,
     expiryDate: expiry,
-    status: "active",
+    // status: "active",
+    status: planStatus,
+    advanceRenewal: isAdvance,
     remarks,
-  paymentDetails: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
-    ? {
+    isPaymentReceived,
+    paymentDetails: isPaymentReceived
+      ? {
         date: req.body.paymentDate ? new Date(req.body.paymentDate) : new Date(),
-        method: req.body.paymentMethod || "Cash",
-        amount: Number(req.body.amountPaid || req.body.paymentAmount || 0),
+        method: paymentMethod || "Cash",
+        amount: req.body.paymentAmount,
         remark: req.body.paymentRemark || ""
       }
-    : null,
-  isPaymentRecived: req.body.paymentStatus === "paid" || req.body.paymentReceived === "Yes"
+      : null,
   });
+
+    // ---------------- Fetch Target User ---------------- //
+  const targetUser = await User.findById(userId);
+  if (!targetUser) {
+    return next(new AppError("Target user not found", 404));
+  }
+
+  //-----------------------paymnet-------------------------//
+
+  const receiptNo = await generateReceiptNo();
+
+  const walletBeforePayment = Number(targetUser.walletBalance || 0);
+
+const paidAmount = isPaymentReceived
+  ? Number(newPurchase.paymentDetails?.amount || 0)
+  : 0;
+
+const walletAfterPayment = walletBeforePayment + paidAmount - packagePrice;
+
+const payment = await Payment.create({
+  ReceiptNo: receiptNo,
+  userId,
+  totalAmount: walletBeforePayment,   
+  amountToBePaid: paidAmount,         
+  dueAmount: walletAfterPayment,       
+  PaymentDate: new Date(),
+  PaymentMode: paymentMethod || "Cash",
+  transactionNo: isPaymentReceived ? req.body.transactionNo || "" : null,
+  comment: remarks || "Plan purchase payment",
+  paymentProof: req.body.paymentProof || null,
+  paymentStatus: isPaymentReceived ? "Completed" : "Pending"
+});
+
 
   // ---------------- Create Activity Log ---------------- //
 
@@ -143,63 +198,54 @@ if (alreadyPurchased) {
     }
   });
 
+  // ---------------- Manage User Wallet (FINAL & CORRECT) ---------------- //
 
-  // ---------------- Fetch Target User ---------------- //
-  const targetUser = await User.findById(userId);
-  if (!targetUser) {
-    return next(new AppError("Target user not found", 404));
-  }
+  // Package price
+  const packageAmount = Number(packagePrice);
 
-  // ---------------- Manage User Wallet ---------------- //
+  // Amount user actually paid (from DB – source of truth)
+  // const paidAmount = isPaymentReceived
+  //   ? Number(newPurchase.paymentDetails?.amount || 0)
+  //   : 0;
 
-  // Get user's last wallet history to maintain continuity
-  const lastHistory = await UserWalletHistory.findOne({ userId })
-    .sort({ createdAt: -1 })
-    .lean();
+  // Get user's current wallet balance
+  const currentWallet = Number(targetUser.walletBalance || 0);
 
-  const lastClosingBalance = lastHistory ? lastHistory.closingBalance : 0; // last closing = new opening
-  const openingBalance = Number(lastClosingBalance);
-  const transferAmount = Number(packagePrice);
-  let closingBalance = openingBalance;
-  let transactionType;
-  let remarkText;
+  // FINAL WALLET LOGIC
+  // newWallet = oldWallet + paid - price
+  const newWalletBalance = currentWallet + paidAmount - packageAmount;
 
-  // Case 1: Payment Not Received → Deduct from Wallet
-  if (!isPaymentRecived) {
-    closingBalance = openingBalance - transferAmount;
-    transactionType = "debit";
-    remarkText = "Plan purchased - amount deducted from wallet";
-
-    // Update user's current wallet balance (never positive)
-    await User.findByIdAndUpdate(userId, { walletBalance: closingBalance });
-  }
-  // Case 2: Payment Received → Wallet Unchanged (record only)
-  else {
-    if (transferAmount > amountPaid) {
-      // Update user's current wallet balance
-      closingBalance = openingBalance + (amountPaid - openingBalance);
-      await User.findByIdAndUpdate(userId, { walletBalance: closingBalance });
-    }
-
-    if (transferAmount < amountPaid) {
-      // closingBalance = openingBalance;
-    }
-    closingBalance = openingBalance;
-    transactionType = "credit";
-    remarkText = "Plan purchased - payment received";
-  }
+  // Update user wallet
+  await User.findByIdAndUpdate(userId, {
+    walletBalance: newWalletBalance,
+  });
 
   // ---------------- Create User Wallet History ---------------- //
+
+  // Opening balance = wallet before this transaction
+  const openingBalance = currentWallet;
+
+  // Closing balance = wallet after this transaction
+  const closingBalance = newWalletBalance;
+
+  // Transaction type based on payment
+  const transactionType = paidAmount > 0 ? "credit" : "debit";
+
+  // Transfer amount = what user actually paid
+  const transferAmount = paidAmount;
+
+  // Save wallet history
   await UserWalletHistory.create({
     userId,
     transactionType,
     openingBalance,
     transferAmount,
     closingBalance,
-    relatedPurchasePlanId: newPurchase._id,
     purpose: "plan",
     paymentMode: paymentMethod === "Online" ? "onlineTrancation" : "cash",
-    remark: remarkText,
+    paymentDate: new Date(),
+    relatedPurchasePlanId: newPurchase._id,
+    remark: "Plan purchased",
   });
 
 
@@ -210,7 +256,9 @@ if (alreadyPurchased) {
       openingBalance,
       transferAmount,
       closingBalance,
-      transactionType: !isPaymentRecived ? "debit" : "credit",
+      transactionType: !isPaymentReceived ? "debit" : "credit",
     },
+    payment
   });
 });
+

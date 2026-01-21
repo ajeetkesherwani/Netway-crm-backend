@@ -173,6 +173,7 @@ const UserSchema = new mongoose.Schema(
       default: "Inactive",
     },
     walletBalance: { type: Number, default: 0 },
+    creditBalance: { type: Number, default: 0 },
     isAutoRecharge: { type: Boolean, default: false },
     assignedHardware: [
       {

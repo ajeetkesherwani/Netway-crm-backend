@@ -19,8 +19,8 @@ exports.getIptvPackages = catchAsync(async (req, res, next) => {
     }
   );
 
-  // 🔍 DEBUG (keep temporarily)
-  // console.log("ZiggTV Response:", apiResponse.data);
+  
+  console.log("ZiggTV Response:", apiResponse.data);
 
   if (!apiResponse.data.success || !Array.isArray(apiResponse.data.plan_list)) {
     return next(new AppError("Failed to fetch IPTV packages from third-party API", 500));

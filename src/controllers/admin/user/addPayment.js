@@ -18,7 +18,6 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
     return next(new AppError("Required fields missing", 400));
   }
 
-  // 1️⃣ Find user
   const user = await User.findById(userId);
   if (!user) {
     return next(new AppError("User not found", 404));
@@ -26,52 +25,47 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
 
   const currentBalance = Number(user.walletBalance || 0);
 
-  // 🔒 RULE: Admin cannot pay if no due
-  if (currentBalance >= 0) {
-    return next(new AppError("No outstanding due for this user", 400));
-  }
+  let paidAmount = 0; 
 
-  let paidAmount = 0;
-  let newBalance = currentBalance;
-
-  // 2️⃣ FULL PAID → clear dues only
+  // FULL PAID → only clears negative dues
   if (fullPaid === true || fullPaid === "true") {
+    if (currentBalance >= 0) {
+      return next(new AppError("No due to clear for this user", 400));
+    }
     paidAmount = Math.abs(currentBalance);
-    newBalance = 0;
   }
-  // 3️⃣ PARTIAL PAYMENT
+  // NORMAL PAYMENT (can be any amount)
   else {
     if (!amountToBePaid || Number(amountToBePaid) <= 0) {
       return next(new AppError("Invalid amount to be paid", 400));
     }
-
     paidAmount = Number(amountToBePaid);
-    newBalance = currentBalance + paidAmount;
-
-    // 🔒 HARD STOP: never allow positive wallet
-    if (newBalance > 0) {
-      newBalance = 0;
-    }
   }
 
-  // 4️⃣ Update wallet balance
-  user.walletBalance = newBalance;
+  //   LOGIC 
+  const newWalletBalance = currentBalance + paidAmount;
+
+  // CREDIT BALANCE RULE
+  const creditBalance = newWalletBalance > 0 ? newWalletBalance : 0;
+
+  // Save user
+  user.walletBalance = newWalletBalance;
+  user.creditBalance = creditBalance;
   await user.save();
 
-  // 5️⃣ Image upload
-let imageProof = "";
+  // Image proof
+  let imageProof = "";
+  if (req.files?.imageProof?.length > 0) {
+    imageProof = req.files.imageProof[0].path;
+  }
 
-if (req.files && req.files.imageProof && req.files.imageProof.length > 0) {
-  imageProof = req.files.imageProof[0].path;
-}
- 
-
-  // 6️⃣ Save history (audit-safe)
+  // Save history
   const payment = await AddUserWallet.create({
     userId,
-    totalAmount: currentBalance, // before payment (negative)
+    totalAmount: currentBalance,
     amountToBePaid: paidAmount,
-    dueAmount: newBalance,       // after payment (≤ 0)
+    dueAmount: newWalletBalance,
+    creditBalance,
     fullPaid: fullPaid === true || fullPaid === "true",
     paymentMode,
     transactionNo,
@@ -80,13 +74,11 @@ if (req.files && req.files.imageProof && req.files.imageProof.length > 0) {
     sms: sms === true || sms === "true",
   });
 
-  console.log("Payment recorded:", payment);
-
   res.status(200).json({
     status: true,
-    message: "Payment recorded successfully",
-    walletBalance: user.walletBalance,
+    message: "Wallet updated successfully",
+    walletBalance: newWalletBalance,
+    creditBalance,
     payment,
   });
 });
-

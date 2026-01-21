@@ -29,6 +29,10 @@ const {
   getIptvPackages
 } = require("../../controllers/admin/Package/getIpTvPackageList");
 
+const { 
+  getOttPackageList 
+} = require("../../controllers/admin/Package/getOttPackageList");
+
 
 
 router.get("/list", adminAuthenticate, getPackages);
@@ -37,6 +41,7 @@ router.post("/create",  createPackage);
 router.get("/:id", adminAuthenticate, getPackagesDetails);
 router.patch("/update/:packageId", adminAuthenticate, updatePackage);
 router.delete("/delete/:packageId", adminAuthenticate, deletePackage);
+router.get("/ott-package/list", adminAuthenticate, getOttPackageList);
 
 module.exports = router;
 

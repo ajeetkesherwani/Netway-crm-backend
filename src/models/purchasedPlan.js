@@ -35,9 +35,20 @@ const renewalSchema = new Schema({
       default: "Cash"
     },
     amount: { type: Number, default: 0 },
-    remark: { type: String, default: "" }
+    remark: { type: String, default: "" },
   },
-
+    status: {
+    type: String,
+    enum: ["active", "expired", "cancelled", "pending", "Inactive"],
+    default: "pending"
+  },
+  isPaymentReceived: {
+    type: Boolean, default: false
+  },
+   advanceRenewal: {
+    type: Boolean,
+    default: true       
+  },
   remarks: String
 }, { _id: false });
 
@@ -113,9 +124,10 @@ const purchasedPlanSchema = new Schema({
   },
 
   renewals: [renewalSchema],
-  isPaymentRecived: {
+isPaymentReceived: {
     type: Boolean, default: false
-  }
+  },
+  advanceRenewal: { type: Boolean, default: false }
 
 }, { timestamps: true });
 

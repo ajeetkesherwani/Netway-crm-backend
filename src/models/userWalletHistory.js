@@ -31,8 +31,7 @@ const userWalletHistorySchema = new Schema(
         },
         purpose: {
             type: String,
-            enum: ["plan", "payment"],
-            default: "plan",
+            default: ""
         },
         paymentMode: {
             type: String,

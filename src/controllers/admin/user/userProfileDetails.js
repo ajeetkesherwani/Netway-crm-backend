@@ -17,6 +17,7 @@ exports.getUserFullDetails = catchAsync(async (req, res, next) => {
     .populate("addressDetails.area")
     .populate("packageInfomation.packageId")
     .lean();
+    console.log("user", user);
 
   if (!user) {
     return next(new AppError("User not found", 404));

@@ -4,10 +4,6 @@ const {
     adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
-// const {
-//     renewPurchasedPlan
-// } = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan");
-
 const {
     createPurchasedPlan
 } = require("../../controllers/admin/purchasedPlan/createPurchasedPlan");
@@ -29,6 +25,10 @@ const {
     renewPurchasedPlan 
 } = require("../../controllers/admin/purchasedPlan/renewPurchasedPlan.JS");
 
+const { 
+    refundPurchasedPlan 
+} = require("../../controllers/admin/purchasedPlan/refundPlan");
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createPurchasedPlan);
@@ -37,5 +37,6 @@ router.patch("/update/:id", adminAuthenticate, updatePurchasedPlan);
 router.delete("/delete/:id", adminAuthenticate, deletePurchasedPlan);
 
 router.post("/renew/:id", adminAuthenticate, renewPurchasedPlan);
+router.post("/refund/:planId", adminAuthenticate, refundPurchasedPlan);
 
 module.exports = router;

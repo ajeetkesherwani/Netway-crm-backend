@@ -55,6 +55,7 @@ const {
 const {
     getCountSummary
 } = require("../../controllers/admin/common/getCounts");
+const { deleteInvoice } = require("../../controllers/admin/common/deleteInvoice");
 
 const router = express.Router();
 
@@ -67,7 +68,8 @@ router.get("/user/Global/details/:id", adminAuthenticate, userGlobalDetails);
 router.get("/logList/:role/:id", adminAuthenticate, getLogsByRoleAndId);
 router.get("/filterPackage/list", adminAuthenticate, getPackageList);
 router.get("/invoiceList", adminAuthenticate, getInvoiceList);
-router.get("/invoice/:invoiceId", getInvoiceDetails);
+router.get("/invoice/:invoiceId", adminAuthenticate, getInvoiceDetails);
+router.delete("/delete/:invoiceId", adminAuthenticate, deleteInvoice);
 router.get("/user/invoice/:userId", adminAuthenticate, getUserInvoice);
 router.get("/user/hardware/:userId", adminAuthenticate, getUserAssignedHardware);
 router.get("/count/summary", adminAuthenticate, getCountSummary);

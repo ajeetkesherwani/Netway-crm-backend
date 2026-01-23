@@ -14,7 +14,9 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
     }
 
     if (!lcoId) return next(new AppError("LcoId is required", 400));
-    if (!amount) return next(new AppError("Amount is required", 400));
+    if (!amount || Number(amount) <= 0) {
+        return next(new AppError("Amount must be greater than 0", 400));
+    }
     if (!transferDate) return next(new AppError("TransferDate is required", 400));
 
     const lco = await Lco.findById(lcoId).populate({
@@ -31,21 +33,18 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
     const openingBalance = lco.walletBalance || 0;
 
     // Check reseller wallet balance (unless admin)
-    if (req.user.role !== "Admin" && reseller.walletBalance < amount) {
+    if (reseller.walletBalance < amount) {
         return next(new AppError("Insufficient balance in reseller wallet", 400));
     }
 
-    // Deduct from reseller wallet if not admin
-    if (req.user.role !== "Admin") {
-        reseller.walletBalance = (reseller.walletBalance || 0) - amount;
-        await reseller.save();
-    }
+    // Deduct from reseller (ALWAYS)
+    reseller.walletBalance -= amount;
+    await reseller.save();
 
-    // Add to LCO wallet
-    lco.walletBalance = (lco.walletBalance || 0) + amount;
+    // Add to LCO
+    lco.walletBalance = openingBalance + amount;
     await lco.save();
 
-    // Capture LCO closing balance after transfer
     const closingBalance = lco.walletBalance;
 
     // Create LCO wallet history

@@ -21,7 +21,7 @@ const lcoSchema = new mongoose.Schema({
     district: { type: String },
     area: { type: String },
     state: { type: String, required: true },
-    county: { type: String },
+    country: { type: String },
     subArea: { type: String },
     telephone: { type: String },
     faxNo: { type: String },
@@ -42,7 +42,7 @@ const lcoSchema = new mongoose.Schema({
     supportWhatsApp: { type: String },
     lcoCode: { type: String },
     nas: { type: [String], default: [], },
-    descripition: { type: String },
+    description: { type: String },
     status: { type: String, enum: ["active", "inActive"], default: "active" },
     walletBalance: { type: Number, default: 0 },
     employeeAssociation: [{

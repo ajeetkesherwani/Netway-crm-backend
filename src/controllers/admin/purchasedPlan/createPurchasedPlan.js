@@ -8,8 +8,35 @@ const User = require("../../../models/user");
 const UserWalletHistory = require("../../../models/userWalletHistory");
 const { createLog } = require("../../../utils/userLogActivity");
 const Payment = require("../../../models/payment");
+const Invoice = require("../../../models/invoice");
 const mongoose = require("mongoose");
 
+//generate invoice number
+const generateInvoiceNumber = async () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const nextYear = year + 1;
+
+  const financialYear = `${year.toString().slice(-2)}-${nextYear
+    .toString()
+    .slice(-2)}`;
+
+  const lastInvoice = await Invoice.findOne({
+    invoiceNumber: { $regex: `IND/${financialYear}` }
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  let nextNumber = 1000;
+
+  if (lastInvoice?.invoiceNumber) {
+    nextNumber = parseInt(lastInvoice.invoiceNumber.split("/").pop()) + 1;
+  }
+
+  return `IND/${financialYear}/${nextNumber}`;
+};
+
+//generate receipt number
 const generateReceiptNo = async () => {
   let receiptNo;
   let exists = true;
@@ -147,7 +174,7 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
       : null,
   });
 
-    // ---------------- Fetch Target User ---------------- //
+  // ---------------- Fetch Target User ---------------- //
   const targetUser = await User.findById(userId);
   if (!targetUser) {
     return next(new AppError("Target user not found", 404));
@@ -159,26 +186,53 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
 
   const walletBeforePayment = Number(targetUser.walletBalance || 0);
 
-const paidAmount = isPaymentReceived
-  ? Number(newPurchase.paymentDetails?.amount || 0)
-  : 0;
+  const paidAmount = isPaymentReceived
+    ? Number(newPurchase.paymentDetails?.amount || 0)
+    : 0;
 
-const walletAfterPayment = walletBeforePayment + paidAmount - packagePrice;
+  const walletAfterPayment = walletBeforePayment + paidAmount - packagePrice;
 
-const payment = await Payment.create({
-  ReceiptNo: receiptNo,
-  userId,
-  totalAmount: walletBeforePayment,   
-  amountToBePaid: paidAmount,         
-  dueAmount: walletAfterPayment,       
-  PaymentDate: new Date(),
-  PaymentMode: paymentMethod || "Cash",
-  transactionNo: isPaymentReceived ? req.body.transactionNo || "" : null,
-  comment: remarks || "Plan purchase payment",
-  paymentProof: req.body.paymentProof || null,
-  paymentStatus: isPaymentReceived ? "Completed" : "Pending"
-});
+  const payment = await Payment.create({
+    ReceiptNo: receiptNo,
+    userId,
+    totalAmount: walletBeforePayment,
+    amountToBePaid: paidAmount,
+    dueAmount: walletAfterPayment,
+    PaymentDate: new Date(),
+    PaymentMode: paymentMethod || "Cash",
+    transactionNo: isPaymentReceived ? req.body.transactionNo || "" : null,
+    comment: remarks || "Plan purchase payment",
+    paymentProof: req.body.paymentProof || null,
+    paymentStatus: isPaymentReceived ? "Completed" : "Pending"
+  });
 
+  // ---------------- Invoice Payment Status ---------------- //
+  let invoicePaymentStatus = "Unpaid";
+
+  if (isPaymentReceived && paidAmount > 0) {
+    if (paidAmount < packagePrice) {
+      invoicePaymentStatus = "Partial";
+    } else if (paidAmount === packagePrice) {
+      invoicePaymentStatus = "Paid";
+    } else if (paidAmount > packagePrice) {
+      invoicePaymentStatus = "ExtraPaid";
+    }
+  }
+
+  // ---------------- Create Invoice ---------------- //
+  const invoiceNumber = await generateInvoiceNumber();
+
+  const invoice = await Invoice.create({
+    invoiceNumber,
+    userId,
+    package: packageId,
+    amount: packagePrice,
+    paidAmount: paidAmount,
+    addedById: purchaser._id,
+    addedByType: purchaser.role,
+    comment: remarks || "Invoice generated for plan purchase",
+    paymentStatus: invoicePaymentStatus
+  });
 
   // ---------------- Create Activity Log ---------------- //
 
@@ -258,7 +312,8 @@ const payment = await Payment.create({
       closingBalance,
       transactionType: !isPaymentReceived ? "debit" : "credit",
     },
-    payment
+    payment,
+    invoice
   });
 });
 

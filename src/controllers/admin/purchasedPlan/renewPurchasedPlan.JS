@@ -6,8 +6,37 @@ const Package = require("../../../models/package");
 const UserWalletHistory  = require("../../../models/userWalletHistory");
 const createLog = require("../../../utils/createLog");
 const User = require("../../../models/user");
+const Invoice = require("../../../models/invoice");
 const Payment = require("../../../models/payment");
 
+
+//generate invoice number
+const generateInvoiceNumber = async () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const nextYear = year + 1;
+
+  const financialYear = `${year.toString().slice(-2)}-${nextYear
+    .toString()
+    .slice(-2)}`;
+
+  const lastInvoice = await Invoice.findOne({
+    invoiceNumber: { $regex: `IND/${financialYear}` }
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  let nextNumber = 1000;
+
+  if (lastInvoice?.invoiceNumber) {
+    nextNumber = parseInt(lastInvoice.invoiceNumber.split("/").pop()) + 1;
+  }
+
+  return `IND/${financialYear}/${nextNumber}`;
+};
+
+
+//receipt number
 const generateReceiptNo = async () => {
   let receiptNo;
   let exists = true;
@@ -114,6 +143,7 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
   plan.isPaymentReceived = isPaymentReceived;
 
   await plan.save();
+  
 
 // ---------------- Wallet Handling ---------------- //
 
@@ -161,6 +191,36 @@ const payment = await Payment.create({
   paymentProof: null,
 
   paymentStatus: isPaymentReceived ? "Completed" : "Pending"
+});
+
+// ────────────────────────────────
+//     CREATE INVOICE FOR RENEWAL
+// ────────────────────────────────
+
+let invoicePaymentStatus = "Unpaid";
+
+if (isPaymentReceived && paidAmount > 0) {
+  if (paidAmount < packageAmount) {
+    invoicePaymentStatus = "Partial";
+  } else if (paidAmount === packageAmount) {
+    invoicePaymentStatus = "Paid";
+  } else if (paidAmount > packageAmount) {
+    invoicePaymentStatus = "ExtraPaid";
+  }
+}
+
+const invoiceNumber = await generateInvoiceNumber();
+
+const renewalInvoice = await Invoice.create({
+  invoiceNumber,
+  userId: plan.userId,
+  package: selectedPackage._id,          
+  amount: packageAmount,                
+  paidAmount: paidAmount,
+  addedById: purchaser._id,
+  addedByType: purchaser.role,
+  comment: remarks || "Invoice generated for plan renewal",
+  paymentStatus: invoicePaymentStatus,
 });
 
 
@@ -212,7 +272,8 @@ await UserWalletHistory.create({
   return successResponse(res, "Plan renewed successfully",
     {
       plan,
-      payment
+      payment,
+      renewalInvoice
     }
     );
 });

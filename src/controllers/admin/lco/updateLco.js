@@ -12,7 +12,7 @@ exports.updateLco = catchAsync(async (req, res, next) => {
     // Allowed fields update
     const updatableFields = [
         "title","phoneNo","email","lcoName","district","houseNo","pincode","area",
-        "subArea","mobileNo","fax","messengerId","dob","balance","dashboard",
+        "subArea","mobileNo","fax","messengerId","dob","balance","dashboard", "telephone",
         "panNumber","lcoCode","contactPersonNumber","whatsAppNumber","address",
         "taluka","state","country","website","annversaryDate","latitude","longitude",
         "gstNo","contactPersonName","supportEmail","nas","description","status","role"

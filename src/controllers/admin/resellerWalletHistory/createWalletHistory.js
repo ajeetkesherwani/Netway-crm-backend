@@ -14,7 +14,10 @@ exports.createResellerWallet = catchAsync(async (req, res, next) => {
     const { resellerId, amount, paymentDate, mode, remark } = req.body;
 
     if (!resellerId) return next(new AppError("resellerId is required", 400));
-    if (!amount) return next(new AppError("amount is required", 400));
+    // if (!amount) return next(new AppError("amount is required", 400));
+    if (!amount || Number(amount) <= 0) {
+  return next(new AppError("Amount must be greater than 0", 400));
+}
     if (!paymentDate) return next(new AppError("paymentDate is required", 400));
     if (!mode) return next(new AppError("mode is required", 400));
 

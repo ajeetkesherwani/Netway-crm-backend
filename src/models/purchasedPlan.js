@@ -39,7 +39,7 @@ const renewalSchema = new Schema({
   },
     status: {
     type: String,
-    enum: ["active", "expired", "cancelled", "pending", "Inactive"],
+    enum: ["active", "expired", "cancelled", "pending", "Inactive", "refund"],
     default: "pending"
   },
   isPaymentReceived: {
@@ -49,6 +49,18 @@ const renewalSchema = new Schema({
     type: Boolean,
     default: true       
   },
+  isRefundable: {
+  type: Boolean,
+  default: true
+},
+refundRequestedAt: {
+  type: Date,
+  default: null
+},
+refundedAt: {
+  type: Date,
+  default: null
+},
   remarks: String
 }, { _id: false });
 
@@ -87,7 +99,7 @@ const purchasedPlanSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["active", "expired", "cancelled", "pending", "Inactive"],
+    enum: ["active", "expired", "cancelled", "pending", "Inactive", "refund"],
     default: "active"
   },
   amountPaid: {
@@ -127,7 +139,23 @@ const purchasedPlanSchema = new Schema({
 isPaymentReceived: {
     type: Boolean, default: false
   },
-  advanceRenewal: { type: Boolean, default: false }
+  advanceRenewal: { 
+    type: Boolean, 
+    default: false
+   },
+
+  isRefundable: {
+  type: Boolean,
+  default: true
+},
+refundRequestedAt: {
+  type: Date,
+  default: null
+},
+refundedAt: {
+  type: Date,
+  default: null
+}
 
 }, { timestamps: true });
 

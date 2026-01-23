@@ -33,6 +33,10 @@ const invoiceSchema = new mongoose.Schema(
       type: Number, 
       required: true,
     },
+    paidAmount: {
+    type: Number,
+    default: 0
+    },
     adminAmount: {
         type: Number,
         default: 0
@@ -57,6 +61,11 @@ const invoiceSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    paymentStatus: {
+    type: String,
+    enum: ['Pending', 'Completed', 'Failed', 'Refunded',"Paid", "Unpaid", "Partial", "ExtraPaid"], // you can modify as needed
+    default: 'Pending'
+    }
   },
   { timestamps: true }
 );

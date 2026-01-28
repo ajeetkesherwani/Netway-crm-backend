@@ -14,7 +14,7 @@ exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
     const { resellerId, amount, paymentDate, mode, remark } = req.body;
 
     if (!resellerId) next(new AppError("resellerId is required", 400));
-   if (!amount || Number(amount)) {
+  if (!amount || Number(amount) <= 0) {
   return next(new AppError("Amount must be greater than 0", 400));
 }
     if (!paymentDate) next(new AppError("paymentDate is required", 400));

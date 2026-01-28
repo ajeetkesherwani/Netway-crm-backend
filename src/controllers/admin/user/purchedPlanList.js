@@ -51,7 +51,6 @@ exports.getPurchasedPlanList = catchAsync(async (req, res, next) => {
     return {
       packageName,
       rechargeDate: new Date(rechargeDate).toISOString(), 
-     
     };
   });
 

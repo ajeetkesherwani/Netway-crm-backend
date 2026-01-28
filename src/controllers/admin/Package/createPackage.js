@@ -1,121 +1,3 @@
-// const mongoose = require("mongoose");
-// const Package = require("../../../models/package");
-// const catchAsync = require("../../../utils/catchAsync");
-// const AppError = require("../../../utils/AppError");
-// const { successResponse } = require("../../../utils/responseHandler");
-
-// exports.createPackage = catchAsync(async (req, res, next) => {
-//   const {
-//     name,
-//     validity, // { number: Number, unit: String }
-//     sacCode,
-//     fromDate,
-//     toDate,
-//     status,
-//     typeOfPlan,
-//     categoryOfPlan,
-//     description,
-//     basePrice,
-//     offerPrice,
-//     packageAvailable = false,
-//     offerPackage = false,
-
-//     // Bundle fields
-//     isOtt = false,
-//     ottType,
-//     ottPackageId,
-
-//     isIptv = false,
-//     iptvType,
-//     iptvPackageId,
-//   } = req.body;
-
-//   // ✅ Basic required field validation
-//   if (!name || !status || !validity?.number || !validity?.unit || !categoryOfPlan) {
-//     return next(
-//       new AppError(
-//         "Required fields missing: name, status, validity (number + unit), categoryOfPlan",
-//         400
-//       )
-//     );
-//   }
-
-//   // ✅ Prevent duplicate package by name + typeOfPlan
-//   const existing = await Package.findOne({ name, typeOfPlan });
-//   if (existing) {
-//     return next(
-//       new AppError("A package with the same name and type already exists.", 409)
-//     );
-//   }
-
-//   // ✅ Helper to validate ObjectId
-//   const isValidObjectId = (id) => id && mongoose.Types.ObjectId.isValid(id);
-
-//   // ✅ Validate OTT bundle
-//   if (isOtt) {
-//     if (!ottType) {
-//       return next(new AppError("OTT Type is required when bundling with OTT", 400));
-//     }
-//     if (!ottPackageId || !isValidObjectId(ottPackageId)) {
-//       return next(
-//         new AppError("A valid OTT Package must be selected when bundling with OTT", 400)
-//       );
-//     }
-//   }
-
-//   // ✅ Validate IPTV bundle
-//   if (isIptv) {
-//     if (!iptvType) {
-//       return next(new AppError("IPTV Type is required when bundling with IPTV", 400));
-//     }
-//     if (!iptvPackageId || !isValidObjectId(iptvPackageId)) {
-//       return next(
-//         new AppError("A valid IPTV Package must be selected when bundling with IPTV", 400)
-//       );
-//     }
-//   }
-
-
-//   // ✅ Build payload safely
-//   const packageData = {
-//     name,
-//     validity: {
-//       number: Number(validity.number),
-//       unit: validity.unit,
-//     },
-//     sacCode: sacCode || undefined,
-//     fromDate: fromDate ? new Date(fromDate) : undefined,
-//     toDate: toDate ? new Date(toDate) : undefined,
-//     status,
-//     typeOfPlan: typeOfPlan || "Renew",
-//     categoryOfPlan,
-//     description: description || undefined,
-//     basePrice: basePrice ? Number(basePrice) : undefined,
-//     offerPrice: offerPrice ? Number(offerPrice) : undefined,
-//     packageAvailable: Boolean(packageAvailable),
-//     offerPackage: Boolean(offerPackage),
-//   };
-
-//   // Add OTT bundle only if enabled and valid
-//   if (isOtt) {
-//     packageData.isOtt = true;
-//     packageData.ottType = ottType;
-//     packageData.ottPackageId = ottPackageId; // Already validated as valid ObjectId
-//   }
-
-//   // Add IPTV bundle only if enabled and valid
-//   if (isIptv) {
-//     packageData.isIptv = true;
-//     packageData.iptvType = iptvType;
-//     packageData.iptvPackageId = iptvPackageId; // Already validated
-//   }
-
-//   // ✅ Create the package
-//   const newPackage = await Package.create(packageData);
-
-//   return successResponse(res, "Package created successfully", newPackage);
-// });
-
 const axios = require("axios");
 const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
@@ -178,7 +60,7 @@ if (isIptv) {
   try {
     // API
     const apiResponse = await axios.get(
-      `${process.env.API_BASE_URL}/package/iptv-packages/list`,
+      "http://159.89.146.245:5004/api/admin/package/iptv-packages/list",
       { timeout: 3000 }
     );
 
@@ -215,6 +97,56 @@ if (isIptv) {
   }
 }
 
+/* -------------------- OTT LOGIC -------------------- */
+let ottPackageData = null;
+
+if (isOtt) {
+  if (!ottType) {
+    return next(new AppError("OTT Type is required", 400));
+  }
+
+  if (!ottPackageId) {
+    return next(new AppError("Please select an OTT Package", 400));
+  }
+
+  try {
+    // Call your cleaned OTT API
+    const apiResponse = await axios.get(
+      "http://159.89.146.245:5004/api/admin/package/ott-package/list",
+      { timeout: 5000 }
+    );
+
+    const packages = apiResponse.data?.data;
+
+    if (!Array.isArray(packages)) {
+      return next(new AppError("Invalid OTT package response", 500));
+    }
+
+    // ✅ FIND SELECTED OTT PACKAGE
+    const selectedOtt = packages.find(
+      pkg => String(pkg.packId) === String(ottPackageId)
+    );
+
+    if (!selectedOtt) {
+      return next(new AppError("Selected OTT package not found", 404));
+    }
+
+    ottPackageData = {
+      packId: selectedOtt.packId,
+      name: selectedOtt.name,
+      basePrice: selectedOtt.basePrice,
+      marketPrice: selectedOtt.marketPrice,
+      validity: selectedOtt.validity,
+      ottProviders: selectedOtt.ottProviders
+    };
+
+  } catch (error) {
+    console.error("OTT API error:", error.message);
+    return next(new AppError("Could not fetch OTT packages", 500));
+  }
+}
+
+
 
   /* -------------------- BUILD PACKAGE -------------------- */
   const packageData = {
@@ -239,7 +171,7 @@ if (isIptv) {
   if (isOtt) {
     packageData.isOtt = true;
     packageData.ottType = ottType;
-    packageData.ottPackageId = ottPackageId;
+    packageData.ottPackageId = ottPackageData;
   }
 
   if (isIptv) {

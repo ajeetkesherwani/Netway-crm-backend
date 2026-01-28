@@ -8,6 +8,7 @@ const createLog = require("../../../utils/createLog");
 const User = require("../../../models/user");
 const Invoice = require("../../../models/invoice");
 const Payment = require("../../../models/payment");
+const RenewalHistory = require("../../../models/renewalHistory");
 
 
 //generate invoice number
@@ -141,6 +142,37 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
   plan.amountPaid += Number(amountPaid);
   // plan.status = "active";
   plan.isPaymentReceived = isPaymentReceived;
+
+  //create renewal history
+  await RenewalHistory.create({
+  purchasedPlanId: plan._id,
+  userId: plan.userId,
+  packageId: plan.packageId._id,
+
+  renewedOn: new Date(),
+
+  previousExpiryDate: previousExpiry,
+  newExpiryDate: newExpiry,
+
+  amountPaid: Number(amountPaid),
+ status: "pending",
+
+  paymentDetails: isPaymentReceived
+    ? {
+        date: paymentDate ? new Date(paymentDate) : new Date(),
+        method: paymentMethod,
+        amount: req.body.paymentAmount,
+        remark: paymentRemark
+      }
+    : null,
+
+  advanceRenewal: true,
+  isPaymentReceived: !!isPaymentReceived,
+  isRefundable: true,
+
+  remarks: remarks || "Plan renewed"
+});
+
 
   await plan.save();
   

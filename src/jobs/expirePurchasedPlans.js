@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 const PurchasedPlan = require("../models/purchasedPlan");
+const WalletHistory = require("../models/userWalletHistory");
 
 const expirePurchasedPlans = async () => {
   const now = new Date();
@@ -150,32 +151,23 @@ const expirePurchasedPlans = async () => {
       }
 
       // ─── Payment & Wallet logic
-      const packagePrice = renewalAmount;
-
-      const paidAmount =
-        plan.isPaymentReceived === true
-          ? Number(plan.paymentDetails?.amount || 0)
-          : 0;
-
-      const walletDeduction = Math.max(packagePrice - paidAmount, 0);
+      const packagePrice = pkg.basePrice || pkg.offerPrice || 0;
+      const walletDeduction = Math.max(packagePrice, 0);
 
       if (walletDeduction > 0) {
         user.walletBalance = Number(user.walletBalance || 0) - walletDeduction;
         await user.save();
-      }
 
-      const renewalPaymentDetails =
-        paidAmount > 0
-          ? {
-            date: plan.paymentDetails?.date || now,
-            method: plan.paymentDetails?.method || "Online",
-            amount: paidAmount,
-            remark:
-              paidAmount === packagePrice
-                ? "Auto-renew full payment received"
-                : "Auto-renew partial payment received",
-          }
-          : null;
+        await WalletHistory.create({
+          userId: user._id,
+          amount: walletDeduction,
+          type: "debit",
+          remark: "Auto-recharge deduction",
+          createdAt: now,
+        });
+
+        console.log(`[CRON] Wallet updated for user ${user._id}, amount deducted: ${walletDeduction}`);
+      }
 
       // Add the renewal record
       plan.renewals.push({
@@ -183,8 +175,7 @@ const expirePurchasedPlans = async () => {
         previousExpiryDate: effectiveExpiry,
         newExpiryDate,
         amountPaid: packagePrice,
-        paymentMethod: paidAmount > 0 ? "Online" : "Wallet",
-        paymentDetails: renewalPaymentDetails,
+        paymentMethod: "Wallet",
         remarks: "Auto-renew via cron",
       });
 
@@ -192,7 +183,6 @@ const expirePurchasedPlans = async () => {
       plan.expiryDate = newExpiryDate;
       plan.status = "active";
       plan.isRenewed = true;
-      plan.isPaymentReceived = paidAmount > 0;
 
       await plan.save();
 

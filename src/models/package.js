@@ -2,14 +2,30 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const iptvPackageSchema = new Schema({
-  plan_id: { type: Number, required: true },
-  plan_code: { type: String, required: true },
-  plan_name: { type: String, required: true, trim: true },
-  plan_type: { type: String },
-  plan_cat: { type: String },
-  plan_period: { type: String },
-  customer_price: { type: String },
-  lco_price: { type: String },
+    plan_id: { type: Number, required: true },
+    plan_code: { type: String, required: true },
+    plan_name: { type: String, required: true, trim: true },
+    plan_type: { type: String },
+    plan_cat: { type: String },
+    plan_period: { type: String },
+    customer_price: { type: String },
+    lco_price: { type: String },
+}, { _id: false });
+
+//OTT sub-schema (same as you do for IPTV)
+const ottPackageSubSchema = new Schema({
+    packId: { type: String, required: true },
+    name: { type: String, required: true },
+    basePrice: { type: Number },
+    marketPrice: { type: Number },
+    validity: {
+        number: { type: Number },
+        unit: { type: String }
+    },
+    ottProviders: [{
+        name: { type: String },
+        validity: { type: Number }
+    }]
 }, { _id: false });
 
 const packageSchema = new Schema({
@@ -27,21 +43,24 @@ const packageSchema = new Schema({
     typeOfPlan: { type: String, enum: ["Renew", "Speed Booster Plan", "Valume Booster"], default: "Renew" },
     categoryOfPlan: { type: String, enum: ["Unlimited", "Limited", "Fup", "DayNight"], required: true },
     description: { type: String },
-     billType: { type: String, enum: ["Monthly","Quarterly","HalfYear","Yearly","OneTime"], default: "Monthly" },
+    billType: { type: String, enum: ["Monthly", "Quarterly", "HalfYear", "Yearly", "OneTime"], default: "Monthly" },
 
 
-       
-    packageAvailable: { type: Boolean, default: false },   
-    offerPackage: { type: Boolean, default: false },  
 
-       // Bundle with OTT
+    packageAvailable: { type: Boolean, default: false },
+    offerPackage: { type: Boolean, default: false },
+
+    // Bundle with OTT
     isOtt: { type: Boolean, default: false },
-    ottType: { type: String, enum:["playBox"], default: "playBox"},      
-    ottPackageId: { type: Schema.Types.ObjectId, ref: "Package" },
+    ottType: { type: String, enum: ["playBox"], default: "playBox" },
+    ottPackageId: {
+        type: ottPackageSubSchema,
+        default: null
+    },
 
     // Bundle with IPTV
     isIptv: { type: Boolean, default: false },
-    iptvType: { type: String, enum:["ziggTv"], default: "ziggTv" },       
+    iptvType: { type: String, enum: ["ziggTv"], default: "ziggTv" },
     iptvPackageId: { type: iptvPackageSchema },
 
     // Timestamps

@@ -33,8 +33,17 @@ const {
   toggleAutoRecharge,
 } = require("../../controllers/admin/user/autoRecharge");
 
-const { addUserWalletPayment } = require("../../controllers/admin/user/addPayment");
-const { getPaymentReceiptDetails } = require("../../controllers/admin/user/PaymentRecieptById");
+const { 
+  addUserWalletPayment 
+} = require("../../controllers/admin/user/addPayment");
+
+const { 
+  getPaymentReceiptDetails 
+} = require("../../controllers/admin/user/PaymentRecieptById");
+
+const { 
+  renewPurchasedPlan 
+} = require("../../controllers/admin/user/renewPlanList");
 
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
 router.post(
@@ -56,6 +65,7 @@ router.patch(
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);
 router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
 router.get("/purchedPlan/list/:userId", adminAuthenticate, getPurchasedPlanList);
+router.get("/renewPlan/list/:userId", adminAuthenticate, renewPurchasedPlan);
 router.patch("/auto-recharge/:userId", adminAuthenticate, toggleAutoRecharge);
 router.post(
   "/addPayment/:userId",

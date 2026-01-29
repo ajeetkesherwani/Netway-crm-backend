@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const iptvPackageSchema = new Schema({
-    plan_id: { type: Number, required: true },
-    plan_code: { type: String, required: true },
-    plan_name: { type: String, required: true, trim: true },
+    plan_id: { type: Number },
+    plan_code: { type: String},
+    plan_name: { type: String},
     plan_type: { type: String },
     plan_cat: { type: String },
     plan_period: { type: String },
@@ -14,8 +14,8 @@ const iptvPackageSchema = new Schema({
 
 //OTT sub-schema (same as you do for IPTV)
 const ottPackageSubSchema = new Schema({
-    packId: { type: String, required: true },
-    name: { type: String, required: true },
+    packId: { type: String },
+    name: { type: String,  },
     basePrice: { type: Number },
     marketPrice: { type: Number },
     validity: {

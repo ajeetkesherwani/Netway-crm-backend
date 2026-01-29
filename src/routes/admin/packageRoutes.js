@@ -36,12 +36,12 @@ const {
 
 
 router.get("/list", adminAuthenticate, getPackages);
-router.get("/iptv-packages/list", adminAuthenticate, getIptvPackages);
+router.get("/iptv-packages/list", getIptvPackages);
 router.post("/create", adminAuthenticate, createPackage);
 router.get("/:id", adminAuthenticate, getPackagesDetails);
 router.patch("/update/:packageId", adminAuthenticate, updatePackage);
 router.delete("/delete/:packageId", adminAuthenticate, deletePackage);
-router.get("/ott-package/list", adminAuthenticate, getOttPackageList);
+router.get("/ott-package/list", getOttPackageList);
 
 module.exports = router;
 

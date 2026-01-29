@@ -28,13 +28,11 @@ const expirePurchasedPlans = async () => {
         continue;
       }
 
-
-      // Determine effective (current real) expiry date
-
+      // Determine effective expiry date
       let effectiveExpiry = plan.expiryDate;
 
       if (plan.renewals?.length > 0) {
-        // Use the LATEST  expiry from all renewals
+        // Use the LATEST expiry from all renewals
         const renewalDates = plan.renewals
           .map(r => new Date(r.newExpiryDate))
           .filter(date => !isNaN(date.getTime()));
@@ -61,7 +59,21 @@ const expirePurchasedPlans = async () => {
         `Effective expiry was: ${effectiveExpiry.toISOString()}`
       );
 
-      // Find all pending advance renewals for this user/package, ordered by purchaseDate
+      // Check if the plan has renewals
+      if (plan.isRenewed) {
+        const pendingRenewals = plan.renewals.filter(r => r.status === "pending");
+        if (pendingRenewals.length > 0) {
+          const nextRenewal = pendingRenewals[0]; // Activate the first pending renewal
+          plan.expiryDate = new Date(nextRenewal.newExpiryDate);
+          nextRenewal.status = "active";
+          plan.isRenewed = true;
+          await plan.save();
+          console.log(`[CRON] Activated pending renewal for plan ${plan._id}`);
+          continue;
+        }
+      }
+
+      // Check for advance renewals
       const pendingAdvances = await PurchasedPlan.find({
         userId: plan.userId,
         packageId: plan.packageId,
@@ -71,7 +83,6 @@ const expirePurchasedPlans = async () => {
 
       let baseExpiry = plan.expiryDate;
       for (const adv of pendingAdvances) {
-        // Only merge if not already merged
         const validityNumber = Number(adv.packageId.validity.number);
         const validityUnit = (adv.packageId.validity.unit || "").toLowerCase();
         let newExpiryDate = new Date(baseExpiry);
@@ -81,7 +92,6 @@ const expirePurchasedPlans = async () => {
           case "month": newExpiryDate.setMonth(newExpiryDate.getMonth() + validityNumber); break;
           case "year": newExpiryDate.setFullYear(newExpiryDate.getFullYear() + validityNumber); break;
         }
-        // Add a renewal entry
         plan.renewals.push({
           renewedOn: new Date(),
           previousExpiryDate: baseExpiry,
@@ -94,102 +104,89 @@ const expirePurchasedPlans = async () => {
           remarks: "Advance renewal merged"
         });
         baseExpiry = newExpiryDate;
-        // Mark advance renewal as merged
         adv.status = "expired";
         adv.advanceRenewal = false;
         await adv.save();
         console.log(`[CRON] Advance renewal merged for plan ${plan._id}, advance ${adv._id}`);
       }
-      // Update the plan's expiryDate after all merges
       plan.expiryDate = baseExpiry;
 
-      // No auto-recharge → expire the plan
-      if (!user.isAutoRecharge) {
-        plan.status = "expired";
-        await plan.save();
-        console.log(`[CRON] Expired (no auto-recharge) → ${plan._id}`);
-        continue;
-      }
+      // Check for auto-recharge
+      if (user.isAutoRecharge) {
+        const validityNumber = Number(pkg.validity.number);
+        const validityUnit = (pkg.validity.unit || "").toLowerCase();
 
-      const validityNumber = Number(pkg.validity.number);
-      const validityUnit = (pkg.validity.unit || "").toLowerCase();
+        if (
+          !validityNumber ||
+          validityNumber <= 0 ||
+          !["day", "week", "month", "year"].includes(validityUnit)
+        ) {
+          console.error(`[CRON] ❌ Invalid validity config for ${plan._id} → expiring`);
+          plan.status = "expired";
+          await plan.save();
+          continue;
+        }
 
-      if (
-        !validityNumber ||
-        validityNumber <= 0 ||
-        !["day", "week", "month", "year"].includes(validityUnit)
-      ) {
-        console.error(`[CRON] ❌ Invalid validity config for ${plan._id} → expiring`);
-        plan.status = "expired";
-        await plan.save();
-        continue;
-      }
+        const newExpiryDate = new Date(effectiveExpiry);
+        switch (validityUnit) {
+          case "day":
+            newExpiryDate.setDate(newExpiryDate.getDate() + validityNumber);
+            break;
+          case "week":
+            newExpiryDate.setDate(newExpiryDate.getDate() + validityNumber * 7);
+            break;
+          case "month":
+            newExpiryDate.setMonth(newExpiryDate.getMonth() + validityNumber);
+            break;
+          case "year":
+            newExpiryDate.setFullYear(newExpiryDate.getFullYear() + validityNumber);
+            break;
+        }
 
-      // Calculate new expiry date
-      const newExpiryDate = new Date(effectiveExpiry);
+        const packagePrice = pkg.basePrice || pkg.offerPrice || 0;
+        const walletDeduction = Math.max(packagePrice, 0);
 
-      switch (validityUnit) {
-        case "day":
-          newExpiryDate.setDate(newExpiryDate.getDate() + validityNumber);
-          break;
-        case "week":
-          newExpiryDate.setDate(newExpiryDate.getDate() + validityNumber * 7);
-          break;
-        case "month":
-          newExpiryDate.setMonth(newExpiryDate.getMonth() + validityNumber);
-          break;
-        case "year":
-          newExpiryDate.setFullYear(newExpiryDate.getFullYear() + validityNumber);
-          break;
-      }
+        if (walletDeduction > 0) {
+          user.walletBalance = Number(user.walletBalance || 0) - walletDeduction;
+          await user.save();
 
-      if (isNaN(newExpiryDate.getTime())) {
-        console.error(`[CRON] ❌ Failed to calculate new expiry for ${plan._id} → expiring`);
-        plan.status = "expired";
-        await plan.save();
-        continue;
-      }
+          await WalletHistory.create({
+            userId: user._id,
+            amount: walletDeduction,
+            type: "debit",
+            remark: "Auto-recharge deduction",
+            createdAt: now,
+          });
 
-      // ─── Payment & Wallet logic
-      const packagePrice = pkg.basePrice || pkg.offerPrice || 0;
-      const walletDeduction = Math.max(packagePrice, 0);
+          console.log(`[CRON] Wallet updated for user ${user._id}, amount deducted: ${walletDeduction}`);
+        }
 
-      if (walletDeduction > 0) {
-        user.walletBalance = Number(user.walletBalance || 0) - walletDeduction;
-        await user.save();
-
-        await WalletHistory.create({
-          userId: user._id,
-          amount: walletDeduction,
-          type: "debit",
-          remark: "Auto-recharge deduction",
-          createdAt: now,
+        plan.renewals.push({
+          renewedOn: now,
+          previousExpiryDate: effectiveExpiry,
+          newExpiryDate,
+          amountPaid: packagePrice,
+          paymentMethod: "Wallet",
+          remarks: "Auto-renew via cron",
         });
 
-        console.log(`[CRON] Wallet updated for user ${user._id}, amount deducted: ${walletDeduction}`);
+        plan.expiryDate = newExpiryDate;
+        plan.status = "active";
+        plan.isRenewed = true;
+
+        await plan.save();
+
+        console.log(
+          `[CRON] ✅ Auto-renewed | Plan ${plan._id} | User ${user._id} | ` +
+          `New expiry: ${newExpiryDate.toISOString()}`
+        );
+        continue;
       }
 
-      // Add the renewal record
-      plan.renewals.push({
-        renewedOn: now,
-        previousExpiryDate: effectiveExpiry,
-        newExpiryDate,
-        amountPaid: packagePrice,
-        paymentMethod: "Wallet",
-        remarks: "Auto-renew via cron",
-      });
-
-      // Update main plan document
-      plan.expiryDate = newExpiryDate;
-      plan.status = "active";
-      plan.isRenewed = true;
-
+      // Expire the plan if no renewals or auto-recharge
+      plan.status = "expired";
       await plan.save();
-
-      console.log(
-        `[CRON] ✅ Auto-renewed | Plan ${plan._id} | User ${user._id} | ` +
-        `New expiry: ${newExpiryDate.toISOString()}`
-      );
+      console.log(`[CRON] Expired plan ${plan._id}`);
     }
 
     console.log("[CRON] ✅ Completed expire & auto-renew check");

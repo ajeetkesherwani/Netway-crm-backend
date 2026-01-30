@@ -96,7 +96,7 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     ];
   }
 
-  const user = await User.find(query);
+  const user = await User.find(query).sort({ createdAt: -1 });
   if (!user) return next(new AppError("User not found", 404));
 
   successResponse(res, "User found successfully", user);

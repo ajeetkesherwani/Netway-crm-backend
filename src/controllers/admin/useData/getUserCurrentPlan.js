@@ -13,7 +13,7 @@ exports.getCurrentPlan = catchAsync(async (req, res, next) => {
   // Fetch ALL active purchased plans instead of 1
   const plans = await PurchasedPlan.find({
     userId,
-    status: "active",
+    status: { $in: ["active", "pending"] }
   })
     .sort({ startDate: -1 }) // latest first
     .populate(

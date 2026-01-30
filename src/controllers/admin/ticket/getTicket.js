@@ -83,6 +83,7 @@ if (subZoneId) {
 
   const pipeline = [
     { $match: match },
+      { $sort: { createdAt: -1 } },
     {
       $lookup: {
         from: "ticketcategories",

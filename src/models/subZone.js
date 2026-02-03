@@ -7,11 +7,11 @@ const subZoneSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    zoneId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Zone",
-      required: true,
-    },
+    // zoneId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Zone",
+    //   required: true,
+    // },
     status: {
       type: String,
       enum: ["active", "inactive"],

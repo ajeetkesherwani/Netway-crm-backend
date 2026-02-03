@@ -50,7 +50,7 @@ exports.getRoleById = catchAsync(async (req, res, next) => {
 
 // Update Role
 exports.updateRole = catchAsync(async (req, res, next) => {
-    const { name, description, permissions } = req.body;
+    const { name, description, permissions, isActive  } = req.body;
 
     const role = await Role.findById(req.params.id);
     if (!role) {
@@ -67,7 +67,7 @@ exports.updateRole = catchAsync(async (req, res, next) => {
 
     const updatedRole = await Role.findByIdAndUpdate(
         req.params.id,
-        { name, description, permissions },
+        { name, description, permissions, isActive  },
         { new: true, runValidators: true }
     );
 

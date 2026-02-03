@@ -139,7 +139,7 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
   // 4️⃣ Update main plan
   // plan.expiryDate = newExpiry;
   plan.isRenewed = true;
-  plan.amountPaid += Number(amountPaid);
+  // plan.amountPaid += Number(amountPaid);
   // plan.status = "active";
   plan.isPaymentReceived = isPaymentReceived;
 

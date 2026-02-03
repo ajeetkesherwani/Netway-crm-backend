@@ -69,6 +69,7 @@ const Admin = require("../../../models/admin");
 const Reseller = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const Staff = require("../../../models/Staff"); // ✅ Added Staff model
+const Retailer = require("../../../models/retailer");
 
 exports.adminAuthenticate = catchAsync(async (req, res, next) => {
   let token;
@@ -105,8 +106,8 @@ exports.adminAuthenticate = catchAsync(async (req, res, next) => {
   if (roleName === "admin") {
     user = await Admin.findById(userId);
     role = "Admin";
-  } else if (roleName === "reseller") {
-    user = await Reseller.findById(userId);
+  } else if (roleName === "reseller" || roleName === "retailer") {
+    user = await Retailer.findById(userId);
     role = "Reseller";
   } else if (roleName === "lco") {
     user = await Lco.findById(userId);

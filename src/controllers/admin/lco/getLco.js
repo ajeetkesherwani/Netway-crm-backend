@@ -22,7 +22,7 @@ exports.getLcoList = catchAsync(async (req, res, next) => {
         .populate({
             path: "retailerId",
             select: "resellerName", // Retailer name
-        });
+        }).sort({ createdAt: -1 });
 
     if (!lcoList || lcoList.length === 0) {
         return next(new AppError("LCO not found", 404));

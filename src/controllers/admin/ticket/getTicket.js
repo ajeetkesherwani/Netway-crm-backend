@@ -22,6 +22,27 @@ exports.getTicketList = catchAsync(async (req, res) => {
     subZoneId,
   } = req.query;
 
+  const fixedByIds = [];
+
+if (fixedBy && fixedBy.trim()) {
+  const regex = new RegExp(fixedBy.trim(), "i");
+
+  const [admins, resellers, lcos, staffs] = await Promise.all([
+    mongoose.model("Admin").find({ name: regex }).select("_id"),
+    mongoose.model("Retailer").find({ resellerName: regex }).select("_id"),
+    mongoose.model("Lco").find({ lcoName: regex }).select("_id"),
+    mongoose.model("Staff").find({ name: regex }).select("_id"),
+  ]);
+
+  fixedByIds.push(
+    ...admins.map(a => a._id),
+    ...resellers.map(r => r._id),
+    ...lcos.map(l => l._id),
+    ...staffs.map(s => s._id)
+  );
+}
+
+
   // Build match conditions
   const match = {};
 
@@ -66,7 +87,10 @@ exports.getTicketList = catchAsync(async (req, res) => {
     match.updatedAt = { $gte: start, $lte: end };
   }
   if (assignTo) match.assignToId = { $regex: assignTo, $options: "i" };
-  if (fixedBy) match.fixedBy = { $regex: fixedBy, $options: "i" };
+  // if (fixedBy) match.fixedBy = { $regex: fixedBy, $options: "i" };
+  if (fixedBy && fixedByIds.length) {
+  match.fixedBy = { $in: fixedByIds };
+}
   if (resellerId) match.resellerId = new mongoose.Types.ObjectId(resellerId);
   if (lcoId) match.lcoId = new mongoose.Types.ObjectId(lcoId);
   if (zoneId) {

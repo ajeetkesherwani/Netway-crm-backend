@@ -11,7 +11,7 @@ const lcoSchema = new mongoose.Schema({
     role: {
         type: mongoose.Schema.Types.ObjectId, ref: "Role"
     },
-    lcoName: { type: String, requied: true },
+    lcoName: { type: String, required: true },
     password: { type: String, },
     mobileNo: { type: Number, match: /^[0-9]{10}$/ },
     address: { type: String },
@@ -70,7 +70,7 @@ const lcoSchema = new mongoose.Schema({
         other: { type: [String], default: "" },
     },
 
-});
+}, { timestamps: true });
 
 // Hash employeeAssociation passwords before saving
 lcoSchema.pre("save", async function (next) {

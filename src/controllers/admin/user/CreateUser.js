@@ -91,17 +91,7 @@ exports.createUser = async (req, res, next) => {
        "Caf Form",
       "Other",
     ];
-    // const validDocTypes = [
-    //   "ID proof",
-    //   "Profile Id",
-    //   "Adhar Card",
-    //   "Insurence Paper",
-    //   "Signature",
-    //   "Other",
-    //   "Pan Card",
-    //   "Aadhar Card",
-    //   "Address Proof",
-    // ];
+    
 
     // Group files by document type
     const documentMap = {};
@@ -141,71 +131,6 @@ exports.createUser = async (req, res, next) => {
     }
 
     console.log("FINAL DOCUMENTS:", finalDocuments);
-
-
-    //     const uploadedFiles = req.files?.documents || [];
-
-    //     // Accept BOTH keys — documentTypes OR documentTypes[]
-    //     let documentTypes = [];
-
-    //     if (req.body.documentTypes) {
-    //       documentTypes = Array.isArray(req.body.documentTypes)
-    //         ? req.body.documentTypes
-    //         : [req.body.documentTypes];
-    //     }
-
-    //     if (req.body["documentTypes[]"]) {
-    //       const arr = req.body["documentTypes[]"];
-    //       documentTypes = Array.isArray(arr) ? arr : [arr];
-    //     }
-
-    //     console.log("DOCUMENT TYPES RECEIVED:", documentTypes);
-
-    //     // MUST BE ABOVE finalDocuments!
-    //     const validDocTypes = [
-    //       "ID proof",
-    //       "Profile Id",
-    //       "Adhar Card",
-    //       "Insurence Paper",
-    //       "Signature",
-    //       "Other",
-    //       "Pan Card",
-    //       "Aadhar Card",
-    //       "Address Proof",
-    //     ];
-
-    //     // Map files + types
-    //     const documentMap = {};
-
-    // uploadedFiles.forEach((file, i) => {
-    //   const type = validDocTypes.includes(documentTypes[i])
-    //     ? documentTypes[i]
-    //     : "Other";
-
-    //   if (!documentMap[type]) {
-    //     documentMap[type] = [];
-    //   }
-
-    //   documentMap[type].push(file.path);
-    // });
-
-    // const finalDocuments = [];
-
-    // for (const type in documentMap) {
-    //   const files = documentMap[type];
-
-    //   //block multiple files for non-Other
-    //   if (type !== "Other" && files.length > 1) {
-    //     throw new AppError(`${type} allows only ONE file`, 400);
-    //   }
-
-    //   finalDocuments.push({
-    //     documentType: type,          
-    //     documentImage: files,       
-    //   });
-    // }
-
-    //     console.log("FINAL DOCUMENTS:", finalDocuments);
 
     /** ------------------------------
      * 3. General Information

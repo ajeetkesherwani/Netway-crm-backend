@@ -13,9 +13,8 @@ exports.getSubzonesByZoneId = catchAsync(async (req, res, next) => {
   }
 
   const subZones = await SubZone.find({
-    zoneId,
     status: "active",
-  }).select("name -_id");
+  }).sort({ creatdedAt: -1 });
 
   if (!subZones) return next(new AppError("subZones not found", 404));
 

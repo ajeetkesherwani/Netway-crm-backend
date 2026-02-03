@@ -33,6 +33,10 @@ const {
   getOttPackageList 
 } = require("../../controllers/admin/Package/getOttPackageList");
 
+const { 
+  getPackagesByRole 
+} = require("../../controllers/admin/Package/getPackageByRole");
+
 
 
 router.get("/list", adminAuthenticate, getPackages);
@@ -42,6 +46,7 @@ router.get("/:id", adminAuthenticate, getPackagesDetails);
 router.patch("/update/:packageId", adminAuthenticate, updatePackage);
 router.delete("/delete/:packageId", adminAuthenticate, deletePackage);
 router.get("/ott-package/list", getOttPackageList);
+router.get("/packageList/byRole", adminAuthenticate, getPackagesByRole);
 
 module.exports = router;
 

@@ -9,7 +9,7 @@ exports.getRetailer = catchAsync(async(req, res, next) => {
     .populate({
         path: "role",
         select: "roleName"
-    });
+    }).sort({ createdAt: -1 });
     if(!retailer) return next(new AppError("reatiler not found",404));
 
     successResponse(res, "retailer found successfully", retailer);

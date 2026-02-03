@@ -1,24 +1,24 @@
 // config/roles.js
 module.exports = {
   super_admin: {
-    users: ["view", "add", "edit", "delete"],
-    packages: ["view", "add", "edit", "delete"],
-    payments: ["view", "refund"],
-    settings: ["view", "edit"]
+    users: ["View", "Add", "Edit", "Delete", "Create"],
+    packages: ["View", "Add", "Edit", "Delete"],
+    payments: ["View", "Refund"],
+    settings: ["View", "Edit"]
   },
   admin: {
-    users: ["view", "add", "edit"],
-    packages: ["view", "add", "edit"],
-    payments: ["view"],
-    settings: ["view"]
+    users: ["View", "Add", "Edit"],
+    packages: ["View", "Add", "Edit"],
+    payments: ["View"],
+    settings: ["View"]
   },
   support: {
-    users: ["view"],
-    packages: ["view"],
-    payments: ["view"],
-    tickets: ["view", "respond"]
+    users: ["View"],
+    packages: ["View"],
+    payments: ["View"],
+    tickets: ["View", "Respond"]
   },
   billing: {
-    payments: ["view", "refund", "export"]
+    payments: ["View", "Refund", "Export"]
   }
 };

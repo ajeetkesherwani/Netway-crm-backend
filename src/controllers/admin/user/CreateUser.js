@@ -88,10 +88,10 @@ exports.createUser = async (req, res, next) => {
       "Pan Card",
       "Driving Licence",
       "GST",
-       "Caf Form",
+      "Caf Form",
       "Other",
     ];
-    
+
 
     // Group files by document type
     const documentMap = {};
@@ -182,9 +182,20 @@ exports.createUser = async (req, res, next) => {
       },
 
       createdFor: {
-        id: customer.createdFor?.id || null,
-        type: customer.createdFor?.type || "Self",
+        id: req.user.role === "Admin"
+          ? req.user._id
+          : customer.createdFor?.id || req.user._id,
+
+        type: req.user.role === "Admin"
+          ? "Admin"
+          : customer.createdFor?.type || "Self",
       },
+
+
+      // createdFor: {
+      //   id: customer.createdFor?.id || null,
+      //   type: customer.createdFor?.type || "Self",
+      // },
     };
 
     /** ------------------------------
@@ -219,10 +230,10 @@ exports.createUser = async (req, res, next) => {
           ? req.body.area.trim()
           : null,
 
-          subZone:
-    req.body.subZone && req.body.subZone.trim() !== ""
-      ? req.body.subZone.trim()
-      : null,
+      subZone:
+        req.body.subZone && req.body.subZone.trim() !== ""
+          ? req.body.subZone.trim()
+          : null,
     };
 
     /** ------------------------------

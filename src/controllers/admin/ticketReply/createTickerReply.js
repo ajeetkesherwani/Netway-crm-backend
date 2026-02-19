@@ -2,6 +2,9 @@ const TicketReply = require("../../../models/ticketReply");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const Ticket = require("../../../models/ticket");
+const User = require("../../../models/user");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 
 exports.createTicketReply = catchAsync(async (req, res, next) => {
     const { ticket, user, description } = req.body;
@@ -25,6 +28,43 @@ exports.createTicketReply = catchAsync(async (req, res, next) => {
     });
 
     await tReply.save();
+
+    
+    // ---------------- SEND SMS ---------------- //
+
+    try {
+
+        // Get ticket
+        const ticketData = await Ticket.findById(ticket);
+
+        if (!ticketData) {
+            console.log("Ticket not found for SMS");
+        } else {
+
+            //Get user using ticket.userId
+            const userData = await User.findById(ticketData.userId);
+
+            const mobile = userData?.generalInformation?.phone;
+
+            if (mobile) {
+
+                await sendTemplateSMS(
+                    mobile,
+                    "complaint has been registered",
+                    {
+                        ticketNo: ticketData.ticketNumber
+                    }
+                );
+
+                console.log("Complaint SMS sent successfully");
+            } else {
+                console.log("User mobile not found");
+            }
+        }
+
+    } catch (error) {
+        console.log("SMS sending failed:", error.message);
+    }
 
     successResponse(res, "Ticket reply created successfully", tReply);
 

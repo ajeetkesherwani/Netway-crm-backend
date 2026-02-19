@@ -1,13 +1,287 @@
+// const User = require("../../../models/user");
+// const catchAsync = require("../../../utils/catchAsync");
+// const AppError = require("../../../utils/AppError");
+// const bcrypt = require("bcryptjs");
+
+// exports.updateUser = catchAsync(async (req, res, next) => {
+//   const { userId } = req.params;
+//   if (!userId) return next(new AppError("User ID is required", 400));
+
+//   let user = await User.findById(userId);
+//   if (!user) return next(new AppError("User not found", 404));
+
+//   const {
+//     customer,
+//     addresses,
+//     additional,
+//     area,
+//     subZone
+//   } = req.body;
+
+//   const parsedCustomer = customer ? JSON.parse(customer) : {};
+//   const parsedAddresses = addresses ? JSON.parse(addresses) : {};
+//   const parsedAdditional = additional ? JSON.parse(additional) : {};
+
+//   // ====================================================================
+//   // DOCUMENTS UPDATE - PRODUCTION LEVEL
+//   // ====================================================================
+
+//   const uploadedFiles = req.files?.documents || [];
+
+//   /* ---------------------------------------------------------
+//   STEP 1: Parse document types
+//   --------------------------------------------------------- */
+
+//   let documentTypes = [];
+
+//   if (req.body["documentTypes[]"]) {
+//     const arr = req.body["documentTypes[]"];
+//     documentTypes = Array.isArray(arr) ? arr : [arr];
+//   }
+
+//   if (req.body.documentTypes) {
+//     const val = req.body.documentTypes;
+//     documentTypes = [...documentTypes, ...(Array.isArray(val) ? val : [val])];
+//   }
+
+//   if (!documentTypes.length && uploadedFiles.length > 0) {
+//     for (let i = 0; i < uploadedFiles.length; i++) {
+//       const key = `documentTypes[${i}]`;
+//       if (req.body[key]) documentTypes.push(req.body[key]);
+//     }
+//   }
+
+//   documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
+
+//   const validDocTypes = [
+//     "Address Proof",
+//     "Profile Photo",
+//     "Addhar Card",
+//     "Passport",
+//     "Signature",
+//     "Pan Card",
+//     "Driving Licence",
+//     "GST",
+//     "Caf Form",
+//     "Other",
+//   ];
+
+//   /* ---------------------------------------------------------
+//   STEP 2: Parse existing docs to keep
+//   --------------------------------------------------------- */
+
+//   let filesToKeep = [];
+
+//   if (req.body.existingDocuments) {
+//     try {
+//       const parsed = JSON.parse(req.body.existingDocuments);
+//       filesToKeep = Array.isArray(parsed) ? parsed : [];
+//     } catch {
+//       filesToKeep = Array.isArray(req.body.existingDocuments)
+//         ? req.body.existingDocuments
+//         : [];
+//     }
+//   }
+
+//   filesToKeep = filesToKeep
+//     .map(f => (typeof f === "string" ? f.split("/").pop() : null))
+//     .filter(Boolean);
+
+//   /* ---------------------------------------------------------
+//   STEP 3: Start with existing DB documents
+//   --------------------------------------------------------- */
+
+//   let updatedDocuments = [];
+
+//   /* ---------------------------------------------------------
+//   STEP 4: Retain or Remove Existing
+//   --------------------------------------------------------- */
+
+//   (user.document || []).forEach(doc => {
+
+//     if (doc.documentType === "Other") {
+
+//       const filteredImages = (doc.documentImage || []).filter(img =>
+//         filesToKeep.includes(img.split("/").pop())
+//       );
+
+//       if (filteredImages.length > 0) {
+//         updatedDocuments.push({
+//           documentType: "Other",
+//           documentImage: filteredImages
+//         });
+//       }
+
+//     } else {
+
+//       const filename = typeof doc.documentImage === "string" && doc.documentImage
+//         ? doc.documentImage.split("/").pop()
+//         : null;
+
+//       if (filename && filesToKeep.includes(filename)) {
+//         updatedDocuments.push(doc);
+//       }
+//     }
+
+//   });
+
+//   /* ---------------------------------------------------------
+//   STEP 5: Merge New Uploads
+//   --------------------------------------------------------- */
+
+//   uploadedFiles.forEach((file, index) => {
+
+//     let type = "Other";
+
+//     if (documentTypes[index] && validDocTypes.includes(documentTypes[index])) {
+//       type = documentTypes[index];
+//     }
+
+//     let existingDoc = updatedDocuments.find(d => d.documentType === type);
+
+//     if (!existingDoc) {
+//       existingDoc = {
+//         documentType: type,
+//         documentImage: type === "Other" ? [] : null
+//       };
+//       updatedDocuments.push(existingDoc);
+//     }
+
+//     if (type === "Other") {
+
+//       const current = Array.isArray(existingDoc.documentImage)
+//         ? existingDoc.documentImage
+//         : [];
+
+//       existingDoc.documentImage = [...current, file.path];
+
+//     } else {
+
+//       // Replace old file
+//       existingDoc.documentImage = file.path;
+
+//     }
+
+//   });
+
+//   /* ---------------------------------------------------------
+//   STEP 6: Final Clean
+//   (Remove empty documents)
+//   --------------------------------------------------------- */
+
+//   updatedDocuments = updatedDocuments.filter(doc => {
+
+//     if (doc.documentType === "Other") {
+//       return Array.isArray(doc.documentImage) && doc.documentImage.length > 0;
+//     }
+
+//     return !!doc.documentImage;
+
+//   });
+
+//   /* ---------------------------------------------------------
+//   STEP 7: Assign Back
+//   --------------------------------------------------------- */
+
+//   user.document = updatedDocuments;
+//   user.markModified("document");
+
+
+//   // ====================================================================
+//   // 3. ADDRESS UPDATE
+//   // ====================================================================
+//   if (Object.keys(parsedAddresses).length > 0) {
+//     const updateAddr = (target, source) => {
+//       if (source.addressLine1 !== undefined) target.addressine1 = source.addressLine1 || "";
+//       if (source.addressLine2 !== undefined) target.addressine2 = source.addressLine2 || "";
+//       if (source.city !== undefined) target.city = source.city || "";
+//       if (source.state !== undefined) target.state = source.state || "";
+//       if (source.pincode !== undefined) target.pincode = source.pincode || "";
+//     };
+
+//     if (parsedAddresses.billing) updateAddr(user.addressDetails.billingAddress, parsedAddresses.billing);
+//     if (parsedAddresses.permanent) updateAddr(user.addressDetails.permanentAddress, parsedAddresses.permanent);
+//     if (parsedAddresses.installation) updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
+
+//     if (area !== undefined) user.addressDetails.area = area || null;
+//     if (subZone !== undefined) user.addressDetails.subZone = subZone || null;
+//     if (req.body.customArea !== undefined) user.addressDetails.customArea = req.body.customArea || "";
+
+//     user.markModified("addressDetails");
+//   }
+
+//   // ====================================================================
+//   // 4. PACKAGE UPDATE
+//   // ====================================================================
+//   if (parsedCustomer.packageDetails) {
+//     const pkg = parsedCustomer.packageDetails;
+//     user.packageInfomation = {
+//       ...user.packageInfomation,
+//       packageId: pkg.packageId || user.packageInfomation.packageId,
+//       packageName: pkg.packageName || user.packageInfomation.packageName,
+//       price: pkg.packageAmount || user.packageInfomation.price,
+//     };
+//     user.markModified("packageInfomation");
+//   }
+
+//   // ====================================================================
+//   // 5. NETWORK UPDATE
+//   // ====================================================================
+//   if (parsedCustomer.networkType || parsedCustomer.ipType) {
+//     if (parsedCustomer.networkType) {
+//       user.networkInformation.networkType = parsedCustomer.networkType;
+//     }
+//     if (parsedCustomer.ipType) {
+//       user.networkInformation.ipType = parsedCustomer.ipType;
+//       if (parsedCustomer.ipType === "Static IP") {
+//         user.networkInformation.statisIp = { nas: [""], category: "" };
+//         user.networkInformation.dynamicIpPool = "";
+//       } else if (parsedCustomer.dynamicIpPool !== undefined) {
+//         user.networkInformation.dynamicIpPool = parsedCustomer.dynamicIpPool;
+//       }
+//     }
+//     user.markModified("networkInformation");
+//   }
+
+//   // ====================================================================
+//   // 6. ADDITIONAL & STATUS
+//   // ====================================================================
+//   if (Object.keys(parsedAdditional).length > 0) {
+//     const addl = user.additionalInformation;
+//     if (parsedAdditional.dob !== undefined) addl.dob = parsedAdditional.dob;
+//     if (parsedAdditional.description !== undefined) addl.description = parsedAdditional.description;
+//     if (parsedAdditional.ekYC !== undefined) addl.ekyc = parsedAdditional.ekYC ? "yes" : "no";
+
+//     if (parsedAdditional.status !== undefined) {
+//       user.status = parsedAdditional.status ? "active" : "Inactive";
+//     }
+
+//     user.markModified("additionalInformation");
+//   }
+
+//   // ====================================================================
+//   // 7. SAVE
+//   // ====================================================================
+//   await user.save({ validateModifiedOnly: true });
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Customer updated successfully",
+//     data: user,
+//   });
+// });
+
+
+
 const User = require("../../../models/user");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
-const bcrypt = require("bcryptjs");
 
 exports.updateUser = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
   if (!userId) return next(new AppError("User ID is required", 400));
 
-  let user = await User.findById(userId);
+  const user = await User.findById(userId);
   if (!user) return next(new AppError("User not found", 404));
 
   const {
@@ -22,254 +296,248 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   const parsedAddresses = addresses ? JSON.parse(addresses) : {};
   const parsedAdditional = additional ? JSON.parse(additional) : {};
 
-  // ====================================================================
-  // 1. DOCUMENTS UPDATE - SAME LOGIC AS CREATE (RELIABLE & ROBUST)
-  // ====================================================================
+  /* =========================================================
+     🔥 DOCUMENT UPDATE - ENTERPRISE LEVEL
+  ========================================================== */
 
-const uploadedFiles = req.files?.documents || [];
+  const uploadedFiles = req.files?.documents || [];
 
-// --- STEP 1: Parse documentTypes in ALL possible ways (just like createUser) ---
-let documentTypes = [];
+  const validDocTypes = [
+    "Address Proof",
+    "Profile Photo",
+    "Addhar Card",
+    "Passport",
+    "Signature",
+    "Pan Card",
+    "Driving Licence",
+    "GST",
+    "Caf Form",
+    "Other",
+  ];
 
-// Case 1: documentTypes[]
-if (req.body["documentTypes[]"]) {
-  const arr = req.body["documentTypes[]"];
-  documentTypes = Array.isArray(arr) ? arr : [arr];
-}
+  /* ----------------------------
+     1️⃣ Parse Document Types
+  ---------------------------- */
 
-// Case 2: plain documentTypes (single or array)
-if (req.body.documentTypes) {
-  const val = req.body.documentTypes;
-  const arr = Array.isArray(val) ? val : [val];
-  documentTypes = [...documentTypes, ...arr];
-}
+  let documentTypes = [];
 
-// Case 3: Indexed like documentTypes[0], documentTypes[1] (common in dynamic forms)
-if (!documentTypes.length && uploadedFiles.length > 0) {
-  for (let i = 0; i < uploadedFiles.length; i++) {
-    const key = `documentTypes[${i}]`;
-    if (req.body[key]) {
-      documentTypes.push(req.body[key]);
+  if (req.body["documentTypes[]"]) {
+    const arr = req.body["documentTypes[]"];
+    documentTypes = Array.isArray(arr) ? arr : [arr];
+  }
+
+  if (req.body.documentTypes) {
+    const val = req.body.documentTypes;
+    documentTypes = [
+      ...documentTypes,
+      ...(Array.isArray(val) ? val : [val]),
+    ];
+  }
+
+  if (!documentTypes.length && uploadedFiles.length > 0) {
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const key = `documentTypes[${i}]`;
+      if (req.body[key]) documentTypes.push(req.body[key]);
     }
   }
-}
 
-// Clean and trim
-documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
+  documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
 
-const validDocTypes = [
-  "Address Proof",
-  "Profile Photo",
-  "Addhar Card",
-  "Passport",
-  "Signature",
-  "Pan Card",
-  "Driving Licence",
-  "GST",
-  "Caf Form",
-  "Other",
-];
+  /* ----------------------------
+     2️⃣ Parse Existing Files To Keep
+  ---------------------------- */
 
-// --- STEP 2: Parse existing documents to keep (sent as JSON string) ---
-let filesToKeep = [];
-if (req.body.existingDocuments) {
-  try {
-    const parsed = JSON.parse(req.body.existingDocuments);
-    filesToKeep = Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    // Fallback: if not JSON, try array
-    filesToKeep = Array.isArray(req.body.existingDocuments)
-      ? req.body.existingDocuments
-      : [];
+  let filesToKeep = [];
+
+  if (req.body.existingDocuments) {
+    try {
+      const parsed = JSON.parse(req.body.existingDocuments);
+      filesToKeep = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      filesToKeep = Array.isArray(req.body.existingDocuments)
+        ? req.body.existingDocuments
+        : [];
+    }
   }
-}
 
-// Extract just filenames for comparison
-filesToKeep = filesToKeep
-  .map(f => (typeof f === "string" ? f.split("/").pop() : null))
-  .filter(Boolean);
+  filesToKeep = filesToKeep
+    .map(f => (typeof f === "string" ? f.split("/").pop() : null))
+    .filter(Boolean);
 
-// --- STEP 3: Retain existing documents that user wants to keep ---
-const retainedDocuments = [];
+  /* ----------------------------
+     3️⃣ Retain Existing Docs
+  ---------------------------- */
 
-for (const doc of user.document || []) {
-  let images = Array.isArray(doc.documentImage)
-    ? doc.documentImage
-    : [doc.documentImage].filter(Boolean);
+  let updatedDocuments = [];
 
-  const keptImages = images.filter(img => {
-    const filename = typeof img === "string" ? img.split("/").pop() : null;
-    return filename && filesToKeep.includes(filename);
+  (user.document || []).forEach(doc => {
+
+    // MULTIPLE IMAGE TYPE
+    if (doc.documentType === "Other") {
+
+      const remainingImages = (doc.documentImage || []).filter(img =>
+        filesToKeep.includes(img.split("/").pop())
+      );
+
+      if (remainingImages.length > 0) {
+        updatedDocuments.push({
+          documentType: "Other",
+          documentImage: remainingImages
+        });
+      }
+
+    } else {
+
+      const filename =
+        typeof doc.documentImage === "string" && doc.documentImage
+          ? doc.documentImage.split("/").pop()
+          : null;
+
+      if (filename && filesToKeep.includes(filename)) {
+        updatedDocuments.push(doc);
+      }
+
+    }
+
   });
 
-  if (keptImages.length > 0) {
-    retainedDocuments.push({
-      documentType: doc.documentType,
-      documentImage: doc.documentType === "Other" ? keptImages : keptImages[0],
-    });
-  }
-}
+  /* ----------------------------
+     4️⃣ Merge New Uploads
+  ---------------------------- */
 
-// --- STEP 4: Process new uploaded files ---
-const newDocumentMap = {};
+  uploadedFiles.forEach((file, index) => {
 
-uploadedFiles.forEach((file, i) => {
-  let type = "Other"; // fallback
+    let type = documentTypes[index] || "Other";
 
-  if (i < documentTypes.length && documentTypes[i]) {
-    const submittedType = documentTypes[i];
-    if (validDocTypes.includes(submittedType)) {
-      type = submittedType;
+    if (!validDocTypes.includes(type)) {
+      type = "Other";
     }
-  }
 
-  if (!newDocumentMap[type]) newDocumentMap[type] = [];
-  newDocumentMap[type].push(file.path || file.location || file.filename);
-});
-
-// Validate: only "Other" can have multiple new files
-for (const [type, files] of Object.entries(newDocumentMap)) {
-  if (type !== "Other" && files.length > 1) {
-    return next(
-      new AppError(
-        `Multiple files not allowed for '${type}'. Only 'Other' supports multiple images.`,
-        400
-      )
+    let existingDoc = updatedDocuments.find(
+      d => d.documentType === type
     );
-  }
-}
 
-// --- STEP 5: Merge new files into retained documents ---
-for (const [type, newFiles] of Object.entries(newDocumentMap)) {
-  let existingDoc = retainedDocuments.find(d => d.documentType === type);
-
-  if (!existingDoc) {
-    existingDoc = {
-      documentType: type,
-      documentImage: type === "Other" ? [] : null,
-    };
-    retainedDocuments.push(existingDoc);
-  }
-
-  if (type === "Other") {
-    // Append new files
-    const current = Array.isArray(existingDoc.documentImage)
-      ? existingDoc.documentImage
-      : [];
-    existingDoc.documentImage = [...current, ...newFiles];
-  } else {
-    // Replace single file
-    existingDoc.documentImage = newFiles[0];
-  }
-}
-
-// Final assignment
-user.document = retainedDocuments;
-user.markModified("document");
-
-  // ====================================================================
-  // 2. GENERAL INFORMATION UPDATE
-  // ====================================================================
-  if (Object.keys(parsedCustomer).length > 0) {
-    const gen = user.generalInformation;
-
-    const set = (key, value) => {
-      if (value !== undefined && value !== null) gen[key] = value;
-    };
-
-    set("title", parsedCustomer.title);
-    set("name", parsedCustomer.name);
-    set("billingName", parsedCustomer.billingName);
-    set("username", parsedCustomer.username);
-    set("email", parsedCustomer.email);
-    set("phone", parsedCustomer.phone);
-    set("alternatePhone", parsedCustomer.alternatePhone);
-    set("ipactId", parsedCustomer.accountId);
-    set("connectionType", parsedCustomer.connectionType?.toLowerCase());
-    set("selsExecutive", parsedCustomer.selsExecutive);
-
-    // Installation By
-    if (Array.isArray(parsedCustomer.installationBy)) {
-      gen.installationBy = parsedCustomer.installationBy.filter(Boolean);
-    }
-    if (parsedCustomer.installationByName !== undefined) {
-      gen.installationByName = parsedCustomer.installationByName?.trim() || null;
-    }
-    if (gen.installationBy?.length > 0) gen.installationByName = null;
-    if (gen.installationByName) gen.installationBy = [];
-
-    set("ipAdress", parsedCustomer.ipAddress);
-    set("ipType", parsedCustomer.ipType);
-    set("serialNo", parsedCustomer.serialNo);
-    set("macId", parsedCustomer.macId);
-    set("serviceOpted", parsedCustomer.serviceOpted);
-    set("stbNo", parsedCustomer.stbNo);
-    set("vcNo", parsedCustomer.vcNo);
-    set("circuitId", parsedCustomer.circuitId);
-
-    // Password update
-    if (parsedCustomer.password?.trim()) {
-      gen.plainPassword = parsedCustomer.password;
-      gen.password = await bcrypt.hash(parsedCustomer.password, 10);
-    }
-
-    // Created For
-    if (parsedCustomer.createdFor) {
-      gen.createdFor = {
-        type: parsedCustomer.createdFor.type || "Self",
-        id: parsedCustomer.createdFor.id || null,
+    if (!existingDoc) {
+      existingDoc = {
+        documentType: type,
+        documentImage: type === "Other" ? [] : null
       };
+      updatedDocuments.push(existingDoc);
     }
 
-    user.markModified("generalInformation");
-  }
+    if (type === "Other") {
 
-  // ====================================================================
-  // 3. ADDRESS UPDATE
-  // ====================================================================
+      const current = Array.isArray(existingDoc.documentImage)
+        ? existingDoc.documentImage
+        : [];
+
+      existingDoc.documentImage = [...current, file.path];
+
+    } else {
+
+      // Replace existing single-type doc
+      existingDoc.documentImage = file.path;
+
+    }
+
+  });
+
+  /* ----------------------------
+     5️⃣ Remove Empty Types
+  ---------------------------- */
+
+  updatedDocuments = updatedDocuments.filter(doc => {
+
+    if (doc.documentType === "Other") {
+      return (
+        Array.isArray(doc.documentImage) &&
+        doc.documentImage.length > 0
+      );
+    }
+
+    return !!doc.documentImage;
+
+  });
+
+  user.document = updatedDocuments;
+  user.markModified("document");
+
+  /* =========================================================
+     🔥 ADDRESS UPDATE (FIXED TYPO)
+  ========================================================== */
+
   if (Object.keys(parsedAddresses).length > 0) {
+
     const updateAddr = (target, source) => {
-      if (source.addressLine1 !== undefined) target.addressine1 = source.addressLine1 || "";
-      if (source.addressLine2 !== undefined) target.addressine2 = source.addressLine2 || "";
-      if (source.city !== undefined) target.city = source.city || "";
-      if (source.state !== undefined) target.state = source.state || "";
-      if (source.pincode !== undefined) target.pincode = source.pincode || "";
+      if (!target) return;
+
+      if (source.addressLine1 !== undefined)
+        target.addressLine1 = source.addressLine1 || "";
+
+      if (source.addressLine2 !== undefined)
+        target.addressLine2 = source.addressLine2 || "";
+
+      if (source.city !== undefined)
+        target.city = source.city || "";
+
+      if (source.state !== undefined)
+        target.state = source.state || "";
+
+      if (source.pincode !== undefined)
+        target.pincode = source.pincode || "";
     };
 
-    if (parsedAddresses.billing) updateAddr(user.addressDetails.billingAddress, parsedAddresses.billing);
-    if (parsedAddresses.permanent) updateAddr(user.addressDetails.permanentAddress, parsedAddresses.permanent);
-    if (parsedAddresses.installation) updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
+    if (parsedAddresses.billing)
+      updateAddr(user.addressDetails.billingAddress, parsedAddresses.billing);
 
-    if (area !== undefined) user.addressDetails.area = area || null;
-    if(subZone !== undefined) user.addressDetails.subZone = subZone || null;
-    if (req.body.customArea !== undefined) user.addressDetails.customArea = req.body.customArea || "";
+    if (parsedAddresses.permanent)
+      updateAddr(user.addressDetails.permanentAddress, parsedAddresses.permanent);
+
+    if (parsedAddresses.installation)
+      updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
+
+    if (area !== undefined)
+      user.addressDetails.area = area || null;
+
+    if (subZone !== undefined)
+      user.addressDetails.subZone = subZone || null;
+
+    if (req.body.customArea !== undefined)
+      user.addressDetails.customArea = req.body.customArea || "";
 
     user.markModified("addressDetails");
   }
 
-  // ====================================================================
-  // 4. PACKAGE UPDATE
-  // ====================================================================
+  /* =========================================================
+     PACKAGE UPDATE
+  ========================================================== */
+
   if (parsedCustomer.packageDetails) {
     const pkg = parsedCustomer.packageDetails;
+
     user.packageInfomation = {
       ...user.packageInfomation,
       packageId: pkg.packageId || user.packageInfomation.packageId,
       packageName: pkg.packageName || user.packageInfomation.packageName,
       price: pkg.packageAmount || user.packageInfomation.price,
     };
+
     user.markModified("packageInfomation");
   }
 
-  // ====================================================================
-  // 5. NETWORK UPDATE
-  // ====================================================================
+  /* =========================================================
+     NETWORK UPDATE
+  ========================================================== */
+
   if (parsedCustomer.networkType || parsedCustomer.ipType) {
-    if (parsedCustomer.networkType) {
+
+    if (parsedCustomer.networkType)
       user.networkInformation.networkType = parsedCustomer.networkType;
-    }
+
     if (parsedCustomer.ipType) {
+
       user.networkInformation.ipType = parsedCustomer.ipType;
+
       if (parsedCustomer.ipType === "Static IP") {
         user.networkInformation.statisIp = { nas: [""], category: "" };
         user.networkInformation.dynamicIpPool = "";
@@ -277,28 +545,37 @@ user.markModified("document");
         user.networkInformation.dynamicIpPool = parsedCustomer.dynamicIpPool;
       }
     }
+
     user.markModified("networkInformation");
   }
 
-  // ====================================================================
-  // 6. ADDITIONAL & STATUS
-  // ====================================================================
-  if (Object.keys(parsedAdditional).length > 0) {
-    const addl = user.additionalInformation;
-    if (parsedAdditional.dob !== undefined) addl.dob = parsedAdditional.dob;
-    if (parsedAdditional.description !== undefined) addl.description = parsedAdditional.description;
-    if (parsedAdditional.ekYC !== undefined) addl.ekyc = parsedAdditional.ekYC ? "yes" : "no";
+  /* =========================================================
+     ADDITIONAL INFO
+  ========================================================== */
 
-    if (parsedAdditional.status !== undefined) {
+  if (Object.keys(parsedAdditional).length > 0) {
+
+    const addl = user.additionalInformation;
+
+    if (parsedAdditional.dob !== undefined)
+      addl.dob = parsedAdditional.dob;
+
+    if (parsedAdditional.description !== undefined)
+      addl.description = parsedAdditional.description;
+
+    if (parsedAdditional.ekYC !== undefined)
+      addl.ekyc = parsedAdditional.ekYC ? "yes" : "no";
+
+    if (parsedAdditional.status !== undefined)
       user.status = parsedAdditional.status ? "active" : "Inactive";
-    }
 
     user.markModified("additionalInformation");
   }
 
-  // ====================================================================
-  // 7. SAVE
-  // ====================================================================
+  /* =========================================================
+     SAVE
+  ========================================================== */
+
   await user.save({ validateModifiedOnly: true });
 
   return res.status(200).json({

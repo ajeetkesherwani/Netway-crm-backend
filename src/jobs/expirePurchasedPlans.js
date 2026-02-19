@@ -1,6 +1,11 @@
 const cron = require("node-cron");
 const PurchasedPlan = require("../models/purchasedPlan");
 const WalletHistory = require("../models/userWalletHistory");
+const { sendTemplateSMS } = require("../utils/smsService");
+
+const formatDate = (date) =>
+  new Date(date).toLocaleDateString("en-IN");
+
 
 const expirePurchasedPlans = async () => {
   const now = new Date();
@@ -12,7 +17,7 @@ const expirePurchasedPlans = async () => {
     const plans = await PurchasedPlan.find({ status: "active" })
       .populate("userId", "isAutoRecharge walletBalance")
       .populate("packageId", "validity basePrice offerPrice");
-      
+
 
     if (plans.length === 0) {
       console.log("[CRON] ⏳ No active plans found to process");
@@ -48,6 +53,46 @@ const expirePurchasedPlans = async () => {
         await plan.save();
         continue;
       }
+
+      // ---------------- Expiry SMS Reminder ---------------- //
+
+      try {
+
+        const mobile = user?.generalInformation?.phone;
+        if (!mobile) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const expiryDate = new Date(effectiveExpiry);
+        expiryDate.setHours(0, 0, 0, 0);
+
+        const diffTime = expiryDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 3) {
+          await sendTemplateSMS(mobile, "your internet going to be expired soon", {});
+          console.log(`[CRON] 3 day reminder SMS sent`);
+        }
+
+        if (diffDays === 1) {
+          await sendTemplateSMS(mobile, "your internet going to be expired soon", {});
+          console.log(`[CRON] 1 day reminder SMS sent`);
+        }
+
+        if (diffDays === 0) {
+          await sendTemplateSMS(
+            mobile,
+            "Account Expiry",
+            { expiryDate: formatDate(effectiveExpiry) }
+          );
+          console.log(`[CRON] Expiry day SMS sent`);
+        }
+
+      } catch (err) {
+        console.log("[CRON] SMS sending failed:", err.message);
+      }
+
 
       // Still valid → skip this plan
       if (effectiveExpiry > now) {

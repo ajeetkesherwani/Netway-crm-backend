@@ -9,6 +9,7 @@ const UserWalletHistory = require("../../../models/userWalletHistory");
 const { createLog } = require("../../../utils/userLogActivity");
 const Payment = require("../../../models/payment");
 const Invoice = require("../../../models/invoice");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 const mongoose = require("mongoose");
 
 //generate invoice number
@@ -76,7 +77,7 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     return next(new AppError("userId, packageId and are required", 400));
   }
 
-
+ 
   const existingActivePlan = await PurchasedPlan.findOne({
     userId,
     status: "active"
@@ -234,6 +235,34 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     paymentStatus: invoicePaymentStatus
   });
 
+  // ---------------- Send Invoice SMS ---------------- //
+
+try {
+  const mobile = targetUser?.generalInformation?.phone;
+
+  if (mobile) {
+
+    // Expiry date (Chosen package expiry)
+    const expiryDate = new Date(expiry);
+    const formattedExpiryDate = expiryDate.toLocaleDateString("en-IN");
+
+    await sendTemplateSMS(
+      mobile,
+      "Internet bill",
+      {
+        billNo: invoiceNumber,           
+        dueDate: formattedExpiryDate       
+      }
+    );
+
+    console.log("Invoice SMS sent successfully");
+  }
+
+} catch (error) {
+  console.log("Invoice SMS sending failed:", error.message);
+}
+
+
   // ---------------- Create Activity Log ---------------- //
 
   await createLog({
@@ -301,6 +330,31 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     relatedPurchasePlanId: newPurchase._id,
     remark: "Plan purchased",
   });
+
+// ---------------- Send SMS ---------------- //
+
+try {
+  const mobile = targetUser.generalInformation.phone;
+
+  console.log("User mobile number for SMS:", mobile);
+
+  if (mobile) {
+
+    await sendTemplateSMS(
+      mobile,
+      "Plan login credentials",
+      {
+        plan: selectedPackage.packageName,
+        username: targetUser.generalInformation.username,
+        password: targetUser.generalInformation.plainPassword
+      }
+    );
+
+  }
+} catch (error) {
+  console.log("SMS sending failed:", error.message);
+}
+
 
 
   // ---------------- Response ---------------- //

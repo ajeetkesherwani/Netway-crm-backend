@@ -3,7 +3,9 @@ const AppError = require("../../../utils/AppError");
 const bcrypt = require("bcryptjs");
 const { createLog } = require("../../../utils/userLogActivity");
 const UserPackage = require("../../../models/userPackage");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
+
 
 // Assign package to user
 
@@ -305,6 +307,29 @@ exports.createUser = async (req, res, next) => {
         role: req.user.role || "Admin",
       },
     });
+
+    // ---------------- Send SMS ---------------- //
+
+try {
+  const mobile = newUser.generalInformation.phone;
+
+  if (mobile) {
+    await sendTemplateSMS(
+      mobile,
+      "your account created",
+      {
+        plan: packageInfomation.packageName || "Default Plan",
+        username: newUser.generalInformation.username,
+        password: newUser.generalInformation.plainPassword
+      }
+    );
+  }
+
+} catch (error) {
+  console.log("User creation SMS failed:", error.message);
+}
+
+
 
     return res.status(201).json({
       success: true,

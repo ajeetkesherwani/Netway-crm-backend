@@ -35,7 +35,8 @@ exports.getRetailers = catchAsync(async (req, res, next) => {
   const retailer = await Retailer.find(query)
     .skip(skip)
     .limit(parseInt(limit))
-    .select("phoneNo email mobileNo resellerName");
+    .select("phoneNo email mobileNo resellerName walletBalance balance");
+    console.log("Retailers found:", retailer);
   if (!retailer) return next(new AppError("reatiler not found", 404));
 
   successResponse(res, "retailer found successfully", retailer);

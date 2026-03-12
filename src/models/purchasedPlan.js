@@ -155,6 +155,18 @@ refundRequestedAt: {
 refundedAt: {
   type: Date,
   default: null
+},
+smsReminder3Sent: {
+  type: Boolean,
+  default: false
+},
+smsReminder1Sent: {
+  type: Boolean,
+  default: false
+},
+smsExpirySent: {
+  type: Boolean,
+  default: false
 }
 
 }, { timestamps: true });

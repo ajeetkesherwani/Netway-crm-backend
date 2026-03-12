@@ -14,7 +14,7 @@ exports.getAssignedPackagesByAssignToId = catchAsync(async (req, res, next) => {
 
 
     if (!assignment) {
-        return next(new AppError("No package assignments found for this ID", 404));
+        return successResponse(res, "No package assignments found for this ID", []);
     }
 
     return successResponse(res, "Assigned packages fetched successfully", assignment);

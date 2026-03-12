@@ -4,10 +4,10 @@ const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 
 exports.createLco = catchAsync(async (req, res, next) => {
-    
+
     let { employeeAssociation } = req.body;
 
-   
+
     if (employeeAssociation && typeof employeeAssociation === "string") {
         try {
             employeeAssociation = JSON.parse(employeeAssociation);
@@ -24,8 +24,6 @@ exports.createLco = catchAsync(async (req, res, next) => {
         supportEmail, supportWhatsApp, lcoCode, nas, description, status, whatsAppNumber
         // employeeAssociation already parsed above
     } = req.body;
-
-    console.log("Final employeeAssociation after parse:", employeeAssociation);
 
     // Email required
     if (!email) return next(new AppError("Email is required", 400));
@@ -110,8 +108,8 @@ exports.createLco = catchAsync(async (req, res, next) => {
 
     // Create new LCO
     const newLco = new Lco({
-        title, retailerId, role, lcoName, plainPassword: password, password, mobileNo, address,houseNo, taluka, pincode, district,
-        area, state, country, subArea,  faxNo, email, messengerId, website, dob, anniversaryDate,whatsAppNumber,
+        title, retailerId, role, lcoName, plainPassword: password, password, mobileNo, address, houseNo, taluka, pincode, district,
+        area, state, country, subArea, faxNo, email, messengerId, website, dob, anniversaryDate, whatsAppNumber,
         latitude, longitude, lcoBalance, gst, panNo, dashboard: dashboard || "Lco", contactPersonName, contactPersonNumber,
         supportEmail, supportWhatsApp: whatsAppNumber || "", lcoCode, nas, description, status: status || "active",
         employeeAssociation,

@@ -1,27 +1,3 @@
-// const ResellerWalletHistory = require("../../../models/resellerWallerHistory");
-// const Reseller = require("../../../models/retailer");
-// const AppError = require("../../../utils/AppError");
-// const catchAsync = require("../../../utils/catchAsync");
-// const { successResponse } = require("../../../utils/responseHandler");
-
-// exports.getResellerWalletHistory = catchAsync(async (req, res, next) => {
-//     const { resellerId } = req.params;
-
-//     if (!resellerId) return next(new AppError("LcoId is required", 400));
-
-//     // Check if LCO exists
-//     const reseller = await Reseller.findById(resellerId);
-//     if (!reseller) return next(new AppError("Lco not found", 404));
-
-//     const histories = await ResellerWalletHistory.find({ reseller: resellerId });
-
-
-//     return successResponse(res, "Rseller wallet history fetched successfully", {
-//         resellerId,
-//         histories
-//     });
-// });
-
 const ResellerWalletHistory = require("../../../models/resellerWallerHistory");
 const Reseller = require("../../../models/retailer");
 const AppError = require("../../../utils/AppError");
@@ -35,8 +11,9 @@ exports.getResellerWalletHistory = catchAsync(async (req, res, next) => {
 
     // Check if Reseller exists
     const reseller = await Reseller.findById(resellerId).select(
-        "_id resellerName walletBalance creditBalance"
+        "_id resellerName walletBalance balance creditBalance"
     );
+    console.log("reseller", reseller);
     if (!reseller) return next(new AppError("Reseller not found", 404));
 
     // Get wallet histories for reseller
@@ -47,6 +24,8 @@ exports.getResellerWalletHistory = catchAsync(async (req, res, next) => {
     const formattedHistories = histories.map(history => ({
         _id: history._id,
         amount: history.amount,
+        openingBalance: history.openingBalance,
+        closingBalance: history.closingBalance,
         paymentDate: history.paymentDate,
         mode: history.mode,
         remark: history.remark,
@@ -59,7 +38,7 @@ exports.getResellerWalletHistory = catchAsync(async (req, res, next) => {
     return successResponse(res, "Reseller wallet history fetched successfully", {
         resellerId: reseller._id,
         resellerName: reseller.resellerName,
-        walletBalance: reseller.walletBalance,
+        walletBalance: reseller.walletBalance ?? reseller.balance,
         creditBalance: reseller.creditBalance,
         histories: formattedHistories
     });

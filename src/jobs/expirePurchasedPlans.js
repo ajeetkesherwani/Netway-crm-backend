@@ -13,18 +13,24 @@ const expirePurchasedPlans = async () => {
   try {
     console.log("[CRON] 🔁 Checking for expired plans & auto-renew...");
 
-    // Get only active plans
-    const plans = await PurchasedPlan.find({ status: "active" })
-      .populate("userId", "isAutoRecharge walletBalance")
-      .populate("packageId", "validity basePrice offerPrice");
+    const threeDaysLater = new Date();
+    threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
+    const plans = await PurchasedPlan.find({
+      status: "active",
+      expiryDate: { $lte: threeDaysLater }
+    })
+    .populate("userId", "walletBalance isAutoRecharge generalInformation.phone")
+    .populate("packageId", "validity basePrice offerPrice");
 
+    console.log(`[CRON] Found ${plans.length} active plans to check for expiry`);
     if (plans.length === 0) {
       console.log("[CRON] ⏳ No active plans found to process");
       return;
     }
 
     for (const plan of plans) {
+      console.log("plan.userId", plan.userId);
       const user = plan.userId;
       const pkg = plan.packageId;
 
@@ -35,7 +41,7 @@ const expirePurchasedPlans = async () => {
 
       // Determine effective expiry date
       let effectiveExpiry = plan.expiryDate;
-
+      console.log(`[CRON] Processing plan ${plan._id} | User ${user._id} | Original expiry: ${effectiveExpiry}`);
       if (plan.renewals?.length > 0) {
         // Use the LATEST expiry from all renewals
         const renewalDates = plan.renewals
@@ -57,9 +63,9 @@ const expirePurchasedPlans = async () => {
       // ---------------- Expiry SMS Reminder ---------------- //
 
       try {
-
+        console.log(`[CRON] Checking SMS reminders for plan ${plan._id} with effective expiry ${effectiveExpiry.toISOString()}`);
         const mobile = user?.generalInformation?.phone;
-        if (!mobile) return;
+        if (!mobile) continue;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -69,24 +75,32 @@ const expirePurchasedPlans = async () => {
 
         const diffTime = expiryDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        console.log(`[CRON] Plan ${plan._id} expires in ${diffDays} day(s)`);
+        
+        let smsUpdated = false;
 
-        if (diffDays === 3) {
+        if (diffDays === 3 && !plan.smsReminder3Sent) {
           await sendTemplateSMS(mobile, "your internet going to be expired soon", {});
-          console.log(`[CRON] 3 day reminder SMS sent`);
+          plan.smsReminder3Sent = true;
+          smsUpdated = true;
         }
 
-        if (diffDays === 1) {
+        if (diffDays === 1 && !plan.smsReminder1Sent) {
           await sendTemplateSMS(mobile, "your internet going to be expired soon", {});
-          console.log(`[CRON] 1 day reminder SMS sent`);
+          plan.smsReminder1Sent = true;
+          smsUpdated = true;
         }
 
-        if (diffDays === 0) {
-          await sendTemplateSMS(
-            mobile,
-            "Account Expiry",
-            { expiryDate: formatDate(effectiveExpiry) }
-          );
-          console.log(`[CRON] Expiry day SMS sent`);
+        if (diffDays === 0 && !plan.smsExpirySent) {
+          await sendTemplateSMS(mobile, "Account Expiry", {
+            expiryDate: formatDate(effectiveExpiry)
+          });
+          plan.smsExpirySent = true;
+          smsUpdated = true;
+        }
+
+        if (smsUpdated) {
+          await plan.save();
         }
 
       } catch (err) {
@@ -120,11 +134,13 @@ const expirePurchasedPlans = async () => {
 
       // Check for advance renewals
       const pendingAdvances = await PurchasedPlan.find({
-        userId: plan.userId,
-        packageId: plan.packageId,
+        userId: plan.userId._id,
+        packageId: plan.packageId._id,
         status: "pending",
         advanceRenewal: true
-      }).sort({ purchaseDate: 1 });
+      })
+      .populate("packageId", "validity")
+      .sort({ purchaseDate: 1 });
 
       let baseExpiry = plan.expiryDate;
       for (const adv of pendingAdvances) {

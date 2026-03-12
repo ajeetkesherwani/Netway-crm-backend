@@ -27,6 +27,7 @@ exports.updateRetailer = catchAsync(async (req, res, next) => {
         }
     }
 
+    console.log("Set Fields for Update:", setFields);
     const updateQuery = {};
     if (Object.keys(setFields).length > 0) updateQuery.$set = setFields;
 

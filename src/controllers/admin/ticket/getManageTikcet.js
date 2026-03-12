@@ -153,11 +153,14 @@ exports.getManageTicketList = catchAsync(async (req, res, next) => {
     { path: "category", select: "name" },
     {
       path: "userId",
-      select: "addressDetails.area",
-      populate: {
+      select: "addressDetails.area addressDetails.subZone",
+      populate: [{
         path: "addressDetails.area",
         select: "areaName zoneName _id",
-      },
+      }, {
+        path: "addressDetails.subZone",
+        select: "subZoneName name _id",
+      }],
     },
     // Optional: get name of assigned person
     {

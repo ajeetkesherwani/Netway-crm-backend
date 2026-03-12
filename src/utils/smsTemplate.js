@@ -8,12 +8,12 @@ const smsTemplates = {
       "Dear Customer your internet going to be expired soon, kindly renew it today. Please ignore if you already renewed. Netway Internet Services"
   },
 
-  "your account created": {
+  "Your_account_created": {
     content:
       "Welcome to Netway Internet Services, your account has been created, you have chosen {plan}. Your username is {username} and password is {password}. For login https://erp.netwayinternetservices.co.in/"
   },
 
-  "complaint has been registered": {
+  "Complaint_has_been_registered": {
     content:
       "Dear Customer, your complaint has been registered. Your ticket no is {ticketNo} Regards, Netway Internet Services"
   },
@@ -47,7 +47,7 @@ const smsTemplates = {
       "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternetservices.co.in"
   },
 
-  "A complaint assigned to Engineer": {
+  "A_complaint_assigned_to_Engineer": {
     content:
       "Dear {engineerName} A complaint assign to you. Client Id :{clientId} Client Name:{clientName} Ticket No:{ticketNo} Mobile:{mobile} Address:{address} Detail:{detail} Netway Internet"
   },

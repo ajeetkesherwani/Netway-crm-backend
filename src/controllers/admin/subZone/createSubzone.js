@@ -4,13 +4,14 @@ const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 
 exports.createSubzone = catchAsync(async (req, res, next) => {
-  const { name } = req.body;
+  const { name,zoneId } = req.body;
 
-  if (!name || name.trim() === "" )
+  if (!name || name.trim() === "")
     return next(new AppError("name is required", 400));
 
   const subZone = new SubZone({
     name,
+    zoneId
   });
 
   await subZone.save();

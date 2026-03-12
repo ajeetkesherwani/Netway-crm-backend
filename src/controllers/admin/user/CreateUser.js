@@ -59,8 +59,8 @@ exports.createUser = async (req, res, next) => {
     const additional = JSON.parse(req.body.additional || "{}");
 
     /** ------------------------------
-   * 2. Documents + Document Types
-   * ------------------------------*/
+     * 2. Documents + Document Types
+     * ------------------------------*/
     const uploadedFiles = req.files?.documents || [];
     console.log("UPLOADED FILES:", uploadedFiles);
 
@@ -310,24 +310,24 @@ exports.createUser = async (req, res, next) => {
 
     // ---------------- Send SMS ---------------- //
 
-try {
-  const mobile = newUser.generalInformation.phone;
+    try {
+      const mobile = newUser.generalInformation.phone;
 
-  if (mobile) {
-    await sendTemplateSMS(
-      mobile,
-      "your account created",
-      {
-        plan: packageInfomation.packageName || "Default Plan",
-        username: newUser.generalInformation.username,
-        password: newUser.generalInformation.plainPassword
+      if (mobile) {
+        await sendTemplateSMS(
+          mobile,
+          "your account created",
+          {
+            plan: packageInfomation.packageName || "Default Plan",
+            username: newUser.generalInformation.username,
+            password: newUser.generalInformation.plainPassword
+          }
+        );
       }
-    );
-  }
 
-} catch (error) {
-  console.log("User creation SMS failed:", error.message);
-}
+    } catch (error) {
+      console.log("User creation SMS failed:", error.message);
+    }
 
 
 

@@ -1,10 +1,12 @@
 const Ticket = require("../../../models/ticket");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
+const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 
 exports.updateTicket = catchAsync(async (req, res, next) => {
   const { ticketId } = req.params;
@@ -20,112 +22,148 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     assignToId,
   } = req.body;
 
-  const ticket = await Ticket.findById(ticketId);
-  if (!ticket) return next(new AppError("Ticket not found", 404));
+  try{
 
-  const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
-  const updaterId = req.user._id;
-  const assignToModel = 'Staff'; // Default, may change based on role
-  const fileI = req.files && req.files['fileI'] ? req.files['fileI'][0].path : ticket.fileI;
-  const fileII = req.files && req.files['fileII'] ? req.files['fileII'][0].path : ticket.fileII;
-  const fileIII = req.files && req.files['fileIII'] ? req.files['fileIII'][0].path : ticket.fileIII;
-
-
-
-  let finalAssignToId = ticket.assignToId;
-  let finalAssignToModel = 'Staff';
-
-  // ✅ Role-based reassignment logic (same as create)
-  if (assignToId && assignToModel) {
-    if (userRole === "Admin") {
-      if (assignToModel !== "Staff") {
-        return next(new AppError("Admin can assign only to Staff", 403));
-      }
-      finalAssignToId = assignToId;
-      finalAssignToModel = "Staff";
-    }
-
-    else if (userRole === "Reseller") {
-      const reseller = await Retailer.findById(updaterId);
-      if (!reseller) return next(new AppError("Reseller not found", 404));
-
-      const emp = reseller.employeeAssociation.id(assignToId);
-      if (!emp) {
-        return next(
-          new AppError("You can assign tickets only to your own employees", 403)
-        );
-      }
-
-      finalAssignToId = emp._id;
-      finalAssignToModel = "Employee";
-    }
-
-    else if (userRole === "Lco") {
-      const lco = await Lco.findById(updaterId);
-      if (!lco) return next(new AppError("LCO not found", 404));
-
-      const emp = lco.employeeAssociation.id(assignToId);
-      if (!emp) {
-        return next(
-          new AppError("You can assign tickets only to your own employees", 403)
-        );
-      }
-
-      finalAssignToId = emp._id;
-      finalAssignToModel = emp.type;
-    }
-
-    else {
-      return next(new AppError("Unauthorized role to assign tickets", 403));
-    }
-  }
-
-  console.log("Final Assignment:", finalAssignToId, finalAssignToModel);
-  console.log("Files:", { fileI, fileII, fileIII });
+    const ticket = await Ticket.findById(ticketId)
+      .populate("userId", "generalInformation.name generalInformation.phoneNo addressDetails.installationAddress")
+      .populate("createdById", "name phoneNo"); // Populate user details for SMS
+      
+    if (!ticket) return next(new AppError("Ticket not found", 404));
   
-
-
-  // ✅ Update all editable fields
-  ticket.category = category || ticket.category;
-  ticket.severity = severity || ticket.severity;
-  // ticket.callSource = callSource || ticket.callSource;
-  ticket.fileI = fileI || ticket.fileI;
-  ticket.fileII = fileII || ticket.fileII;
-  ticket.fileIII = fileIII || ticket.fileIII;
-  ticket.isChargeable = typeof isChargeable === "boolean" ? isChargeable : ticket.isChargeable;
-  ticket.price = price || ticket.price;
-  ticket.callDescription = callDescription || ticket.callDescription;
-  ticket.assignToId = finalAssignToId;
-  ticket.assignToModel = finalAssignToModel;
-
-  // Track who last modified the ticket
-  ticket.lastModifiedBy = updaterId;
-  ticket.lastModifiedByType = userRole;
-
-  await ticket.save();
-
-  // ✅ Log ticket activity
-  await logTicketActivity({
-    ticketId,
-    activityType: assignToId ? 2 : 1, // 1 = status update, 2 = reassignment
-    performedBy: updaterId,
-  });
-
-  // ✅ Return populated ticket
-  const populatedTicket = await Ticket.findById(ticket._id)
-    .populate("category")
-    .populate({
-      path: "assignToId",
-      select: "name email type employeeUserName",
-    })
-    .populate({
-      path: "createdById",
-      select: "resellerName email phoneNo",
-    })
-    .populate({
-      path: "lastModifiedBy",
-      select: "name email phoneNo",
+    const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
+    const updaterId = req.user._id;
+    const assignToModel = 'Staff'; // Default, may change based on role
+    const fileI = req.files && req.files['fileI'] ? req.files['fileI'][0].path : ticket.fileI;
+    const fileII = req.files && req.files['fileII'] ? req.files['fileII'][0].path : ticket.fileII;
+    const fileIII = req.files && req.files['fileIII'] ? req.files['fileIII'][0].path : ticket.fileIII;
+  
+  
+  
+    let finalAssignToId = ticket.assignToId;
+    let finalAssignToModel = 'Staff';
+    let emp;
+  
+    // ✅ Role-based reassignment logic (same as create)
+    if (assignToId && assignToModel) {
+      if (userRole === "Admin") {
+        if (assignToModel !== "Staff") {
+          return next(new AppError("Admin can assign only to Staff", 403));
+        }
+        finalAssignToId = assignToId;
+        finalAssignToModel = "Staff";
+  
+        emp = await Staff.findById(assignToId).select("name");
+        console.log("Admin assigning to Staff:", emp);
+        if (!emp) {
+          return next(new AppError("Staff member not found", 404));
+        }
+      }
+  
+      else if (userRole === "Reseller") {
+        const reseller = await Retailer.findById(updaterId);
+        if (!reseller) return next(new AppError("Reseller not found", 404));
+  
+        emp = reseller.employeeAssociation.id(assignToId);
+        if (!emp) {
+          return next(
+            new AppError("You can assign tickets only to your own employees", 403)
+          );
+        }
+  
+        finalAssignToId = emp._id;
+        finalAssignToModel = "Employee";
+      }
+  
+      else if (userRole === "Lco") {
+        const lco = await Lco.findById(updaterId);
+        if (!lco) return next(new AppError("LCO not found", 404));
+  
+        emp = lco.employeeAssociation.id(assignToId);
+        if (!emp) {
+          return next(
+            new AppError("You can assign tickets only to your own employees", 403)
+          );
+        }
+  
+        finalAssignToId = emp._id;
+        finalAssignToModel = emp.type;
+      }
+  
+      else {
+        return next(new AppError("Unauthorized role to assign tickets", 403));
+      }
+    }
+  
+    console.log("Final Assignment:", finalAssignToId, finalAssignToModel);
+    console.log("Files:", { fileI, fileII, fileIII });
+    console.log("emp data", emp);
+  
+  
+    // ✅ Update all editable fields
+    ticket.category = category || ticket.category;
+    ticket.severity = severity || ticket.severity;
+    // ticket.callSource = callSource || ticket.callSource;
+    ticket.fileI = fileI || ticket.fileI;
+    ticket.fileII = fileII || ticket.fileII;
+    ticket.fileIII = fileIII || ticket.fileIII;
+    ticket.isChargeable = typeof isChargeable === "boolean" ? isChargeable : ticket.isChargeable;
+    ticket.price = price || ticket.price;
+    ticket.callDescription = callDescription || ticket.callDescription;
+    ticket.assignToId = finalAssignToId;
+    ticket.assignToModel = finalAssignToModel;
+  
+    // Track who last modified the ticket
+    ticket.lastModifiedBy = updaterId;
+    ticket.lastModifiedByType = userRole;
+  
+    await ticket.save();
+  
+    // ✅ Log ticket activity
+    await logTicketActivity({
+      ticketId,
+      activityType: assignToId ? 2 : 1, // 1 = status update, 2 = reassignment
+      performedBy: updaterId,
     });
-
-  return successResponse(res, "Ticket updated successfully", populatedTicket);
+  
+    console.log("Ticket updated, now sending SMS if assigned to engineer...");
+    console.log("Ticket details for SMS:", {
+      ticketNumber: ticket.ticketNumber,
+      userId: ticket.userId,
+      callDescription: ticket.callDescription,
+    });
+    await sendTemplateSMS(
+      ticket.createdById.phoneNo,
+      "A_complaint_assigned_to_Engineer",
+      { 
+        engineerName: emp.employeeName,
+        clientId: assignToId ? "reassigned" : "updated",
+        clientName: ticket.userId ? ticket.userId.generalInformation.name : "N/A",
+        ticketNo: ticket.ticketNumber,
+        mobile: ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A",
+        address: ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A",
+        detail: ticket.callDescription || "N/A",
+      }
+    );
+  
+    // ✅ Return populated ticket
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate("category")
+      .populate({
+        path: "assignToId",
+        select: "name email type employeeUserName",
+      })
+      .populate({
+        path: "createdById",
+        select: "resellerName email phoneNo",
+      })
+      .populate({
+        path: "lastModifiedBy",
+        select: "name email phoneNo",
+      });
+  
+    return successResponse(res, "Ticket updated successfully", populatedTicket);
+  }catch (error) {
+    console.error("Error updating ticket:", error);
+    return next(new AppError("Failed to update ticket", 500));
+  }
 });

@@ -15,7 +15,7 @@ exports.getStaffRoleList = catchAsync(async (req, res, next) => {
         // 1️⃣ ADMIN → Return Staff list (Staff Schema)
         // -------------------------------------------------
         case "Admin":
-            roles = await Staff.find({}, "_id staffName").lean(); 
+            roles = await Staff.find({}, "_id staffName name").lean(); 
             // console.log("Staff Roles for Admin:", roles);
             break;
 
@@ -30,7 +30,7 @@ exports.getStaffRoleList = catchAsync(async (req, res, next) => {
                 .filter(emp => emp.type === "Operator")
                 .map(emp => ({
                     _id: emp._id,
-                    staffName: emp.employeeName
+                    staffName: emp.employeeName ? emp.employeeName : emp.name
                 }));
             break;
 
@@ -45,7 +45,7 @@ exports.getStaffRoleList = catchAsync(async (req, res, next) => {
                 .filter(emp => emp.type === "Operator")
                 .map(emp => ({
                     _id: emp._id,
-                    staffName: emp.employeeName
+                    staffName: emp.employeeName ? emp.employeeName : emp.name
                 }));
             break;
 

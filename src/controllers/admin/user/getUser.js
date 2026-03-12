@@ -35,7 +35,7 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     query["addressDetails.area"] = new mongoose.Types.ObjectId(area);
   }
 
-   if (subZone) {
+  if (subZone) {
     query["addressDetails.subZone"] = new mongoose.Types.ObjectId(subZone);
   }
 
@@ -71,7 +71,7 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     );
   }
 
-  
+
   /* ---------------- CAF FORM FILTER ---------------- */
   if (cafUploaded === "yes") {
     query.document = {

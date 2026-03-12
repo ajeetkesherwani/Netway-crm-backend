@@ -2,6 +2,8 @@ const Retailer = require("../../../models/retailer");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const createResellerWalletHistory = require("../../../utils/createResellerWalletHistory");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 
 exports.createRetailer = catchAsync(async (req, res, next) => {
     const {
@@ -52,11 +54,6 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
         !employeeAssociation[0].employeeUserName ||
         !employeeAssociation[0].password
     ) {
-        console.log("!employeeAssociation", !employeeAssociation);
-        console.log("!Array.isArray(employeeAssociation)", !Array.isArray(employeeAssociation));
-        console.log("employeeAssociation.length === 0", employeeAssociation.length === 0);
-        console.log("!employeeAssociation[0].employeeUserName", !employeeAssociation[0].employeeUserName);
-        console.log("!employeeAssociation[0].password", !employeeAssociation[0].password);
         return next(new AppError("employeeAssociation with username and password is required", 400));
     }
 
@@ -94,14 +91,36 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
 
     const retailer = new Retailer({
         title, phoneNo, email, password, district, resellerName, houseNo, pincode, area, subArea,
-        mobileNo, fax, messengerId, dob, balance, dashboard, panNumber, resellerCode,
+        mobileNo, fax, messengerId, dob, walletBalance:balance, dashboard, panNumber, resellerCode,
         contactPersonNumber, whatsAppNumber, address, taluka, state, country, website,
         annversaryDate, latitude, longitude, gstNo, contactPersonName, supportEmail,
         nas, description, status, role, employeeAssociation, document: documentData,
     });
-    console.log(retailer, "reseller");
 
     await retailer.save();
+
+    // Create reseller wallet history for the new retailer
+    await createResellerWalletHistory({
+        reseller: retailer._id,
+        amount: balance || 0,
+        paymentDate: new Date(),
+        mode: "Online", // Assuming initial balance is added through an online transaction, adjust as needed
+        createdBy: req.user.role, // Assuming req.user contains the authenticated user
+        createdById: req.user._id,
+        openingBalance: 0,
+        closingBalance: balance || 0,
+        remark: "Initial wallet balance for new retailer"
+    });
+
+    await sendTemplateSMS(
+        mobileNo,
+        "Your_account_created",
+        {
+        plan: "",           
+        username: employeeAssociation[0].employeeUserName,    
+        password: employeeAssociation[0].password
+        }
+    );   
 
     successResponse(res, "Retailer created successfully", retailer);
 });

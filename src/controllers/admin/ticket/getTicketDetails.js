@@ -55,10 +55,11 @@ exports.getTicketDetails = catchAsync(async (req, res, next) => {
         "generalInformation.name generalInformation.email generalInformation.phone generalInformation.address isActive walletBalance",
     },
     { path: "category", select: "name" },
-    { path: "createdById", select: "name" },
+    // { path: "createdById", select: "name" },
   ]);
 
   if (!ticket) return next(new AppError("ticket not found", 404));
+
 
   // -----------------------------
   // ✅ Dynamic populate works HERE
@@ -85,6 +86,56 @@ exports.getTicketDetails = catchAsync(async (req, res, next) => {
 
   const ticketTimeline = await TicketTimeline.find({ ticketId })
     .populate("activities.performedBy", "name");
+
+    // ✅ Dynamic populate (required to get name)
+if (ticket.createdById && ticket.createdByType) {
+  let select = "";
+
+  if (ticket.createdByType === "Admin") {
+    select = "name";
+  } else if (ticket.createdByType === "Reseller || Retailer") {
+    select = "resellerName";
+  } else if (ticket.createdByType === "LCO") {
+    select = "lcoName";
+  } else if (ticket.createdByType === "User") {
+    select = "generalInformation.name";
+  } else {
+    select = "name";
+  }
+
+  await ticket.populate({
+    path: "createdById",
+    model: ticket.createdByType,
+    select,
+  });
+}
+
+// ✅ Extract name
+let createdByName = "N/A";
+
+if (ticket.createdById) {
+  switch (ticket.createdByType) {
+    case "Admin":
+      createdByName = ticket.createdById.name;
+      break;
+
+    case "Reseller":
+      createdByName = ticket.createdById.resellerName;
+      break;
+
+    case "LCO":
+      createdByName = ticket.createdById.lcoName;
+      break;
+
+    case "User":
+      createdByName =
+        ticket.createdById.generalInformation?.name;
+      break;
+  }
+}
+
+// ✅ ONLY ADD THIS LINE (no change anywhere else)
+ticket._doc.createdByName = createdByName;
 
   successResponse(res, "ticket Details found successfully", {
     ticket,

@@ -68,6 +68,7 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
             id: reseller._id,
             name: reseller.resellerName,
             walletBalance: reseller.walletBalance,
+            
         }
     });
 });

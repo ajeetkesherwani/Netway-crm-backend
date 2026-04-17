@@ -45,4 +45,6 @@ router.use("/userPackage", require("./admin/userPackageRoute"));
 
 router.use("/website", require("./website/MailRoutes"));
 
+router.use("/ipacct", require("./admin/ipacctRoutes"));
+
 module.exports = router;

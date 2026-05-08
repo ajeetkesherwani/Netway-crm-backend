@@ -1,15 +1,13 @@
-// services/packageService.js
+const Package = require("../models/package");
 const { callSoap } = require("../utils/soapApi");
-const {  cleanResponse }  = require("../utils/cleanSoapResponse");
+const { cleanResponse } = require("../utils/cleanSoapResponse");
 
+// GET SOAP PACKAGES
 async function getAllPackages() {
- const response = await callSoap("ipbillGetAllPackages", {
-  user: process.env.IPACCT_USER,
-  pass: process.env.IPACCT_PASS
-});
-
-//   console.log("USER:", process.env.IPPACT_USER);
-// console.log("PASS:", process.env.IPPACT_PASS);
+  const response = await callSoap("ipbillGetAllPackages", {
+    user: process.env.IPACCT_USER,
+    pass: process.env.IPACCT_PASS
+  });
 
   const envelope =
     response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"];
@@ -17,32 +15,47 @@ async function getAllPackages() {
   const body =
     envelope["SOAP-ENV:Body"] || envelope["soapenv:Body"];
 
-  // console.log("BODY:", JSON.stringify(body, null, 2));
-
-  // dynamic key
   const responseKey = Object.keys(body).find(key =>
     key.includes("ipbillGetAllPackagesResponse")
   );
 
   const responseData = body[responseKey];
 
-  // 🔥 HANDLE BOTH CASES
   let packages =
-    responseData?.return?.item ||   // normal case
-    responseData?.item ||           // fallback
+    responseData?.return?.item ||
+    responseData?.item ||
     [];
 
-  // ensure array
   if (!Array.isArray(packages)) {
     packages = [packages];
   }
 
-
-  // CLEAN FUNCTION HERE
   packages = packages.map(cleanResponse);
-
-  console.log("PACKAGES:", packages.length);
 
   return packages;
 }
-module.exports = { getAllPackages };
+
+async function syncAndUpdatePackages() {
+  const soapPackages = await getAllPackages(); // 🔹 get SOAP data
+
+  const dbPackages = await Package.find();
+
+  // 🔹 update silently
+  for (let dbPkg of dbPackages) {
+    const match = soapPackages.find(
+      sp =>
+        sp.name.trim().toLowerCase().includes(
+          dbPkg.name.trim().toLowerCase()
+        )
+    );
+
+    if (match) {
+      dbPkg.IppactId = match.id;
+      await dbPkg.save();
+    }
+  }
+
+  return soapPackages;
+}
+
+module.exports = { getAllPackages, syncAndUpdatePackages };

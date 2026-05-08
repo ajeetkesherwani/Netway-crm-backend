@@ -62,6 +62,7 @@ const packageSchema = new Schema({
     isIptv: { type: Boolean, default: false },
     iptvType: { type: String, enum: ["ziggTv"], default: "ziggTv" },
     iptvPackageId: { type: iptvPackageSchema },
+    IppactId: { type: String }
 
     // Timestamps
 }, { timestamps: true });

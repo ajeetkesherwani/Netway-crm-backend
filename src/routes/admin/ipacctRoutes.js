@@ -10,6 +10,6 @@ const {
 
 const router = express.Router();
 
-router.get("/updateipPackages", adminAuthenticate, getSoapPackages)
+router.post("/updateipPackages", adminAuthenticate, getSoapPackages)
 
 module.exports = router;

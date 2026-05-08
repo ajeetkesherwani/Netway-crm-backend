@@ -1,4 +1,3 @@
-// services/soapClient.js
 const axios = require("axios");
 const { parseStringPromise } = require("xml2js");
 const config = require("../config/ipacctConfig");
@@ -16,7 +15,8 @@ async function callSoap(method, params = {}) {
     paramsXML += `<${key}>${params[key]}</${key}>`;
   }
 
-  // SOAP body
+  //SOAP body
+
   const xml = `
   <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="${config.NAMESPACE}">
     <soapenv:Header/>
@@ -37,7 +37,7 @@ async function callSoap(method, params = {}) {
       }
     });
 
-    // 🔹 XML → JSON
+    //XML → JSON
     const json = await parseStringPromise(res.data, {
       explicitArray: false
     });

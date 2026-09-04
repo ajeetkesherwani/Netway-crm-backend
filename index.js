@@ -4,6 +4,8 @@ process.on("uncaughtException", (err) => {
   console.log(err.stack);
   process.exit(1);
 });
+
+require("./src/dns-fix");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const app = require("./src/app");

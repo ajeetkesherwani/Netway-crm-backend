@@ -4,19 +4,23 @@ const {
     adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
 
+// const {
+//     lcoBalanceTransfer
+// } = require("../../controllers/admin/reports/franchisee/lcoBalanceTransfer");
+
 const {
     lcoBalanceTransfer
-} = require("../../controllers/admin/reports/franchisee/lcoBalanceTransfer");
+} = require("../../controllers/admin/reports/Franchisee/lcoBalanceTransfer");
 
 const {
     lcoTransactionHistory
-} = require("../../controllers/admin/reports/franchisee/lcoTransactionHistory");
+} = require("../../controllers/admin/reports/Franchisee/lcoTransactionHistory");
 const {
     onlineTransaction
-} = require("../../controllers/admin/reports/franchisee/onlineTransaction");
+} = require("../../controllers/admin/reports/Franchisee/onlineTransaction");
 const {
     resellerTransferBalance
-} = require("../../controllers/admin/reports/franchisee/resellerTransferBalance");
+} = require("../../controllers/admin/reports/Franchisee/resellerTransferBalance");
 
 const router = express.Router();
 

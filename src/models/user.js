@@ -9,19 +9,26 @@ const UserSchema = new mongoose.Schema(
         enum: ["M/s", "Mr", "Ms", "Mrs", "Miss"],
         default: "M/s",
       },
-      name: { type: String },
+      name: { type: String, required: [true, "Name is required"] },
       billingName: { type: String },
       username: { type: String },
-      password: { type: String },
+      UserId: { type: String, required: [true, "User ID is required"] },
+      gender: {
+        type: String,
+        enum: ["Male", "Female", "Other"],
+        default: "Male",
+      },
+      password: { type: String, required: [true, "Password is required"] },
       plainPassword: { type: String },
-      email: { type: String },
-      phone: { type: String },
+      email: { type: String, required: [true, "Email is required"] },
+      phone: { type: String, required: [true, "Mobile number is required"] },
       alternatePhone: { type: String },
       ipactId: { type: String },
       connectionType: {
         type: String,
         enum: ["ill", "ftth", "rf", "other"],
         default: "other",
+        required: [true, "Connection type is required"],
       },
       selsExecutive: {
         type: mongoose.Schema.Types.ObjectId,
@@ -41,8 +48,9 @@ const UserSchema = new mongoose.Schema(
       macId: { type: String },
       serviceOpted: {
         type: String,
-        enum: ["intercom", "broadband", "corporate"],
-        default: "intercom",
+        enum: ["intercom", "broadband", "corporate", "coporate"],
+        default: "broadband",
+        required: [true, "Service opted is required"],
       },
       stbNo: { type: String },
       vcNo: { type: String },
@@ -86,11 +94,11 @@ const UserSchema = new mongoose.Schema(
     },
     addressDetails: {
       billingAddress: {
-        addressine1: { type: String },
+        addressine1: { type: String, required: [true, "Address Line 1 is required"] },
         addressine2: { type: String },
-        city: { type: String },
-        state: { type: String },
-        pincode: { type: String },
+        city: { type: String, required: [true, "City is required"] },
+        state: { type: String, required: [true, "State is required"] },
+        pincode: { type: String, required: [true, "Pincode is required"] },
       },
       permanentAddress: {
         addressine1: { type: String },
@@ -109,19 +117,25 @@ const UserSchema = new mongoose.Schema(
       area: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Zone",
+        required: [true, "Area is required"],
       },
-      subZone: { type: mongoose.Schema.Types.ObjectId,
-       ref: "SubZone" },
+      subZone: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SubZone",
+        required: [true, "Zone is required"],
+      },
     },
 
-    packageInfomation: {
-      packageId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Package",
+    packageInfomation: [
+      {
+        packageId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Package",
+        },
+        packageName: { type: String },
+        price: { type: String },
       },
-      packageName: { type: String },
-      price: { type: String },
-    },
+    ],
 
     networkInformation: {
       networkType: {
@@ -138,7 +152,7 @@ const UserSchema = new mongoose.Schema(
     },
 
     additionalInformation: {
-      dob: { type: String },
+      dob: { type: String, required: [true, "Date of birth is required"] },
       description: { type: String },
       ekyc: { type: String, enum: ["yes", "no"], default: "no" },
       notification: { type: Boolean, default: "false" },
@@ -185,6 +199,36 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+UserSchema.pre("validate", function (next) {
+  if (this.isNew || this.isModified("generalInformation")) {
+    const hasInstaller =
+      (Array.isArray(this.generalInformation?.installationBy) &&
+        this.generalInformation.installationBy.length > 0) ||
+      Boolean(this.generalInformation?.installationByName?.trim());
+
+    if (!hasInstaller) {
+      this.invalidate(
+        "generalInformation.installationBy",
+        "Installation By is required"
+      );
+    }
+  }
+
+  if (this.isNew || this.isModified("packageInfomation")) {
+    if (
+      !Array.isArray(this.packageInfomation) ||
+      this.packageInfomation.length === 0
+    ) {
+      this.invalidate(
+        "packageInfomation",
+        "At least one package is mandatory"
+      );
+    }
+  }
+
+  next();
+});
 
 UserSchema.pre("save", async function (next) {
   try {

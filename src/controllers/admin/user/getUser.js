@@ -27,6 +27,7 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     query.$or = [
       { "generalInformation.name": { $regex: safeSearch, $options: "i" } },
       { "generalInformation.username": { $regex: safeSearch, $options: "i" } },
+      { "generalInformation.UserId": { $regex: safeSearch, $options: "i" } },
       { "generalInformation.email": { $regex: safeSearch, $options: "i" } },
       { "generalInformation.phone": { $regex: safeSearch, $options: "i" } },
     ];

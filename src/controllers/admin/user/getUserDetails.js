@@ -29,6 +29,11 @@ exports.getUserDetails = async (req, res, next) => {
       model: "SubZone",
       select: "name",
     })
+    .populate({
+      path: "packageInfomation.packageId",
+      model: "Package",
+      select: "name price basePrice validity",
+    })
     .lean();
 
   if (!user) return next(new AppError("User not found", 404));

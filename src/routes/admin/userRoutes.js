@@ -49,7 +49,7 @@ const {
 router.post(
   "/create",
   adminAuthenticate,
-  fileUploader("user_documents", [{ name: "documents", maxCount: 15 }]),
+  fileUploader("user_documents", [{ name: "documents", maxCount: 50 }]),
   createUser
 );
 
@@ -59,7 +59,7 @@ router.get("/fullDetails/:userId", adminAuthenticate, getUserFullDetails);
 router.patch(
   "/update/:userId",
   adminAuthenticate,
-  fileUploader("user_documents", [{ name: "documents", maxCount: 10 }]),
+  fileUploader("user_documents", [{ name: "documents", maxCount: 50 }]),
   updateUser
 );
 router.delete("/delete/:userId", adminAuthenticate, deleteUser);

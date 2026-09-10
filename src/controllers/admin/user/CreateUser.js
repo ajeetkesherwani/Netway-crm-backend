@@ -59,6 +59,62 @@ exports.createUser = async (req, res, next) => {
     const additional = JSON.parse(req.body.additional || "{}");
 
     /** ------------------------------
+     * Mandatory Field Validations
+     * ------------------------------*/
+    if (!customer.name || !customer.name.trim()) {
+      throw new AppError("Name is required", 400);
+    }
+    const customerUserId = (customer.UserId || customer.userId)?.trim();
+    if (!customerUserId) {
+      throw new AppError("User ID is required", 400);
+    }
+    if (!customer.email || !customer.email.trim()) {
+      throw new AppError("Email is required", 400);
+    }
+    if (!customer.mobile || !customer.mobile.trim()) {
+      throw new AppError("Mobile Number is required", 400);
+    }
+    if (!customer.password || !customer.password.trim()) {
+      throw new AppError("Password is required", 400);
+    }
+    if (!additional.dob || !additional.dob.trim()) {
+      throw new AppError("Date of Birth is required", 400);
+    }
+    if (!customer.connectionType || !customer.connectionType.trim()) {
+      throw new AppError("Connection Type is required", 400);
+    }
+    const hasInstaller =
+      (Array.isArray(customer.installationBy) && customer.installationBy.length > 0) ||
+      Boolean(customer.installationByName?.trim());
+    if (!hasInstaller) {
+      throw new AppError("Installation By is required", 400);
+    }
+    if (!customer.serviceOpted || !customer.serviceOpted.trim()) {
+      throw new AppError("Service Opted is required", 400);
+    }
+    const billingAddr = addresses.billing || {};
+    if (!billingAddr.addressLine1 || !billingAddr.addressLine1.trim()) {
+      throw new AppError("Address Line 1 is required", 400);
+    }
+    if (!billingAddr.city || !billingAddr.city.trim()) {
+      throw new AppError("City is required", 400);
+    }
+    if (!billingAddr.state || !billingAddr.state.trim()) {
+      throw new AppError("State is required", 400);
+    }
+    if (!billingAddr.pincode || !billingAddr.pincode.trim()) {
+      throw new AppError("Pincode is required", 400);
+    }
+    const areaId = (req.body.area || "").trim();
+    if (!areaId) {
+      throw new AppError("Area is required", 400);
+    }
+    const subZoneId = (req.body.subZone || "").trim();
+    if (!subZoneId) {
+      throw new AppError("Zone is required", 400);
+    }
+
+    /** ------------------------------
      * 2. Documents + Document Types
      * ------------------------------*/
     const uploadedFiles = req.files?.documents || [];
@@ -67,16 +123,24 @@ exports.createUser = async (req, res, next) => {
     // Handle documentTypes (single or array) and documentTypes[] from form-data
     let documentTypes = [];
 
-    if (req.body.documentTypes) {
-      documentTypes = Array.isArray(req.body.documentTypes)
-        ? req.body.documentTypes
-        : [req.body.documentTypes];
-    }
-
     if (req.body["documentTypes[]"]) {
       const arr = req.body["documentTypes[]"];
       documentTypes = Array.isArray(arr) ? arr : [arr];
     }
+
+    if (req.body.documentTypes) {
+      const arr = req.body.documentTypes;
+      documentTypes.push(...(Array.isArray(arr) ? arr : [arr]));
+    }
+
+    if (!documentTypes.length && uploadedFiles.length > 0) {
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const key = `documentTypes[${i}]`;
+        if (req.body[key]) documentTypes.push(req.body[key]);
+      }
+    }
+
+    documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
 
     console.log("DOCUMENT TYPES RECEIVED:", documentTypes);
 
@@ -111,7 +175,7 @@ exports.createUser = async (req, res, next) => {
       if (!documentMap[type]) {
         documentMap[type] = [];
       }
-      documentMap[type].push(file.path); // or file.location if using cloud storage
+      documentMap[type].push(file.path.replace(/\\/g, "/"));
     });
 
     // Build final documents + enforce rule: multiple images ONLY for "Other"
@@ -146,6 +210,8 @@ exports.createUser = async (req, res, next) => {
       billingName: customer.billingName || customer.name,
       // username: customer.username || customer.phone,
       username: generateUsername(customer.name),
+      UserId: customerUserId,
+      gender: customer.gender || "Male",
       password: rawPassword,
       plainPassword: rawPassword,
       email: customer.email,
@@ -227,25 +293,33 @@ exports.createUser = async (req, res, next) => {
       },
 
       /** IMPORTANT — area must be ObjectId */
-      area:
-        req.body.area && req.body.area.trim() !== ""
-          ? req.body.area.trim()
-          : null,
-
-      subZone:
-        req.body.subZone && req.body.subZone.trim() !== ""
-          ? req.body.subZone.trim()
-          : null,
+      area: areaId,
+      subZone: subZoneId,
     };
 
     /** ------------------------------
-     * 5. Package Information
+     * 5. Package Information (Multiple Packages Supported)
      * ------------------------------*/
-    const packageInfomation = {
-      packageId: customer.packageDetails?.packageId || null,
-      packageName: customer.packageDetails?.packageName || "",
-      price: customer.packageDetails?.packageAmount || "",
-    };
+    let rawPackages = [];
+    if (Array.isArray(customer.packages) && customer.packages.length > 0) {
+      rawPackages = customer.packages;
+    } else if (Array.isArray(customer.packageDetails) && customer.packageDetails.length > 0) {
+      rawPackages = customer.packageDetails;
+    } else if (customer.packageDetails?.packageId) {
+      rawPackages = [customer.packageDetails];
+    }
+
+    const packageInfomation = rawPackages
+      .filter((p) => p && p.packageId && p.packageId !== "null")
+      .map((p) => ({
+        packageId: p.packageId,
+        packageName: p.packageName || "",
+        price: String(p.packageAmount || p.price || "0"),
+      }));
+
+    if (packageInfomation.length === 0) {
+      throw new AppError("At least one package is mandatory", 400);
+    }
 
     /** ------------------------------
      * 6. Network Information
@@ -286,10 +360,11 @@ exports.createUser = async (req, res, next) => {
       status: additional.status ? "active" : "Inactive",
     });
 
-    // Assign package to user
-    // userPackageAssign(newUser._id, packageInfomation);
-    if (packageInfomation.packageId && packageInfomation.packageId !== "null") {
-      await userPackageAssign(newUser._id, packageInfomation);
+    // Assign packages to user
+    for (const pkgInfo of packageInfomation) {
+      if (pkgInfo.packageId && pkgInfo.packageId !== "null") {
+        await userPackageAssign(newUser._id, pkgInfo);
+      }
     }
 
     await createLog({
@@ -301,30 +376,29 @@ exports.createUser = async (req, res, next) => {
         phone: newUser.generalInformation.phone,
         userId: newUser.generalInformation.username,
       },
-      ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
-      addedBy: {
-        id: req.user._id,
-        role: req.user.role || "Admin",
-      },
     });
 
-    // ---------------- Send SMS ---------------- //
-
+    /** ------------------------------
+     * 9. Send SMS
+     * ------------------------------*/
     try {
       const mobile = newUser.generalInformation.phone;
 
       if (mobile) {
+        const planNames =
+          packageInfomation.map((p) => p.packageName).filter(Boolean).join(", ") ||
+          "Default Plan";
+
         await sendTemplateSMS(
           mobile,
           "your account created",
           {
-            plan: packageInfomation.packageName || "Default Plan",
+            plan: planNames,
             username: newUser.generalInformation.username,
             password: newUser.generalInformation.plainPassword
           }
         );
       }
-
     } catch (error) {
       console.log("User creation SMS failed:", error.message);
     }

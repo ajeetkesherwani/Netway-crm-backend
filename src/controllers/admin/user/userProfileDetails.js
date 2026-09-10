@@ -3,6 +3,8 @@ const PurchasedPlan = require("../../../models/purchasedPlan");
 const Log = require("../../../models/activityLog");
 const Payment = require("../../../models/payment");
 const Ticket = require("../../../models/ticket");
+const Zone = require("../../../models/zone");
+const SubZone = require("../../../models/subZone");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 
@@ -15,9 +17,10 @@ exports.getUserFullDetails = catchAsync(async (req, res, next) => {
     .populate("generalInformation.selsExecutive")
     .populate("generalInformation.installationBy")
     .populate("addressDetails.area")
+    .populate("addressDetails.subZone")
     .populate("packageInfomation.packageId")
     .lean();
-    console.log("user", user);
+  console.log("user", user);
 
   if (!user) {
     return next(new AppError("User not found", 404));

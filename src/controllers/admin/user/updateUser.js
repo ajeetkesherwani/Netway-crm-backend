@@ -323,6 +323,8 @@
 //   });
 // });
 const User = require("../../../models/user");
+const UserPackage = require("../../../models/userPackage");
+const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 
@@ -374,6 +376,13 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     documentTypes.push(...(Array.isArray(arr) ? arr : [arr]));
   }
 
+  if (!documentTypes.length && uploadedFiles.length > 0) {
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const key = `documentTypes[${i}]`;
+      if (req.body[key]) documentTypes.push(req.body[key]);
+    }
+  }
+
   documentTypes = documentTypes.map(t => t?.trim()).filter(Boolean);
 
 
@@ -400,18 +409,15 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   }
 
   filesToKeep = filesToKeep
-    .map(f => typeof f === "string" ? f.split("/").pop() : null)
+    .map(f => typeof f === "string" ? f.split(/[/\\]/).pop() : null)
     .filter(Boolean);
-
 
   const shouldUpdateDocuments =
     uploadedFiles.length > 0 ||
-    filesToKeep.length > 0 ||
+    req.body.existingDocuments !== undefined ||
     documentTypes.length > 0;
 
-
   if (shouldUpdateDocuments) {
-
     const validDocTypes = [
       "Address Proof",
       "Profile Photo",
@@ -428,91 +434,69 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     let updatedDocuments = [];
 
     /* KEEP EXISTING DOCUMENTS */
-
-    if (filesToKeep.length > 0) {
-
+    if (req.body.existingDocuments !== undefined) {
       (user.document || []).forEach(doc => {
+        const images = Array.isArray(doc.documentImage)
+          ? doc.documentImage
+          : doc.documentImage
+          ? [doc.documentImage]
+          : [];
 
-        if (doc.documentType === "Other") {
+        const remainingImages = images.filter(img =>
+          typeof img === "string" && filesToKeep.includes(img.split(/[/\\]/).pop())
+        );
 
-          const remainingImages = doc.documentImage.filter(img =>
-            filesToKeep.includes(img.split("/").pop())
-          );
-
-          if (remainingImages.length > 0) {
-
-            updatedDocuments.push({
-              documentType: "Other",
-              documentImage: remainingImages
-            });
-
-          }
-
-        } else {
-
-          const filename = doc.documentImage?.[0]?.split("/").pop();
-
-          if (filename && filesToKeep.includes(filename)) {
-
-            updatedDocuments.push(doc);
-
-          }
-
+        if (remainingImages.length > 0) {
+          updatedDocuments.push({
+            documentType: doc.documentType,
+            documentImage: remainingImages
+          });
         }
-
       });
-
     } else {
-
-      updatedDocuments = [...user.document];
-
+      updatedDocuments = (user.document || []).map(doc => ({
+        documentType: doc.documentType,
+        documentImage: Array.isArray(doc.documentImage)
+          ? [...doc.documentImage]
+          : doc.documentImage
+          ? [doc.documentImage]
+          : []
+      }));
     }
 
-
     /* ADD / REPLACE NEW FILES */
-
     uploadedFiles.forEach((file, index) => {
-
       let type = documentTypes[index] || "Other";
 
       if (!validDocTypes.includes(type))
         type = "Other";
 
+      const normalizedPath = file.path.replace(/\\/g, "/");
 
       let existingDoc = updatedDocuments.find(
         d => d.documentType === type
       );
 
-
       if (!existingDoc) {
-
         existingDoc = {
           documentType: type,
           documentImage: []
         };
-
         updatedDocuments.push(existingDoc);
-
       }
-
 
       if (type === "Other") {
-
-        existingDoc.documentImage.push(file.path);
-
+        if (!Array.isArray(existingDoc.documentImage)) {
+          existingDoc.documentImage = existingDoc.documentImage ? [existingDoc.documentImage] : [];
+        }
+        existingDoc.documentImage.push(normalizedPath);
       } else {
-
-        existingDoc.documentImage = [file.path];
-
+        existingDoc.documentImage = [normalizedPath];
       }
-
     });
 
-
     user.document = updatedDocuments;
-
     user.markModified("document");
-
   }
 
 
@@ -543,8 +527,21 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
     };
 
-    if (parsedAddresses.billing)
+    if (parsedAddresses.billing) {
+      if (parsedAddresses.billing.addressLine1 !== undefined && !parsedAddresses.billing.addressLine1.trim()) {
+        return next(new AppError("Address Line 1 cannot be empty", 400));
+      }
+      if (parsedAddresses.billing.city !== undefined && !parsedAddresses.billing.city.trim()) {
+        return next(new AppError("City cannot be empty", 400));
+      }
+      if (parsedAddresses.billing.state !== undefined && !parsedAddresses.billing.state.trim()) {
+        return next(new AppError("State cannot be empty", 400));
+      }
+      if (parsedAddresses.billing.pincode !== undefined && !parsedAddresses.billing.pincode.trim()) {
+        return next(new AppError("Pincode cannot be empty", 400));
+      }
       updateAddr(user.addressDetails.billingAddress, parsedAddresses.billing);
+    }
 
     if (parsedAddresses.permanent)
       updateAddr(user.addressDetails.permanentAddress, parsedAddresses.permanent);
@@ -553,11 +550,19 @@ exports.updateUser = catchAsync(async (req, res, next) => {
       updateAddr(user.addressDetails.installationAddress, parsedAddresses.installation);
 
 
-    if (area !== undefined)
-      user.addressDetails.area = area || null;
+    if (area !== undefined) {
+      if (!area || !area.trim()) {
+        return next(new AppError("Area cannot be empty", 400));
+      }
+      user.addressDetails.area = area;
+    }
 
-    if (subZone !== undefined)
-      user.addressDetails.subZone = subZone || null;
+    if (subZone !== undefined) {
+      if (!subZone || !subZone.trim()) {
+        return next(new AppError("Zone cannot be empty", 400));
+      }
+      user.addressDetails.subZone = subZone;
+    }
 
     if (req.body.customArea !== undefined)
       user.addressDetails.customArea = req.body.customArea || "";
@@ -569,21 +574,71 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
 
   /* =========================================================
-     PACKAGE UPDATE
+     PACKAGE UPDATE (Multiple Packages Supported)
   ========================================================== */
 
-  if (parsedCustomer.packageDetails) {
+  if (parsedCustomer.packages !== undefined || parsedCustomer.packageDetails !== undefined) {
 
-    const pkg = parsedCustomer.packageDetails;
+    let rawPackages = [];
+    if (Array.isArray(parsedCustomer.packages)) {
+      rawPackages = parsedCustomer.packages;
+    } else if (Array.isArray(parsedCustomer.packageDetails)) {
+      rawPackages = parsedCustomer.packageDetails;
+    } else if (parsedCustomer.packageDetails?.packageId) {
+      rawPackages = [parsedCustomer.packageDetails];
+    }
 
-    user.packageInfomation = {
-      ...user.packageInfomation,
-      packageId: pkg.packageId || user.packageInfomation.packageId,
-      packageName: pkg.packageName || user.packageInfomation.packageName,
-      price: pkg.packageAmount || user.packageInfomation.price,
-    };
+    const updatedPackageInfo = rawPackages
+      .filter((p) => p && p.packageId && p.packageId !== "null")
+      .map((p) => ({
+        packageId: p.packageId,
+        packageName: p.packageName || "",
+        price: String(p.packageAmount || p.price || "0"),
+      }));
 
+    if (updatedPackageInfo.length === 0) {
+      return next(new AppError("At least one package is mandatory", 400));
+    }
+
+    user.packageInfomation = updatedPackageInfo;
     user.markModified("packageInfomation");
+
+    // Sync UserPackage documents
+    for (const pkgInfo of updatedPackageInfo) {
+      try {
+        let existingUserPkg = await UserPackage.findOne({
+          userId: user._id,
+          packageId: pkgInfo.packageId,
+        });
+
+        if (existingUserPkg) {
+          existingUserPkg.customPrice = Number(pkgInfo.price || existingUserPkg.customPrice || 0);
+          existingUserPkg.packageName = pkgInfo.packageName || existingUserPkg.packageName;
+          existingUserPkg.status = "active";
+          await existingUserPkg.save();
+        } else {
+          const pkg = await Package.findById(pkgInfo.packageId);
+          if (pkg) {
+            const newUserPkg = new UserPackage({
+              userId: user._id,
+              packageId: pkgInfo.packageId,
+              packageName: pkgInfo.packageName || pkg.name,
+              basePrice: Number(pkg.basePrice || pkg.offerPrice || 0),
+              customPrice: Number(pkgInfo.price || pkg.basePrice || pkg.offerPrice || 0),
+              validity: pkg.validity,
+              status: "active",
+              startDate: pkg.fromDate,
+              endDate: pkg.toDate,
+              hasOtt: pkg.isOtt,
+              hasIptv: pkg.isIptv,
+            });
+            await newUserPkg.save();
+          }
+        }
+      } catch (pkgErr) {
+        console.error("Error syncing UserPackage:", pkgErr);
+      }
+    }
 
   }
 
@@ -635,6 +690,123 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
 
   /* =========================================================
+     GENERAL INFORMATION UPDATE
+  ========================================================== */
+
+  if (parsedCustomer && Object.keys(parsedCustomer).length > 0) {
+
+    if (parsedCustomer.UserId !== undefined || parsedCustomer.userId !== undefined) {
+      const uId = (parsedCustomer.UserId !== undefined ? parsedCustomer.UserId : parsedCustomer.userId || "").trim();
+      if (!uId) {
+        return next(new AppError("User ID cannot be empty", 400));
+      }
+      user.generalInformation.UserId = uId;
+    }
+
+    if (parsedCustomer.title !== undefined)
+      user.generalInformation.title = parsedCustomer.title;
+
+    if (parsedCustomer.gender !== undefined)
+      user.generalInformation.gender = parsedCustomer.gender;
+
+
+    if (parsedCustomer.name !== undefined) {
+      if (!parsedCustomer.name.trim()) {
+        return next(new AppError("Name cannot be empty", 400));
+      }
+      user.generalInformation.name = parsedCustomer.name.trim();
+    }
+
+    if (parsedCustomer.billingName !== undefined)
+      user.generalInformation.billingName = parsedCustomer.billingName;
+
+    if (parsedCustomer.password !== undefined) {
+      if (!parsedCustomer.password.trim()) {
+        return next(new AppError("Password cannot be empty", 400));
+      }
+      user.generalInformation.password = parsedCustomer.password;
+      user.generalInformation.plainPassword = parsedCustomer.password;
+    }
+
+    if (parsedCustomer.email !== undefined) {
+      if (!parsedCustomer.email.trim()) {
+        return next(new AppError("Email cannot be empty", 400));
+      }
+      user.generalInformation.email = parsedCustomer.email.trim();
+    }
+
+    if (parsedCustomer.mobile !== undefined) {
+      if (!parsedCustomer.mobile.trim()) {
+        return next(new AppError("Mobile Number cannot be empty", 400));
+      }
+      user.generalInformation.phone = parsedCustomer.mobile.trim();
+    }
+
+    if (parsedCustomer.alternateMobile !== undefined)
+      user.generalInformation.alternatePhone = parsedCustomer.alternateMobile;
+
+    if (parsedCustomer.ipactId !== undefined)
+      user.generalInformation.ipactId = parsedCustomer.ipactId;
+
+    if (parsedCustomer.connectionType !== undefined) {
+      if (!parsedCustomer.connectionType.trim()) {
+        return next(new AppError("Connection Type cannot be empty", 400));
+      }
+      user.generalInformation.connectionType = parsedCustomer.connectionType?.toLowerCase();
+    }
+
+    if (parsedCustomer.selsExecutive !== undefined)
+      user.generalInformation.selsExecutive = parsedCustomer.selsExecutive || null;
+
+    if (parsedCustomer.installationBy !== undefined)
+      user.generalInformation.installationBy = parsedCustomer.installationBy;
+
+    if (parsedCustomer.installationByName !== undefined)
+      user.generalInformation.installationByName = parsedCustomer.installationByName;
+
+    if (parsedCustomer.installationBy !== undefined || parsedCustomer.installationByName !== undefined) {
+      const hasInstaller =
+        (Array.isArray(user.generalInformation.installationBy) && user.generalInformation.installationBy.length > 0) ||
+        Boolean(user.generalInformation.installationByName?.trim());
+      if (!hasInstaller) {
+        return next(new AppError("Installation By is required", 400));
+      }
+    }
+
+    if (parsedCustomer.ipAddress !== undefined)
+      user.generalInformation.ipAdress = parsedCustomer.ipAddress;
+
+    if (parsedCustomer.ipType !== undefined)
+      user.generalInformation.ipType = parsedCustomer.ipType;
+
+    if (parsedCustomer.serialNo !== undefined)
+      user.generalInformation.serialNo = parsedCustomer.serialNo;
+
+    if (parsedCustomer.macId !== undefined)
+      user.generalInformation.macId = parsedCustomer.macId;
+
+    if (parsedCustomer.serviceOpted !== undefined) {
+      if (!parsedCustomer.serviceOpted.trim()) {
+        return next(new AppError("Service Opted cannot be empty", 400));
+      }
+      user.generalInformation.serviceOpted = parsedCustomer.serviceOpted;
+    }
+
+    if (parsedCustomer.stbNo !== undefined)
+      user.generalInformation.stbNo = parsedCustomer.stbNo;
+
+    if (parsedCustomer.vcNo !== undefined)
+      user.generalInformation.vcNo = parsedCustomer.vcNo;
+
+    if (parsedCustomer.circuitId !== undefined)
+      user.generalInformation.circuitId = parsedCustomer.circuitId;
+
+    user.markModified("generalInformation");
+
+  }
+
+
+  /* =========================================================
      ADDITIONAL INFO UPDATE
   ========================================================== */
 
@@ -642,8 +814,12 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
     const addl = user.additionalInformation;
 
-    if (parsedAdditional.dob !== undefined)
+    if (parsedAdditional.dob !== undefined) {
+      if (!parsedAdditional.dob.trim()) {
+        return next(new AppError("Date of Birth cannot be empty", 400));
+      }
       addl.dob = parsedAdditional.dob;
+    }
 
     if (parsedAdditional.description !== undefined)
       addl.description = parsedAdditional.description;

@@ -39,6 +39,7 @@ const {
   deleteLcoDocument,
 } = require("../../controllers/admin/lco/deleteLcoDocument");
 const { getLcos } = require("../../controllers/admin/lco/getLcos");
+const { getLcosByResellerId } = require("../../controllers/admin/lco/getLcosByResellerId");
 
 const router = express.Router();
 
@@ -55,6 +56,7 @@ router.post(
   createLco
 );
 router.get("/list", adminAuthenticate, getLcoList);
+router.get("/list/reseller/:resellerId", adminAuthenticate, getLcosByResellerId);
 router.get("/list/:id", adminAuthenticate, getDetails);
 router.patch(
   "/update/:lcoId",

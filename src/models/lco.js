@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const lcoSchema = new mongoose.Schema({
     title: {
         type: String,
-        enum: ["Mr.", "Ms", "M/s", "Mrs", "Miss"],
+        enum: ["Mr.", "Ms", "M/s", "Mrs", "Miss", "Mrs."],
         default: "M/s"
     },
     retailerId: { type: mongoose.Schema.Types.ObjectId, ref: "Retailer", required: true },
@@ -35,6 +35,7 @@ const lcoSchema = new mongoose.Schema({
     lcoBalance: { type: String },
     gst: { type: String },
     panNo: { type: String },
+    aadharNumber: { type: String },
     dashboard: { type: String, enum: ["Admin", "Reseller", "Lco"], default: "Admin" },
     contactPersonName: { type: String },
     contactPersonNumber: { type: String },

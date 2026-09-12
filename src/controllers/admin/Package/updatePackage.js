@@ -235,7 +235,9 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
 
     isIptv = false,
     iptvType,
-    iptvPackageId
+    iptvPackageId,
+    servertype,
+    packageID
   } = req.body;
 
   /* ================= IPTV DROPDOWN (SAME AS CREATE) ================= */
@@ -374,6 +376,8 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
     packageToUpdate.packageAvailable = Boolean(packageAvailable);
   if (offerPackage !== undefined)
     packageToUpdate.offerPackage = Boolean(offerPackage);
+  if (servertype !== undefined) packageToUpdate.servertype = servertype;
+  if (packageID !== undefined) packageToUpdate.packageID = packageID;
 
   /* ================= OTT BUNDLE ================= */
   packageToUpdate.isOtt = Boolean(isOtt);

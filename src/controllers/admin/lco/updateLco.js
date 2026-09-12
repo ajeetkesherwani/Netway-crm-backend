@@ -13,15 +13,22 @@ exports.updateLco = catchAsync(async (req, res, next) => {
     const updatableFields = [
         "title","phoneNo","email","lcoName","district","houseNo","pincode","area",
         "subArea","mobileNo","fax","messengerId","dob","balance","dashboard", "telephone",
-        "panNumber","lcoCode","contactPersonNumber","whatsAppNumber","address",
+        "panNo","aadharNumber","lcoCode","contactPersonNumber","whatsAppNumber","address",
         "taluka","state","country","website","annversaryDate","latitude","longitude",
         "gstNo","contactPersonName","supportEmail","nas","description","status","role"
     ];
 
+    const mandatoryFields = ["lcoName", "address", "email", "panNo", "aadharNumber", "mobileNo", "contactPersonName", "contactPersonNumber"];
+
     const setFields = {};
     for (const field of updatableFields) {
-        if (body[field] !== undefined && body[field] !== "") {
-            setFields[field] = body[field];
+        if (body[field] !== undefined) {
+            if (body[field] === "" && mandatoryFields.includes(field)) {
+                return next(new AppError(`${field} cannot be empty`, 400));
+            }
+            if (body[field] !== "") {
+                setFields[field] = body[field];
+            }
         }
     }
 
@@ -41,6 +48,14 @@ exports.updateLco = catchAsync(async (req, res, next) => {
             updateQuery.$set[`document.${doc}`] = "";
         }
     });
+
+    // Ensure Aadhaar Card and PAN Card are not removed without replacement
+    if (body.remove_aadhaarCard === "true" && (!req.files || !req.files.aadhaarCard || req.files.aadhaarCard.length === 0)) {
+        return next(new AppError("Aadhaar Card document is required", 400));
+    }
+    if (body.remove_panCard === "true" && (!req.files || !req.files.panCard || req.files.panCard.length === 0)) {
+        return next(new AppError("PAN Card document is required", 400));
+    }
 
     // REPLACE document logic (if new file uploaded)
     if (req.files) {

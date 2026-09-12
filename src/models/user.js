@@ -60,6 +60,7 @@ const UserSchema = new mongoose.Schema(
       cafNo: { type: String },
       gst: { type: String },
       adharNo: { type: String },
+      panNumber: { type: String },
       address: { type: String },
       pincode: { type: String },
       state: { type: String },

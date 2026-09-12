@@ -20,7 +20,7 @@ exports.createLco = catchAsync(async (req, res, next) => {
     const {
         title, retailerId, role, lcoName, plainPassword, password, mobileNo, address, houseNo, phoneNo, taluka, pincode, district,
         area, state, country, subArea, telephone, faxNo, email, messengerId, website, dob, anniversaryDate,
-        latitude, longitude, lcoBalance, gst, panNo, dashboard, contactPersonName, contactPersonNumber,
+        latitude, longitude, lcoBalance, gst, panNo, aadharNumber, dashboard, contactPersonName, contactPersonNumber,
         supportEmail, supportWhatsApp, lcoCode, nas, description, status, whatsAppNumber
         // employeeAssociation already parsed above
     } = req.body;
@@ -63,6 +63,11 @@ exports.createLco = catchAsync(async (req, res, next) => {
     if (!mobileNo) return next(new AppError("mobileNo is required", 400));
     if (!state) return next(new AppError("state is required", 400));
     if (!role) return next(new AppError("role is required", 400));
+    if (!address) return next(new AppError("address is required", 400));
+    if (!panNo) return next(new AppError("panNo is required", 400));
+    if (!aadharNumber) return next(new AppError("aadharNumber is required", 400));
+    if (!contactPersonName) return next(new AppError("contactPersonName is required", 400));
+    if (!contactPersonNumber) return next(new AppError("contactPersonNumber is required", 400));
     // if (!password) return next(new AppError("password is required for new LCO", 400));
 
     if (
@@ -82,6 +87,13 @@ exports.createLco = catchAsync(async (req, res, next) => {
         license: [],
         other: [],
     };
+
+    if (!req.files || !req.files.aadhaarCard || req.files.aadhaarCard.length === 0) {
+        return next(new AppError("Aadhaar Card document is required", 400));
+    }
+    if (!req.files || !req.files.panCard || req.files.panCard.length === 0) {
+        return next(new AppError("PAN Card document is required", 400));
+    }
 
     if (req.files) {
         if (req.files.aadhaarCard) {
@@ -110,7 +122,7 @@ exports.createLco = catchAsync(async (req, res, next) => {
     const newLco = new Lco({
         title, retailerId, role, lcoName, plainPassword: password, password, mobileNo, address, houseNo, taluka, pincode, district,
         area, state, country, subArea, faxNo, email, messengerId, website, dob, anniversaryDate, whatsAppNumber,
-        latitude, longitude, lcoBalance, gst, panNo, dashboard: dashboard || "Lco", contactPersonName, contactPersonNumber,
+        latitude, longitude, lcoBalance, gst, panNo, aadharNumber, dashboard: dashboard || "Lco", contactPersonName, contactPersonNumber,
         supportEmail, supportWhatsApp: whatsAppNumber || "", lcoCode, nas, description, status: status || "active",
         employeeAssociation,
         document: documentData,

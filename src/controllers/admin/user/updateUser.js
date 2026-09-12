@@ -801,6 +801,15 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     if (parsedCustomer.circuitId !== undefined)
       user.generalInformation.circuitId = parsedCustomer.circuitId;
 
+    if (parsedCustomer.gstNo !== undefined)
+      user.generalInformation.gst = parsedCustomer.gstNo;
+
+    if (parsedCustomer.aadharNo !== undefined)
+      user.generalInformation.adharNo = parsedCustomer.aadharNo;
+
+    if (parsedCustomer.panNumber !== undefined)
+      user.generalInformation.panNumber = parsedCustomer.panNumber;
+
     user.markModified("generalInformation");
 
   }

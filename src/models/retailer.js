@@ -21,6 +21,7 @@ const retailerSchema = new mongoose.Schema({
   balance: { type: String },
   dashboard: { type: String, enum: ["Admin", "Reseller", "Manager"], default: "Admin" },
   panNumber: { type: String },
+  aadharNumber: { type: String },
   resellerCode: { type: String },
   contactPersonNumber: { type: String },
   whatsAppNumber: { type: String },

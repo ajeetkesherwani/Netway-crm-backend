@@ -248,6 +248,8 @@ exports.createPackage = catchAsync(async (req, res, next) => {
     isOtt = false,
     ottType,
     ottPackageId,
+    servertype,
+    packageID,
 
     isIptv = false,
     iptvType,
@@ -344,6 +346,8 @@ if (isOtt) {
     isOtt,
     iptvPackageId: iptvPackageData,
     ottPackageId: ottPackageData,
+    servertype,
+    packageID,
   };
 
   const newPackage = await Package.create(packageData);

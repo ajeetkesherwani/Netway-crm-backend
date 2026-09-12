@@ -8,7 +8,7 @@ const { sendTemplateSMS } = require("../../../utils/smsService");
 exports.createRetailer = catchAsync(async (req, res, next) => {
     const {
         title, phoneNo, password, email, district, resellerName, houseNo, pincode, area, subArea,
-        mobileNo, fax, messengerId, dob, balance, dashboard, panNumber, resellerCode,
+        mobileNo, fax, messengerId, dob, balance, dashboard, panNumber, aadharNumber, resellerCode,
         contactPersonNumber, whatsAppNumber, address, taluka, state, country, website,
         annversaryDate, latitude, longitude, gstNo, contactPersonName, supportEmail,
         nas, description, status, role
@@ -44,8 +44,11 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
     // New retailer creation
     if (!resellerName) return next(new AppError("resellerName is required", 400));
     if (!mobileNo) return next(new AppError("mobileNo is required", 400));
-    if (!state) return next(new AppError("state is required", 400));
-    if (!role) return next(new AppError("role is required", 400));
+    if (!address) return next(new AppError("address is required", 400));
+    if (!panNumber) return next(new AppError("panNumber is required", 400));
+    if (!aadharNumber) return next(new AppError("aadharNumber is required", 400));
+    if (!contactPersonName) return next(new AppError("contactPersonName is required", 400));
+    if (!contactPersonNumber) return next(new AppError("contactPersonNumber is required", 400));
     // if (!password) return next(new AppError("password is required for new retailer", 400));
     if (
         !employeeAssociation ||
@@ -66,6 +69,13 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
     };
 
     // multer files example structure: req.files = { aadhaarCard: [..], panCard: [..], license: [..], other: [..] }
+    if (!req.files || !req.files.aadhaarCard || req.files.aadhaarCard.length === 0) {
+        return next(new AppError("aadhaarCard image is required", 400));
+    }
+    if (!req.files || !req.files.panCard || req.files.panCard.length === 0) {
+        return next(new AppError("panCard image is required", 400));
+    }
+
     if (req.files) {
         if (req.files.aadhaarCard) {
             req.files.aadhaarCard.forEach((file) => {
@@ -91,7 +101,7 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
 
     const retailer = new Retailer({
         title, phoneNo, email, password, district, resellerName, houseNo, pincode, area, subArea,
-        mobileNo, fax, messengerId, dob, walletBalance:balance, dashboard, panNumber, resellerCode,
+        mobileNo, fax, messengerId, dob, walletBalance:balance, dashboard, panNumber, aadharNumber, resellerCode,
         contactPersonNumber, whatsAppNumber, address, taluka, state, country, website,
         annversaryDate, latitude, longitude, gstNo, contactPersonName, supportEmail,
         nas, description, status, role, employeeAssociation, document: documentData,

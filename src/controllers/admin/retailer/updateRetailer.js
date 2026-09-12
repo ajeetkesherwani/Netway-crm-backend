@@ -13,17 +13,27 @@ exports.updateRetailer = catchAsync(async (req, res, next) => {
     const updatableFields = [
         "title","phoneNo","email","resellerName","district","houseNo",
         "pincode","area","subArea","mobileNo","fax","messengerId",
-        "dob","balance","dashboard","panNumber","resellerCode",
+        "dob","balance","dashboard","panNumber","aadharNumber","resellerCode",
         "contactPersonNumber","whatsAppNumber","address","taluka",
         "state","country","website","annversaryDate","latitude",
         "longitude","gstNo","contactPersonName","supportEmail",
         "nas","description","status","role"
     ];
 
+    const mandatoryFields = [
+        "resellerName", "mobileNo", "address", "panNumber",
+        "aadharNumber", "contactPersonName", "contactPersonNumber"
+    ];
+
     const setFields = {};
     for (const field of updatableFields) {
-        if (body[field] !== undefined && body[field] !== "") {
-            setFields[field] = body[field];
+        if (body[field] !== undefined) {
+            if (body[field] === "" && mandatoryFields.includes(field)) {
+                return next(new AppError(`${field} cannot be empty`, 400));
+            }
+            if (body[field] !== "") {
+                setFields[field] = body[field];
+            }
         }
     }
 

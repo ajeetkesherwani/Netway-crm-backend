@@ -18,6 +18,8 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     reseller,
     lco,
     cafUploaded,
+    connectionType,
+    installationBy,
   } = req.query;
 
   const query = {};
@@ -51,6 +53,24 @@ exports.getUserList = catchAsync(async (req, res, next) => {
   if (serviceOpted) {
     query["generalInformation.serviceOpted"] = serviceOpted;
   }
+
+  if (connectionType) {
+    query["generalInformation.connectionType"] = connectionType.toLowerCase();
+  }
+
+  if (installationBy) {
+    const installCondition = [];
+    if (mongoose.Types.ObjectId.isValid(installationBy)) {
+      installCondition.push({ "generalInformation.installationBy": new mongoose.Types.ObjectId(installationBy) });
+    }
+    installCondition.push({ "generalInformation.installationByName": { $regex: installationBy, $options: "i" } });
+
+    if (!query.$and) {
+      query.$and = [];
+    }
+    query.$and.push({ $or: installCondition });
+  }
+
   if (startDate || endDate) {
     query.createdAt = {};
     if (startDate) query.createdAt.$gte = new Date(startDate);

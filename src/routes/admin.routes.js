@@ -48,5 +48,6 @@ router.use("/website", require("./website/MailRoutes"));
 router.use("/ipacct", require("./admin/ipacctRoutes"));
 router.use("/pool", require("./admin/poolRoutes"));
 router.use("/server", require("./admin/serverRoutes"));
+router.use("/banner", require("./admin/bannerRoutes"));
 
 module.exports = router;

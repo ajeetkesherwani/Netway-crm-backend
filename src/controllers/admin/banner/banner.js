@@ -3,7 +3,7 @@ const Banner = require("../../../models/banner");
 // Create Banner
 exports.createBanner = async (req, res) => {
   try {
-    const { bannerName, bannerType, reseller, fromDate, toDate, short, status } = req.body;
+    const { bannerName, bannerType, reseller, lco, fromDate, toDate, short, status } = req.body;
     let file = "";
     if (req.files && req.files.file && req.files.file.length > 0) {
       file = `/banner/${req.files.file[0].filename}`;
@@ -15,6 +15,7 @@ exports.createBanner = async (req, res) => {
       bannerName,
       bannerType,
       reseller,
+      lco,
       fromDate,
       toDate,
       short,
@@ -47,7 +48,10 @@ exports.getBanners = async (req, res) => {
       query.bannerType = bannerType;
     }
 
-    const banners = await Banner.find(query).sort({ short: 1, createdAt: -1 });
+    const banners = await Banner.find(query)
+      .sort({ short: 1, createdAt: -1 })
+      .populate("reseller", "resellerName")
+      .populate("lco", "lcoName");
     return res.status(200).json({ status: true, message: "Banners fetched successfully", data: banners });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
@@ -58,7 +62,9 @@ exports.getBanners = async (req, res) => {
 exports.getBannerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const banner = await Banner.findOne({ _id: id, isDeleted: false });
+    const banner = await Banner.findOne({ _id: id, isDeleted: false })
+      .populate("reseller", "resellerName")
+      .populate("lco", "lcoName");
     
     if (!banner) {
       return res.status(404).json({ status: false, message: "Banner not found" });

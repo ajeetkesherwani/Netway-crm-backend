@@ -20,6 +20,7 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     price,
     callDescription,
     assignToId,
+    status,
   } = req.body;
 
   try{
@@ -111,6 +112,8 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     ticket.callDescription = callDescription || ticket.callDescription;
     ticket.assignToId = finalAssignToId;
     ticket.assignToModel = finalAssignToModel;
+    if (status) ticket.status = status;
+
   
     // Track who last modified the ticket
     ticket.lastModifiedBy = updaterId;

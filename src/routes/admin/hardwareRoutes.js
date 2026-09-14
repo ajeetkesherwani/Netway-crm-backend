@@ -1,5 +1,8 @@
 const express = require("express");
 
+
+const fileUploader = require("../../middlewares/fileUploader");
+
 const {
     adminAuthenticate
 } = require("../../controllers/admin/auth/adminAuthenticate");
@@ -24,6 +27,10 @@ const {
     updateHardware
 } = require("../../controllers/admin/hardware/updateHardware");
 
+const {
+    bulkUploadHardware
+} = require("../../controllers/admin/hardware/bulkUploadHardware");
+
 //assign hardware
 
 const {
@@ -37,6 +44,12 @@ router.get("/list", adminAuthenticate, getHardwareList);
 router.get("/list/:hardwareId", adminAuthenticate, getHardwareDetails);
 router.delete("/delete/:hardwareId", adminAuthenticate, deletHardware);
 router.patch("/update/:hardwareId", adminAuthenticate, updateHardware);
+router.post(
+  "/bulk-upload",
+  adminAuthenticate,
+  fileUploader("bulkUploads", [{ name: "file", maxCount: 1 }]),
+  bulkUploadHardware
+);
 
 //assgin hardware
 router.post("/assign-hardware", adminAuthenticate, assignHardwareToUser);

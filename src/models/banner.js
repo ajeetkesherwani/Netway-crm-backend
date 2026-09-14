@@ -4,7 +4,8 @@ const bannerSchema = new mongoose.Schema(
   {
     bannerName: { type: String, required: true },
     bannerType: { type: String, enum: ["Web", "App"], required: true },
-    reseller: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+    reseller: { type: mongoose.Schema.Types.ObjectId, ref: "Retailer" },
+    lco: { type: mongoose.Schema.Types.ObjectId, ref: "Lco" },
     fromDate: { type: Date },
     toDate: { type: Date },
     short: { type: Number, default: 0 },

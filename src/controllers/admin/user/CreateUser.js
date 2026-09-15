@@ -5,6 +5,7 @@ const { createLog } = require("../../../utils/userLogActivity");
 const UserPackage = require("../../../models/userPackage");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
+const { addIpacctUser } = require("../../../services/ipacctUserServices");
 
 
 // Assign package to user
@@ -367,6 +368,36 @@ exports.createUser = async (req, res, next) => {
         await userPackageAssign(newUser._id, pkgInfo);
       }
     }
+
+    // ── IPACCT Integration ──────────────────────────────────────────
+    try {
+      // Find the first assigned package to get its IPACCT ID if any
+      let ipacctPackageId = null;
+      if (packageInfomation.length > 0) {
+        const firstPkg = await Package.findById(packageInfomation[0].packageId);
+        if (firstPkg && firstPkg.IppactId) {
+           ipacctPackageId = firstPkg.IppactId;
+        }
+      }
+
+      console.log("---- STARTING IPACCT USER CREATION ----");
+      const ipacctRes = await addIpacctUser({
+        name: generalInformation.name,
+        address: addressDetails.installationAddress?.addressine1 || "",
+        phone: generalInformation.phone,
+        mobile: generalInformation.phone,
+        username: generalInformation.username,
+        password: generalInformation.plainPassword,
+        email: generalInformation.email,
+        packageId: ipacctPackageId,
+      });
+      console.log("---- IPACCT USER CREATION RESPONSE ----");
+      console.log(ipacctRes);
+      console.log("---------------------------------------");
+    } catch (ipacctErr) {
+      console.error("Failed to create user in IPACCT:", ipacctErr.message);
+    }
+    // ────────────────────────────────────────────────────────────────
 
     await createLog({
       userId: newUser._id,

@@ -53,5 +53,6 @@ router.use("/stockCategory", require("./admin/stockCategoryRoutes"));
 router.use("/attendance", require("./admin/attendanceRoutes"));
 router.use("/expensesCategory", require("./admin/expensesCategoryRoutes"));
 router.use("/expense", require("./admin/expenseRoutes"));
+router.use("/lead", require("./admin/leadRoutes"));
 
 module.exports = router;

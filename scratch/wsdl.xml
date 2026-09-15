@@ -1,0 +1,1800 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="urn:IPACCTipbill" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="urn:IPACCTipbill">
+<types>
+<xsd:schema targetNamespace="urn:IPACCTipbill"
+>
+ <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+ <xsd:import namespace="http://schemas.xmlsoap.org/wsdl/" />
+ <xsd:complexType name="client">
+  <xsd:all>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="address" type="xsd:string"/>
+   <xsd:element name="phones" type="xsd:string"/>
+   <xsd:element name="tlim1" type="xsd:string"/>
+   <xsd:element name="tlim2" type="xsd:string"/>
+   <xsd:element name="statuscolor" type="xsd:string"/>
+   <xsd:element name="status" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="clients">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:client[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="item">
+  <xsd:all>
+   <xsd:element name="descr" type="xsd:string"/>
+   <xsd:element name="amount" type="xsd:string"/>
+   <xsd:element name="department" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="items">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:item[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="payment">
+  <xsd:all>
+   <xsd:element name="status" type="xsd:string"/>
+   <xsd:element name="newperiodprice" type="xsd:string"/>
+   <xsd:element name="allownewperiod" type="xsd:string"/>
+   <xsd:element name="partial" type="xsd:string"/>
+   <xsd:element name="partialstep" type="xsd:string"/>
+   <xsd:element name="partialcoeff" type="xsd:string"/>
+   <xsd:element name="total" type="xsd:string"/>
+   <xsd:element name="pid" type="xsd:string"/>
+   <xsd:element name="items" type="tns:items"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="upgradeopt">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="tax" type="xsd:string"/>
+   <xsd:element name="svcperq" type="xsd:string"/>
+   <xsd:element name="svcperd" type="xsd:string"/>
+   <xsd:element name="oppd" type="xsd:string"/>
+   <xsd:element name="days" type="xsd:string"/>
+   <xsd:element name="ppd" type="xsd:string"/>
+   <xsd:element name="dif" type="xsd:string"/>
+   <xsd:element name="tot" type="xsd:string"/>
+   <xsd:element name="dbeg" type="xsd:string"/>
+   <xsd:element name="dend" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="upgradeopts">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:upgradeopt[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="clientphone">
+  <xsd:all>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="address" type="xsd:string"/>
+   <xsd:element name="phone" type="xsd:string"/>
+   <xsd:element name="mobile" type="xsd:string"/>
+   <xsd:element name="zoneid" type="xsd:integer"/>
+   <xsd:element name="id" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="clientphones">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:clientphone[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="clientphoneresult">
+  <xsd:all>
+   <xsd:element name="partial" type="xsd:boolean"/>
+   <xsd:element name="err" type="xsd:string"/>
+   <xsd:element name="clientlist" type="tns:clientphones"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="strlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd:string[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="idname">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="idnamelist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:idname[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="ip">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="login" type="xsd:string"/>
+   <xsd:element name="ip" type="xsd:string"/>
+   <xsd:element name="st_isweblogin" type="xsd:boolean"/>
+   <xsd:element name="st_isonpppoe" type="xsd:boolean"/>
+   <xsd:element name="st_onlinemac" type="xsd:string"/>
+   <xsd:element name="st_onu" type="xsd:string"/>
+   <xsd:element name="disabled" type="xsd:boolean"/>
+   <xsd:element name="staticip" type="xsd:string"/>
+   <xsd:element name="stopped" type="xsd:boolean"/>
+   <xsd:element name="pass" type="xsd:string"/>
+   <xsd:element name="protection" type="tns:protection"/>
+   <xsd:element name="graphip" type="xsd:boolean"/>
+   <xsd:element name="interface" type="xsd:string"/>
+   <xsd:element name="cmtsip" type="xsd:string"/>
+   <xsd:element name="cmtscfgid" type="xsd:integer"/>
+   <xsd:element name="cmtsmodemmac" type="xsd:string"/>
+   <xsd:element name="cmtsremote" type="xsd:boolean"/>
+   <xsd:element name="radiusremote" type="xsd:boolean"/>
+   <xsd:element name="monitor" type="xsd:boolean"/>
+   <xsd:element name="disabledhcp" type="xsd:boolean"/>
+   <xsd:element name="autosaveif" type="xsd:boolean"/>
+   <xsd:element name="autosavemac" type="xsd:boolean"/>
+   <xsd:element name="hostname" type="xsd:string"/>
+   <xsd:element name="filename" type="xsd:string"/>
+   <xsd:element name="macs" type="tns:strlist"/>
+   <xsd:element name="pools" type="tns:idnamelist"/>
+   <xsd:element name="lat" type="xsd:string"/>
+   <xsd:element name="lon" type="xsd:string"/>
+   <xsd:element name="ip6" type="xsd:string"/>
+   <xsd:element name="disabled6" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="ips">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:ip[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="billdata">
+  <xsd:all>
+   <xsd:element name="sendinvoice" type="xsd:boolean"/>
+   <xsd:element name="sendsms" type="xsd:boolean"/>
+   <xsd:element name="autorenew" type="xsd:boolean"/>
+   <xsd:element name="onboardingid" type="xsd:string"/>
+   <xsd:element name="ekyc" type="xsd:boolean"/>
+   <xsd:element name="ecaf" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="user">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="fee" type="xsd:decimal"/>
+   <xsd:element name="ifee" type="xsd:decimal"/>
+   <xsd:element name="address" type="xsd:string"/>
+   <xsd:element name="pin" type="xsd:string"/>
+   <xsd:element name="phone" type="xsd:string"/>
+   <xsd:element name="mobile" type="xsd:string"/>
+   <xsd:element name="pid" type="xsd:string"/>
+   <xsd:element name="idid" type="xsd:string"/>
+   <xsd:element name="enddate" type="xsd:date"/>
+   <xsd:element name="enddateisnull" type="xsd:boolean"/>
+   <xsd:element name="stopped" type="tns:stopstatus"/>
+   <xsd:element name="pass" type="xsd:string"/>
+   <xsd:element name="fuppackageid" type="xsd:integer"/>
+   <xsd:element name="tcpmax" type="xsd:integer"/>
+   <xsd:element name="packagetype" type="tns:packagetype"/>
+   <xsd:element name="packageid" type="xsd:integer"/>
+   <xsd:element name="packagename" type="xsd:string"/>
+   <xsd:element name="comment" type="xsd:string"/>
+   <xsd:element name="email" type="xsd:string"/>
+   <xsd:element name="volumelimitat" type="xsd:string"/>
+   <xsd:element name="volumenow" type="xsd:string"/>
+   <xsd:element name="ttl" type="xsd:integer"/>
+   <xsd:element name="createdate" type="xsd:date"/>
+   <xsd:element name="createdateisnull" type="xsd:boolean"/>
+   <xsd:element name="zoneid" type="xsd:integer"/>
+   <xsd:element name="zonename" type="xsd:string"/>
+   <xsd:element name="zoneadr" type="xsd:string"/>
+   <xsd:element name="zonepho" type="xsd:string"/>
+   <xsd:element name="zonecomment" type="xsd:string"/>
+   <xsd:element name="zonepubname" type="xsd:string"/>
+   <xsd:element name="zonepubadr" type="xsd:string"/>
+   <xsd:element name="zonepubpho" type="xsd:string"/>
+   <xsd:element name="ips" type="tns:ips"/>
+   <xsd:element name="havecontract" type="xsd:boolean"/>
+   <xsd:element name="contractno" type="xsd:string"/>
+   <xsd:element name="contractdate" type="xsd:date"/>
+   <xsd:element name="contractdateisnull" type="xsd:boolean"/>
+   <xsd:element name="contractdata" type="xsd:string"/>
+   <xsd:element name="lastwarn" type="xsd:dateTime"/>
+   <xsd:element name="billdata" type="tns:billdata"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="packageshort">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="fee" type="xsd:string"/>
+   <xsd:element name="iscurrent" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="packageshortlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:packageshort[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="packageshortv2">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="fee" type="xsd:string"/>
+   <xsd:element name="type" type="xsd:string"/>
+   <xsd:element name="isvalid" type="xsd:boolean"/>
+   <xsd:element name="ismapped" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="packageshortlistv2">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:packageshortv2[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="serverdata">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="host" type="xsd:string"/>
+   <xsd:element name="ip" type="xsd:string"/>
+   <xsd:element name="isconnected" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="serverdatalist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:serverdata[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="zone">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="status" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="address" type="xsd:string"/>
+   <xsd:element name="phone" type="xsd:string"/>
+   <xsd:element name="comment" type="xsd:string"/>
+   <xsd:element name="pubname" type="xsd:string"/>
+   <xsd:element name="pubaddress" type="xsd:string"/>
+   <xsd:element name="pubphone" type="xsd:string"/>
+   <xsd:element name="billtype" type="xsd:string"/>
+   <xsd:element name="l1v" type="xsd:string"/>
+   <xsd:element name="l2v" type="xsd:string"/>
+   <xsd:element name="extra" type="xsd:string"/>
+   <xsd:element name="l1ev" type="xsd:string"/>
+   <xsd:element name="l2ev" type="xsd:string"/>
+   <xsd:element name="tdstype" type="xsd:string"/>
+   <xsd:element name="tdspc" type="xsd:string"/>
+   <xsd:element name="agrtype" type="xsd:string"/>
+   <xsd:element name="agrpc" type="xsd:string"/>
+   <xsd:element name="epaycashier" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="zonelist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:zone[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="cashier">
+  <xsd:all>
+   <xsd:element name="login" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="zoneids" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="cashierlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:cashier[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="result">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="code" type="xsd:integer"/>
+   <xsd:element name="message" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="pool">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="zoneid" type="xsd:integer"/>
+   <xsd:element name="interface" type="xsd:string"/>
+   <xsd:element name="autosaveif" type="xsd:boolean"/>
+   <xsd:element name="autosavemac" type="xsd:boolean"/>
+   <xsd:element name="graphip" type="xsd:boolean"/>
+   <xsd:element name="protection" type="tns:protection"/>
+   <xsd:element name="disabledhcp" type="xsd:boolean"/>
+   <xsd:element name="cmtscfgid" type="xsd:integer"/>
+   <xsd:element name="cmtsremote" type="xsd:boolean"/>
+   <xsd:element name="monitor" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="pools">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:pool[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="intlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd:integer[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="zb">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="balance" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="zblist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:zb[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_o">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="otype" type="xsd:string"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="rid" type="xsd:string"/>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="zoneid" type="xsd:string"/>
+   <xsd:element name="clname" type="xsd:string"/>
+   <xsd:element name="claddress" type="xsd:string"/>
+   <xsd:element name="clphone" type="xsd:string"/>
+   <xsd:element name="total" type="xsd:string"/>
+   <xsd:element name="cashier" type="xsd:string"/>
+   <xsd:element name="cashiername" type="xsd:string"/>
+   <xsd:element name="haveinv" type="xsd:string"/>
+   <xsd:element name="invid" type="xsd:string"/>
+   <xsd:element name="istick" type="xsd:string"/>
+   <xsd:element name="paymethod" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_p">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="cashier" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="rid" type="xsd:string"/>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="amount" type="xsd:string"/>
+   <xsd:element name="taxpercent" type="xsd:string"/>
+   <xsd:element name="amountl1" type="xsd:string"/>
+   <xsd:element name="amountl2" type="xsd:string"/>
+   <xsd:element name="tickamount" type="xsd:string"/>
+   <xsd:element name="tickid" type="xsd:string"/>
+   <xsd:element name="paid" type="xsd:string"/>
+   <xsd:element name="description" type="xsd:string"/>
+   <xsd:element name="hasorder" type="xsd:string"/>
+   <xsd:element name="orderid" type="xsd:string"/>
+   <xsd:element name="tstampstart" type="xsd:dateTime"/>
+   <xsd:element name="tstampstartisnull" type="xsd:boolean"/>
+   <xsd:element name="tstampend" type="xsd:dateTime"/>
+   <xsd:element name="tstampendisnull" type="xsd:boolean"/>
+   <xsd:element name="oldexpiry" type="xsd:date"/>
+   <xsd:element name="oldexpiryisnull" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_f">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="rid" type="xsd:string"/>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="sid" type="xsd:string"/>
+   <xsd:element name="fee" type="xsd:string"/>
+   <xsd:element name="traffic" type="xsd:string"/>
+   <xsd:element name="executeafter" type="xsd:string"/>
+   <xsd:element name="executeafterisnull" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_s">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="clientid" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="status" type="xsd:string"/>
+   <xsd:element name="tvcount" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_i">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="invoiceno" type="xsd:string"/>
+   <xsd:element name="amount" type="xsd:string"/>
+   <xsd:element name="taxpercent" type="xsd:string"/>
+   <xsd:element name="taxpercentused" type="xsd:string"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="rid" type="xsd:string"/>
+   <xsd:element name="cid" type="xsd:string"/>
+   <xsd:element name="firmid" type="xsd:string"/>
+   <xsd:element name="clientfirmid" type="xsd:string"/>
+   <xsd:element name="zoneid" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_z">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="zoneid" type="xsd:string"/>
+   <xsd:element name="billtype" type="xsd:string"/>
+   <xsd:element name="tdstype" type="xsd:string"/>
+   <xsd:element name="tdspercent" type="xsd:string"/>
+   <xsd:element name="agrtype" type="xsd:string"/>
+   <xsd:element name="agrpercent" type="xsd:string"/>
+   <xsd:element name="calctype" type="xsd:string"/>
+   <xsd:element name="calcvalue" type="xsd:string"/>
+   <xsd:element name="amount" type="xsd:string"/>
+   <xsd:element name="cashier" type="xsd:string"/>
+   <xsd:element name="paymentid" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_t">
+  <xsd:all>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="traffic" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_ca">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="clientid" type="xsd:string"/>
+   <xsd:element name="casid" type="xsd:string"/>
+   <xsd:element name="casname" type="xsd:string"/>
+   <xsd:element name="cardno" type="xsd:string"/>
+   <xsd:element name="inactive" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_ac">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="clientid" type="xsd:string"/>
+   <xsd:element name="cardid" type="xsd:string"/>
+   <xsd:element name="acid" type="xsd:string"/>
+   <xsd:element name="cardno" type="xsd:string"/>
+   <xsd:element name="casname" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="code" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="canc_olist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_o[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_plist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_p[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_flist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_f[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_slist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_s[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_ilist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_i[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_zlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_z[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_tlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_t[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_calist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_ca[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="canc_aclist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:canc_ac[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="cancelinfo">
+  <xsd:all>
+   <xsd:element name="orders" type="tns:canc_olist"/>
+   <xsd:element name="payments" type="tns:canc_plist"/>
+   <xsd:element name="futureperiods" type="tns:canc_flist"/>
+   <xsd:element name="tvstatus" type="tns:canc_slist"/>
+   <xsd:element name="invoices" type="tns:canc_ilist"/>
+   <xsd:element name="zonebill" type="tns:canc_zlist"/>
+   <xsd:element name="traffic" type="tns:canc_tlist"/>
+   <xsd:element name="tvcards" type="tns:canc_calist"/>
+   <xsd:element name="tvaccess" type="tns:canc_aclist"/>
+   <xsd:element name="checksum" type="xsd:string"/>
+   <xsd:element name="code" type="xsd:string"/>
+   <xsd:element name="message" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="zbitem">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="cashier" type="xsd:string"/>
+   <xsd:element name="cashiername" type="xsd:string"/>
+   <xsd:element name="trasnactiontype" type="xsd:string"/>
+   <xsd:element name="camt" type="xsd:string"/>
+   <xsd:element name="tamt" type="xsd:string"/>
+   <xsd:element name="taxpc" type="xsd:string"/>
+   <xsd:element name="aamt" type="xsd:string"/>
+   <xsd:element name="namt" type="xsd:string"/>
+   <xsd:element name="samt" type="xsd:string"/>
+   <xsd:element name="damt" type="xsd:string"/>
+   <xsd:element name="lamt" type="xsd:string"/>
+   <xsd:element name="iamt" type="xsd:string"/>
+   <xsd:element name="amt" type="xsd:string"/>
+   <xsd:element name="comment" type="xsd:string"/>
+   <xsd:element name="billtype" type="xsd:string"/>
+   <xsd:element name="agrtype" type="xsd:string"/>
+   <xsd:element name="agrpc" type="xsd:string"/>
+   <xsd:element name="tdstype" type="xsd:string"/>
+   <xsd:element name="tdspc" type="xsd:string"/>
+   <xsd:element name="calctype" type="xsd:string"/>
+   <xsd:element name="calcval" type="xsd:string"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="clientname" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="zbitemlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:zbitem[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="zonebill">
+  <xsd:all>
+   <xsd:element name="message" type="xsd:string"/>
+   <xsd:element name="openingbalance" type="xsd:string"/>
+   <xsd:element name="closingbalance" type="xsd:string"/>
+   <xsd:element name="items" type="tns:zbitemlist"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="invitem">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="oiid" type="xsd:string"/>
+   <xsd:element name="iid" type="xsd:string"/>
+   <xsd:element name="aacid" type="xsd:string"/>
+   <xsd:element name="text" type="xsd:string"/>
+   <xsd:element name="type" type="xsd:string"/>
+   <xsd:element name="qty" type="xsd:string"/>
+   <xsd:element name="sprice" type="xsd:string"/>
+   <xsd:element name="total" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="invitemlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:invitem[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="inv">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="no" type="xsd:string"/>
+   <xsd:element name="tstamp" type="xsd:dateTime"/>
+   <xsd:element name="tstampisnull" type="xsd:boolean"/>
+   <xsd:element name="total" type="xsd:string"/>
+   <xsd:element name="taxpc" type="xsd:string"/>
+   <xsd:element name="billcid" type="xsd:string"/>
+   <xsd:element name="zoneid" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="adr1" type="xsd:string"/>
+   <xsd:element name="adr2" type="xsd:string"/>
+   <xsd:element name="adr3" type="xsd:string"/>
+   <xsd:element name="city" type="xsd:string"/>
+   <xsd:element name="lcity" type="xsd:string"/>
+   <xsd:element name="taxno1" type="xsd:string"/>
+   <xsd:element name="taxno2" type="xsd:string"/>
+   <xsd:element name="signatory" type="xsd:string"/>
+   <xsd:element name="type" type="xsd:string"/>
+   <xsd:element name="paymethod" type="xsd:string"/>
+   <xsd:element name="isgst" type="xsd:boolean"/>
+   <xsd:element name="refundno" type="xsd:string"/>
+   <xsd:element name="refundtst" type="xsd:dateTime"/>
+   <xsd:element name="refundtstisnull" type="xsd:boolean"/>
+   <xsd:element name="cashier" type="xsd:string"/>
+   <xsd:element name="sname" type="xsd:string"/>
+   <xsd:element name="scity" type="xsd:string"/>
+   <xsd:element name="sadr1" type="xsd:string"/>
+   <xsd:element name="sadr2" type="xsd:string"/>
+   <xsd:element name="sadr3" type="xsd:string"/>
+   <xsd:element name="staxno1" type="xsd:string"/>
+   <xsd:element name="staxno2" type="xsd:string"/>
+   <xsd:element name="ssignatory" type="xsd:string"/>
+   <xsd:element name="suser" type="xsd:string"/>
+   <xsd:element name="scode" type="xsd:string"/>
+   <xsd:element name="suname" type="xsd:string"/>
+   <xsd:element name="receiver" type="xsd:string"/>
+   <xsd:element name="items" type="tns:invitemlist"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="invlist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:inv[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="invresult">
+  <xsd:all>
+   <xsd:element name="message" type="xsd:string"/>
+   <xsd:element name="invoices" type="tns:invlist"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="keyvalue">
+  <xsd:all>
+   <xsd:element name="key" type="xsd:string"/>
+   <xsd:element name="value" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="keyvaluelist">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:keyvalue[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="shapinggroup">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="shapinggroups">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:shapinggroup[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="traffictype">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:string"/>
+   <xsd:element name="tag" type="xsd:string"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="uplgroups" type="tns:shapinggroups"/>
+   <xsd:element name="dnlgroups" type="tns:shapinggroups"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="traffictypes">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:traffictype[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="speed">
+  <xsd:all>
+   <xsd:element name="d0rate" type="xsd:string"/>
+   <xsd:element name="d1rate" type="xsd:string"/>
+   <xsd:element name="d2rate" type="xsd:string"/>
+   <xsd:element name="d3rate" type="xsd:string"/>
+   <xsd:element name="d4rate" type="xsd:string"/>
+   <xsd:element name="d5rate" type="xsd:string"/>
+   <xsd:element name="d6rate" type="xsd:string"/>
+   <xsd:element name="d7rate" type="xsd:string"/>
+   <xsd:element name="d8rate" type="xsd:string"/>
+   <xsd:element name="d9rate" type="xsd:string"/>
+   <xsd:element name="darate" type="xsd:string"/>
+   <xsd:element name="dbrate" type="xsd:string"/>
+   <xsd:element name="dcrate" type="xsd:string"/>
+   <xsd:element name="derate" type="xsd:string"/>
+   <xsd:element name="dfrate" type="xsd:string"/>
+   <xsd:element name="u0rate" type="xsd:string"/>
+   <xsd:element name="u1rate" type="xsd:string"/>
+   <xsd:element name="u2rate" type="xsd:string"/>
+   <xsd:element name="u3rate" type="xsd:string"/>
+   <xsd:element name="u4rate" type="xsd:string"/>
+   <xsd:element name="u5rate" type="xsd:string"/>
+   <xsd:element name="u6rate" type="xsd:string"/>
+   <xsd:element name="u7rate" type="xsd:string"/>
+   <xsd:element name="u8rate" type="xsd:string"/>
+   <xsd:element name="u9rate" type="xsd:string"/>
+   <xsd:element name="uarate" type="xsd:string"/>
+   <xsd:element name="ubrate" type="xsd:string"/>
+   <xsd:element name="ucrate" type="xsd:string"/>
+   <xsd:element name="uerate" type="xsd:string"/>
+   <xsd:element name="ufrate" type="xsd:string"/>
+   <xsd:element name="d0ceil" type="xsd:string"/>
+   <xsd:element name="d1ceil" type="xsd:string"/>
+   <xsd:element name="d2ceil" type="xsd:string"/>
+   <xsd:element name="d3ceil" type="xsd:string"/>
+   <xsd:element name="d4ceil" type="xsd:string"/>
+   <xsd:element name="d5ceil" type="xsd:string"/>
+   <xsd:element name="d6ceil" type="xsd:string"/>
+   <xsd:element name="d7ceil" type="xsd:string"/>
+   <xsd:element name="d8ceil" type="xsd:string"/>
+   <xsd:element name="d9ceil" type="xsd:string"/>
+   <xsd:element name="daceil" type="xsd:string"/>
+   <xsd:element name="dbceil" type="xsd:string"/>
+   <xsd:element name="dcceil" type="xsd:string"/>
+   <xsd:element name="deceil" type="xsd:string"/>
+   <xsd:element name="dfceil" type="xsd:string"/>
+   <xsd:element name="u0ceil" type="xsd:string"/>
+   <xsd:element name="u1ceil" type="xsd:string"/>
+   <xsd:element name="u2ceil" type="xsd:string"/>
+   <xsd:element name="u3ceil" type="xsd:string"/>
+   <xsd:element name="u4ceil" type="xsd:string"/>
+   <xsd:element name="u5ceil" type="xsd:string"/>
+   <xsd:element name="u6ceil" type="xsd:string"/>
+   <xsd:element name="u7ceil" type="xsd:string"/>
+   <xsd:element name="u8ceil" type="xsd:string"/>
+   <xsd:element name="u9ceil" type="xsd:string"/>
+   <xsd:element name="uaceil" type="xsd:string"/>
+   <xsd:element name="ubceil" type="xsd:string"/>
+   <xsd:element name="ucceil" type="xsd:string"/>
+   <xsd:element name="ueceil" type="xsd:string"/>
+   <xsd:element name="ufceil" type="xsd:string"/>
+   <xsd:element name="d0burst" type="xsd:string"/>
+   <xsd:element name="d1burst" type="xsd:string"/>
+   <xsd:element name="d2burst" type="xsd:string"/>
+   <xsd:element name="d3burst" type="xsd:string"/>
+   <xsd:element name="d4burst" type="xsd:string"/>
+   <xsd:element name="d5burst" type="xsd:string"/>
+   <xsd:element name="d6burst" type="xsd:string"/>
+   <xsd:element name="d7burst" type="xsd:string"/>
+   <xsd:element name="d8burst" type="xsd:string"/>
+   <xsd:element name="d9burst" type="xsd:string"/>
+   <xsd:element name="daburst" type="xsd:string"/>
+   <xsd:element name="dbburst" type="xsd:string"/>
+   <xsd:element name="dcburst" type="xsd:string"/>
+   <xsd:element name="deburst" type="xsd:string"/>
+   <xsd:element name="dfburst" type="xsd:string"/>
+   <xsd:element name="u0burst" type="xsd:string"/>
+   <xsd:element name="u1burst" type="xsd:string"/>
+   <xsd:element name="u2burst" type="xsd:string"/>
+   <xsd:element name="u3burst" type="xsd:string"/>
+   <xsd:element name="u4burst" type="xsd:string"/>
+   <xsd:element name="u5burst" type="xsd:string"/>
+   <xsd:element name="u6burst" type="xsd:string"/>
+   <xsd:element name="u7burst" type="xsd:string"/>
+   <xsd:element name="u8burst" type="xsd:string"/>
+   <xsd:element name="u9burst" type="xsd:string"/>
+   <xsd:element name="uaburst" type="xsd:string"/>
+   <xsd:element name="ubburst" type="xsd:string"/>
+   <xsd:element name="ucburst" type="xsd:string"/>
+   <xsd:element name="ueburst" type="xsd:string"/>
+   <xsd:element name="ufburst" type="xsd:string"/>
+   <xsd:element name="d0cburst" type="xsd:string"/>
+   <xsd:element name="d1cburst" type="xsd:string"/>
+   <xsd:element name="d2cburst" type="xsd:string"/>
+   <xsd:element name="d3cburst" type="xsd:string"/>
+   <xsd:element name="d4cburst" type="xsd:string"/>
+   <xsd:element name="d5cburst" type="xsd:string"/>
+   <xsd:element name="d6cburst" type="xsd:string"/>
+   <xsd:element name="d7cburst" type="xsd:string"/>
+   <xsd:element name="d8cburst" type="xsd:string"/>
+   <xsd:element name="d9cburst" type="xsd:string"/>
+   <xsd:element name="dacburst" type="xsd:string"/>
+   <xsd:element name="dbcburst" type="xsd:string"/>
+   <xsd:element name="dccburst" type="xsd:string"/>
+   <xsd:element name="decburst" type="xsd:string"/>
+   <xsd:element name="dfcburst" type="xsd:string"/>
+   <xsd:element name="u0cburst" type="xsd:string"/>
+   <xsd:element name="u1cburst" type="xsd:string"/>
+   <xsd:element name="u2cburst" type="xsd:string"/>
+   <xsd:element name="u3cburst" type="xsd:string"/>
+   <xsd:element name="u4cburst" type="xsd:string"/>
+   <xsd:element name="u5cburst" type="xsd:string"/>
+   <xsd:element name="u6cburst" type="xsd:string"/>
+   <xsd:element name="u7cburst" type="xsd:string"/>
+   <xsd:element name="u8cburst" type="xsd:string"/>
+   <xsd:element name="u9cburst" type="xsd:string"/>
+   <xsd:element name="uacburst" type="xsd:string"/>
+   <xsd:element name="ubcburst" type="xsd:string"/>
+   <xsd:element name="uccburst" type="xsd:string"/>
+   <xsd:element name="uecburst" type="xsd:string"/>
+   <xsd:element name="ufcburst" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="timedef">
+  <xsd:all>
+   <xsd:element name="starth" type="xsd:integer"/>
+   <xsd:element name="startm" type="xsd:integer"/>
+   <xsd:element name="endh" type="xsd:integer"/>
+   <xsd:element name="endm" type="xsd:integer"/>
+   <xsd:element name="speeds" type="tns:speed"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="timedefs">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:timedef[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="package">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="fee" type="xsd:string"/>
+   <xsd:element name="installfee" type="xsd:string"/>
+   <xsd:element name="forcefee" type="xsd:boolean"/>
+   <xsd:element name="tlimit" type="xsd:string"/>
+   <xsd:element name="tlaction" type="xsd:integer"/>
+   <xsd:element name="treeattach" type="xsd:boolean"/>
+   <xsd:element name="iplimitset" type="xsd:boolean"/>
+   <xsd:element name="iplimit" type="xsd:integer"/>
+   <xsd:element name="publicfee" type="xsd:string"/>
+   <xsd:element name="privatefee" type="xsd:string"/>
+   <xsd:element name="resetperiod" type="xsd:boolean"/>
+   <xsd:element name="resetprice" type="xsd:string"/>
+   <xsd:element name="postpaidtr" type="xsd:boolean"/>
+   <xsd:element name="ppprice" type="xsd:string"/>
+   <xsd:element name="ppunit" type="xsd:string"/>
+   <xsd:element name="afterexp" type="xsd:integer"/>
+   <xsd:element name="expdays" type="xsd:integer"/>
+   <xsd:element name="keepperiod" type="xsd:boolean"/>
+   <xsd:element name="keepstep" type="xsd:integer"/>
+   <xsd:element name="keepmin" type="xsd:integer"/>
+   <xsd:element name="trnoex" type="xsd:boolean"/>
+   <xsd:element name="trnoexifd" type="xsd:integer"/>
+   <xsd:element name="centralid" type="xsd:integer"/>
+   <xsd:element name="bonusday" type="xsd:boolean"/>
+   <xsd:element name="bonusdayd" type="xsd:integer"/>
+   <xsd:element name="bonusdayp" type="xsd:boolean"/>
+   <xsd:element name="cmtscfgf" type="xsd:boolean"/>
+   <xsd:element name="cmtscfgs" type="xsd:integer"/>
+   <xsd:element name="eoccfgf" type="xsd:boolean"/>
+   <xsd:element name="eoccfgs" type="xsd:integer"/>
+   <xsd:element name="svcperq" type="xsd:integer"/>
+   <xsd:element name="svcperd" type="xsd:string"/>
+   <xsd:element name="aacid" type="xsd:integer"/>
+   <xsd:element name="bday" type="xsd:integer"/>
+   <xsd:element name="hsac1stlogin" type="tns:hstype"/>
+   <xsd:element name="only1stpay" type="xsd:boolean"/>
+   <xsd:element name="onlyrenew" type="xsd:boolean"/>
+   <xsd:element name="speeds" type="tns:speed"/>
+   <xsd:element name="timed" type="tns:timedefs"/>
+   <xsd:element name="d0treeattach" type="xsd:string"/>
+   <xsd:element name="d1treeattach" type="xsd:string"/>
+   <xsd:element name="d2treeattach" type="xsd:string"/>
+   <xsd:element name="d3treeattach" type="xsd:string"/>
+   <xsd:element name="d4treeattach" type="xsd:string"/>
+   <xsd:element name="d5treeattach" type="xsd:string"/>
+   <xsd:element name="d6treeattach" type="xsd:string"/>
+   <xsd:element name="d7treeattach" type="xsd:string"/>
+   <xsd:element name="d8treeattach" type="xsd:string"/>
+   <xsd:element name="d9treeattach" type="xsd:string"/>
+   <xsd:element name="datreeattach" type="xsd:string"/>
+   <xsd:element name="dbtreeattach" type="xsd:string"/>
+   <xsd:element name="dctreeattach" type="xsd:string"/>
+   <xsd:element name="ddtreeattach" type="xsd:string"/>
+   <xsd:element name="detreeattach" type="xsd:string"/>
+   <xsd:element name="dftreeattach" type="xsd:string"/>
+   <xsd:element name="u0treeattach" type="xsd:string"/>
+   <xsd:element name="u1treeattach" type="xsd:string"/>
+   <xsd:element name="u2treeattach" type="xsd:string"/>
+   <xsd:element name="u3treeattach" type="xsd:string"/>
+   <xsd:element name="u4treeattach" type="xsd:string"/>
+   <xsd:element name="u5treeattach" type="xsd:string"/>
+   <xsd:element name="u6treeattach" type="xsd:string"/>
+   <xsd:element name="u7treeattach" type="xsd:string"/>
+   <xsd:element name="u8treeattach" type="xsd:string"/>
+   <xsd:element name="u9treeattach" type="xsd:string"/>
+   <xsd:element name="uatreeattach" type="xsd:string"/>
+   <xsd:element name="ubtreeattach" type="xsd:string"/>
+   <xsd:element name="uctreeattach" type="xsd:string"/>
+   <xsd:element name="udtreeattach" type="xsd:string"/>
+   <xsd:element name="uetreeattach" type="xsd:string"/>
+   <xsd:element name="uftreeattach" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:simpleType name="stopstatus">
+  <xsd:restriction base="xsd:string">
+  <xsd:enumeration value="y"/>
+  <xsd:enumeration value="n"/>
+  <xsd:enumeration value="a"/>
+  </xsd:restriction>
+ </xsd:simpleType> <xsd:simpleType name="packagetype">
+  <xsd:restriction base="xsd:string">
+  <xsd:enumeration value="c"/>
+  <xsd:enumeration value="p"/>
+  </xsd:restriction>
+ </xsd:simpleType> <xsd:simpleType name="protection">
+  <xsd:restriction base="xsd:string">
+  <xsd:enumeration value="none"/>
+  <xsd:enumeration value="lmac"/>
+  <xsd:enumeration value="rmac"/>
+  <xsd:enumeration value="pmac"/>
+  <xsd:enumeration value="lpmac"/>
+  <xsd:enumeration value="dmac"/>
+  <xsd:enumeration value="ldmac"/>
+  <xsd:enumeration value="wmac"/>
+  <xsd:enumeration value="lwmac"/>
+  <xsd:enumeration value="wdmac"/>
+  </xsd:restriction>
+ </xsd:simpleType> <xsd:simpleType name="hstype">
+  <xsd:restriction base="xsd:string">
+  <xsd:enumeration value="no"/>
+  <xsd:enumeration value="yes"/>
+  <xsd:enumeration value="local"/>
+  </xsd:restriction>
+ </xsd:simpleType> <xsd:simpleType name="maptype">
+  <xsd:restriction base="xsd:string">
+  <xsd:enumeration value="g2r"/>
+  <xsd:enumeration value="s2g"/>
+  <xsd:enumeration value="s2r"/>
+  <xsd:enumeration value="e2r"/>
+  <xsd:enumeration value="c2r"/>
+  </xsd:restriction>
+ </xsd:simpleType></xsd:schema>
+</types>
+<message name="getBillVersion"></message>
+<message name="getBillVersionResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillSearch">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="search" type="xsd:string" /></message>
+<message name="ipbillSearchResponse">
+  <part name="return" type="tns:clients" /></message>
+<message name="ipbillGetDue">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cid" type="xsd:string" />
+  <part name="pid" type="xsd:string" />
+  <part name="info" type="xsd:string" />
+  <part name="newperiod" type="xsd:string" />
+  <part name="months" type="xsd:string" />
+  <part name="nsid" type="xsd:string" />
+  <part name="paymethod" type="xsd:string" /></message>
+<message name="ipbillGetDueResponse">
+  <part name="return" type="tns:payment" /></message>
+<message name="ipbillPay">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="pid" type="xsd:string" /></message>
+<message name="ipbillPayResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillCancel">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="pid" type="xsd:string" /></message>
+<message name="ipbillCancelResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillUpgradeOpts">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cin" type="xsd:string" /></message>
+<message name="ipbillUpgradeOptsResponse">
+  <part name="return" type="tns:upgradeopts" /></message>
+<message name="ipbillUpgrade">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cin" type="xsd:string" />
+  <part name="id" type="xsd:string" />
+  <part name="istick" type="xsd:string" /></message>
+<message name="ipbillUpgradeResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillCheckUser">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cin" type="xsd:string" />
+  <part name="ip" type="xsd:string" />
+  <part name="uuser" type="xsd:string" />
+  <part name="upass" type="xsd:string" /></message>
+<message name="ipbillCheckUserResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillClientPhone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="rids" type="xsd:string" /></message>
+<message name="ipbillClientPhoneResponse">
+  <part name="return" type="tns:clientphoneresult" /></message>
+<message name="ipbillGetUser">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetUserResponse">
+  <part name="return" type="tns:user" /></message>
+<message name="ipbillAddUser">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" />
+  <part name="u" type="tns:user" /></message>
+<message name="ipbillAddUserResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillGetUserBilldata">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetUserBilldataResponse">
+  <part name="return" type="tns:billdata" /></message>
+<message name="ipbillSetUserData">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" />
+  <part name="keyvalue" type="tns:keyvaluelist" /></message>
+<message name="ipbillSetUserDataResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillGetPackages">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetPackagesResponse">
+  <part name="return" type="tns:packageshortlist" /></message>
+<message name="ipbillGetAllPackagesV2">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetAllPackagesV2Response">
+  <part name="return" type="tns:packageshortlistv2" /></message>
+<message name="ipbillGetAllPackages">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" /></message>
+<message name="ipbillGetAllPackagesResponse">
+  <part name="return" type="tns:packageshortlist" /></message>
+<message name="ipbillGetMappedPackages">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="zoneid" type="xsd:string" /></message>
+<message name="ipbillGetMappedPackagesResponse">
+  <part name="return" type="tns:packageshortlist" /></message>
+<message name="ipbillGetPools">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="zoneid" type="xsd:string" /></message>
+<message name="ipbillGetPoolsResponse">
+  <part name="return" type="tns:pools" /></message>
+<message name="ipbillGetPoolFreeIps">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="poolid" type="xsd:integer" />
+  <part name="count" type="xsd:integer" />
+  <part name="cmts" type="xsd:boolean" /></message>
+<message name="ipbillGetPoolFreeIpsResponse">
+  <part name="return" type="tns:strlist" /></message>
+<message name="ipbillGetPoolFreeIps6">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="poolid" type="xsd:integer" />
+  <part name="count" type="xsd:integer" /></message>
+<message name="ipbillGetPoolFreeIps6Response">
+  <part name="return" type="tns:strlist" /></message>
+<message name="ipbillLockPoolIp">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="ip" type="xsd:string" />
+  <part name="session" type="xsd:string" />
+  <part name="cmts" type="xsd:boolean" /></message>
+<message name="ipbillLockPoolIpResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="ipbillLockPoolIp6">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ipacctid" type="xsd:string" />
+  <part name="ip" type="xsd:string" />
+  <part name="session" type="xsd:string" /></message>
+<message name="ipbillLockPoolIp6Response">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="ipbillGetServerIds">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" /></message>
+<message name="ipbillGetServerIdsResponse">
+  <part name="return" type="tns:serverdatalist" /></message>
+<message name="ipbillGetServerIdsByZone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zoneid" type="xsd:string" /></message>
+<message name="ipbillGetServerIdsByZoneResponse">
+  <part name="return" type="tns:serverdatalist" /></message>
+<message name="ipbillGetZones">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" /></message>
+<message name="ipbillGetZonesResponse">
+  <part name="return" type="tns:zonelist" /></message>
+<message name="ipbillGetZone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetZoneResponse">
+  <part name="return" type="tns:zone" /></message>
+<message name="ipbillAddZone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="z" type="tns:zone" /></message>
+<message name="ipbillAddZoneResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillSetZone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="z" type="tns:zone" /></message>
+<message name="ipbillSetZoneResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillInvTotalZone">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zoneid" type="xsd:integer" />
+  <part name="fdate" type="xsd:string" />
+  <part name="tdate" type="xsd:string" />
+  <part name="login" type="xsd:string" /></message>
+<message name="ipbillInvTotalZoneResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillTopupList">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" /></message>
+<message name="ipbillTopupListResponse">
+  <part name="return" type="tns:cashierlist" /></message>
+<message name="ipbillTopup">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cashier" type="xsd:string" />
+  <part name="amount" type="xsd:string" />
+  <part name="comment" type="xsd:string" /></message>
+<message name="ipbillTopupResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="ipbillTopupCheck">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="cashier" type="xsd:string" />
+  <part name="amount" type="xsd:string" />
+  <part name="comment" type="xsd:string" /></message>
+<message name="ipbillTopupCheckResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillZoneTopup">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zoneid" type="xsd:integer" />
+  <part name="amount" type="xsd:string" />
+  <part name="comment" type="xsd:string" /></message>
+<message name="ipbillZoneTopupResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="ipbillZoneTopupCheck">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zoneid" type="xsd:integer" />
+  <part name="amount" type="xsd:string" />
+  <part name="comment" type="xsd:string" /></message>
+<message name="ipbillZoneTopupCheckResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillZoneBalance">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zoneid" type="xsd:integer" /></message>
+<message name="ipbillZoneBalanceResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillZonesBalance">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="zones" type="tns:intlist" /></message>
+<message name="ipbillZonesBalanceResponse">
+  <part name="return" type="tns:zblist" /></message>
+<message name="ipbillCheckLogin">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="luser" type="xsd:string" />
+  <part name="lpass" type="xsd:string" />
+  <part name="ip" type="xsd:string" /></message>
+<message name="ipbillCheckLoginResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillCheckAdminLogin">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="luser" type="xsd:string" />
+  <part name="lpass" type="xsd:string" />
+  <part name="ip" type="xsd:string" /></message>
+<message name="ipbillCheckAdminLoginResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillCancelGet">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillCancelGetResponse">
+  <part name="return" type="tns:cancelinfo" /></message>
+<message name="ipbillCancelDo">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" />
+  <part name="checksum" type="xsd:string" /></message>
+<message name="ipbillCancelDoResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillZoneBill">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="frdate" type="xsd:date" />
+  <part name="todate" type="xsd:date" />
+  <part name="zoneid" type="xsd:integer" /></message>
+<message name="ipbillZoneBillResponse">
+  <part name="return" type="tns:zonebill" /></message>
+<message name="ipbillGetInvoices">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="frdate" type="xsd:date" />
+  <part name="todate" type="xsd:date" />
+  <part name="cid" type="xsd:string" />
+  <part name="zoneid" type="xsd:integer" /></message>
+<message name="ipbillGetInvoicesResponse">
+  <part name="return" type="tns:invresult" /></message>
+<message name="ipbillGetUserCashier">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:string" /></message>
+<message name="ipbillGetUserCashierResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillGenGraph">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="rid" type="xsd:string" />
+  <part name="kv" type="tns:keyvaluelist" /></message>
+<message name="ipbillGenGraphResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillMakeSession">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="ip" type="xsd:string" />
+  <part name="ruser" type="xsd:string" />
+  <part name="rpass" type="xsd:string" />
+  <part name="rlang" type="xsd:string" /></message>
+<message name="ipbillMakeSessionResponse">
+  <part name="return" type="xsd:string" /></message>
+<message name="ipbillGetTrafficTypes">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" /></message>
+<message name="ipbillGetTrafficTypesResponse">
+  <part name="return" type="tns:traffictypes" /></message>
+<message name="ipbillGetPackage">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="id" type="xsd:integer" /></message>
+<message name="ipbillGetPackageResponse">
+  <part name="return" type="tns:package" /></message>
+<message name="ipbillSetPackage">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="package" type="tns:package" /></message>
+<message name="ipbillSetPackageResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillAddPackage">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="package" type="tns:package" /></message>
+<message name="ipbillAddPackageResponse">
+  <part name="return" type="tns:result" /></message>
+<message name="ipbillMap">
+  <part name="user" type="xsd:string" />
+  <part name="pass" type="xsd:string" />
+  <part name="type" type="tns:maptype" />
+  <part name="srcid" type="xsd:integer" />
+  <part name="dstid" type="xsd:integer" /></message>
+<message name="ipbillMapResponse">
+  <part name="return" type="tns:result" /></message>
+<portType name="IPACCTPortType">
+  <operation name="getBillVersion">
+    <input message="tns:getBillVersion"/>
+    <output message="tns:getBillVersionResponse"/>
+  </operation>
+  <operation name="ipbillSearch">
+    <input message="tns:ipbillSearch"/>
+    <output message="tns:ipbillSearchResponse"/>
+  </operation>
+  <operation name="ipbillGetDue">
+    <input message="tns:ipbillGetDue"/>
+    <output message="tns:ipbillGetDueResponse"/>
+  </operation>
+  <operation name="ipbillPay">
+    <input message="tns:ipbillPay"/>
+    <output message="tns:ipbillPayResponse"/>
+  </operation>
+  <operation name="ipbillCancel">
+    <input message="tns:ipbillCancel"/>
+    <output message="tns:ipbillCancelResponse"/>
+  </operation>
+  <operation name="ipbillUpgradeOpts">
+    <input message="tns:ipbillUpgradeOpts"/>
+    <output message="tns:ipbillUpgradeOptsResponse"/>
+  </operation>
+  <operation name="ipbillUpgrade">
+    <input message="tns:ipbillUpgrade"/>
+    <output message="tns:ipbillUpgradeResponse"/>
+  </operation>
+  <operation name="ipbillCheckUser">
+    <input message="tns:ipbillCheckUser"/>
+    <output message="tns:ipbillCheckUserResponse"/>
+  </operation>
+  <operation name="ipbillClientPhone">
+    <input message="tns:ipbillClientPhone"/>
+    <output message="tns:ipbillClientPhoneResponse"/>
+  </operation>
+  <operation name="ipbillGetUser">
+    <input message="tns:ipbillGetUser"/>
+    <output message="tns:ipbillGetUserResponse"/>
+  </operation>
+  <operation name="ipbillAddUser">
+    <input message="tns:ipbillAddUser"/>
+    <output message="tns:ipbillAddUserResponse"/>
+  </operation>
+  <operation name="ipbillGetUserBilldata">
+    <input message="tns:ipbillGetUserBilldata"/>
+    <output message="tns:ipbillGetUserBilldataResponse"/>
+  </operation>
+  <operation name="ipbillSetUserData">
+    <input message="tns:ipbillSetUserData"/>
+    <output message="tns:ipbillSetUserDataResponse"/>
+  </operation>
+  <operation name="ipbillGetPackages">
+    <input message="tns:ipbillGetPackages"/>
+    <output message="tns:ipbillGetPackagesResponse"/>
+  </operation>
+  <operation name="ipbillGetAllPackagesV2">
+    <input message="tns:ipbillGetAllPackagesV2"/>
+    <output message="tns:ipbillGetAllPackagesV2Response"/>
+  </operation>
+  <operation name="ipbillGetAllPackages">
+    <input message="tns:ipbillGetAllPackages"/>
+    <output message="tns:ipbillGetAllPackagesResponse"/>
+  </operation>
+  <operation name="ipbillGetMappedPackages">
+    <input message="tns:ipbillGetMappedPackages"/>
+    <output message="tns:ipbillGetMappedPackagesResponse"/>
+  </operation>
+  <operation name="ipbillGetPools">
+    <input message="tns:ipbillGetPools"/>
+    <output message="tns:ipbillGetPoolsResponse"/>
+  </operation>
+  <operation name="ipbillGetPoolFreeIps">
+    <input message="tns:ipbillGetPoolFreeIps"/>
+    <output message="tns:ipbillGetPoolFreeIpsResponse"/>
+  </operation>
+  <operation name="ipbillGetPoolFreeIps6">
+    <input message="tns:ipbillGetPoolFreeIps6"/>
+    <output message="tns:ipbillGetPoolFreeIps6Response"/>
+  </operation>
+  <operation name="ipbillLockPoolIp">
+    <input message="tns:ipbillLockPoolIp"/>
+    <output message="tns:ipbillLockPoolIpResponse"/>
+  </operation>
+  <operation name="ipbillLockPoolIp6">
+    <input message="tns:ipbillLockPoolIp6"/>
+    <output message="tns:ipbillLockPoolIp6Response"/>
+  </operation>
+  <operation name="ipbillGetServerIds">
+    <input message="tns:ipbillGetServerIds"/>
+    <output message="tns:ipbillGetServerIdsResponse"/>
+  </operation>
+  <operation name="ipbillGetServerIdsByZone">
+    <input message="tns:ipbillGetServerIdsByZone"/>
+    <output message="tns:ipbillGetServerIdsByZoneResponse"/>
+  </operation>
+  <operation name="ipbillGetZones">
+    <input message="tns:ipbillGetZones"/>
+    <output message="tns:ipbillGetZonesResponse"/>
+  </operation>
+  <operation name="ipbillGetZone">
+    <input message="tns:ipbillGetZone"/>
+    <output message="tns:ipbillGetZoneResponse"/>
+  </operation>
+  <operation name="ipbillAddZone">
+    <input message="tns:ipbillAddZone"/>
+    <output message="tns:ipbillAddZoneResponse"/>
+  </operation>
+  <operation name="ipbillSetZone">
+    <input message="tns:ipbillSetZone"/>
+    <output message="tns:ipbillSetZoneResponse"/>
+  </operation>
+  <operation name="ipbillInvTotalZone">
+    <input message="tns:ipbillInvTotalZone"/>
+    <output message="tns:ipbillInvTotalZoneResponse"/>
+  </operation>
+  <operation name="ipbillTopupList">
+    <input message="tns:ipbillTopupList"/>
+    <output message="tns:ipbillTopupListResponse"/>
+  </operation>
+  <operation name="ipbillTopup">
+    <input message="tns:ipbillTopup"/>
+    <output message="tns:ipbillTopupResponse"/>
+  </operation>
+  <operation name="ipbillTopupCheck">
+    <input message="tns:ipbillTopupCheck"/>
+    <output message="tns:ipbillTopupCheckResponse"/>
+  </operation>
+  <operation name="ipbillZoneTopup">
+    <input message="tns:ipbillZoneTopup"/>
+    <output message="tns:ipbillZoneTopupResponse"/>
+  </operation>
+  <operation name="ipbillZoneTopupCheck">
+    <input message="tns:ipbillZoneTopupCheck"/>
+    <output message="tns:ipbillZoneTopupCheckResponse"/>
+  </operation>
+  <operation name="ipbillZoneBalance">
+    <input message="tns:ipbillZoneBalance"/>
+    <output message="tns:ipbillZoneBalanceResponse"/>
+  </operation>
+  <operation name="ipbillZonesBalance">
+    <input message="tns:ipbillZonesBalance"/>
+    <output message="tns:ipbillZonesBalanceResponse"/>
+  </operation>
+  <operation name="ipbillCheckLogin">
+    <input message="tns:ipbillCheckLogin"/>
+    <output message="tns:ipbillCheckLoginResponse"/>
+  </operation>
+  <operation name="ipbillCheckAdminLogin">
+    <input message="tns:ipbillCheckAdminLogin"/>
+    <output message="tns:ipbillCheckAdminLoginResponse"/>
+  </operation>
+  <operation name="ipbillCancelGet">
+    <input message="tns:ipbillCancelGet"/>
+    <output message="tns:ipbillCancelGetResponse"/>
+  </operation>
+  <operation name="ipbillCancelDo">
+    <input message="tns:ipbillCancelDo"/>
+    <output message="tns:ipbillCancelDoResponse"/>
+  </operation>
+  <operation name="ipbillZoneBill">
+    <input message="tns:ipbillZoneBill"/>
+    <output message="tns:ipbillZoneBillResponse"/>
+  </operation>
+  <operation name="ipbillGetInvoices">
+    <input message="tns:ipbillGetInvoices"/>
+    <output message="tns:ipbillGetInvoicesResponse"/>
+  </operation>
+  <operation name="ipbillGetUserCashier">
+    <input message="tns:ipbillGetUserCashier"/>
+    <output message="tns:ipbillGetUserCashierResponse"/>
+  </operation>
+  <operation name="ipbillGenGraph">
+    <input message="tns:ipbillGenGraph"/>
+    <output message="tns:ipbillGenGraphResponse"/>
+  </operation>
+  <operation name="ipbillMakeSession">
+    <input message="tns:ipbillMakeSession"/>
+    <output message="tns:ipbillMakeSessionResponse"/>
+  </operation>
+  <operation name="ipbillGetTrafficTypes">
+    <input message="tns:ipbillGetTrafficTypes"/>
+    <output message="tns:ipbillGetTrafficTypesResponse"/>
+  </operation>
+  <operation name="ipbillGetPackage">
+    <input message="tns:ipbillGetPackage"/>
+    <output message="tns:ipbillGetPackageResponse"/>
+  </operation>
+  <operation name="ipbillSetPackage">
+    <input message="tns:ipbillSetPackage"/>
+    <output message="tns:ipbillSetPackageResponse"/>
+  </operation>
+  <operation name="ipbillAddPackage">
+    <input message="tns:ipbillAddPackage"/>
+    <output message="tns:ipbillAddPackageResponse"/>
+  </operation>
+  <operation name="ipbillMap">
+    <input message="tns:ipbillMap"/>
+    <output message="tns:ipbillMapResponse"/>
+  </operation>
+</portType>
+<binding name="IPACCTBinding" type="tns:IPACCTPortType">
+  <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getBillVersion">
+    <soap:operation soapAction="urn:IPACCTipbill#getBillVersion" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillSearch">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillSearch" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetDue">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetDue" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillPay">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillPay" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCancel">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCancel" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillUpgradeOpts">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillUpgradeOpts" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillUpgrade">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillUpgrade" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCheckUser">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCheckUser" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillClientPhone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillClientPhone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetUser">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetUser" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillAddUser">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillAddUser" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetUserBilldata">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetUserBilldata" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillSetUserData">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillSetUserData" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetPackages">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetPackages" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetAllPackagesV2">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetAllPackagesV2" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetAllPackages">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetAllPackages" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetMappedPackages">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetMappedPackages" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetPools">
+    <soap:operation soapAction="urn:IPACCTipacct#ipbillGetPools" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetPoolFreeIps">
+    <soap:operation soapAction="urn:IPACCTipacct#ipbillGetPoolFreeIps" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetPoolFreeIps6">
+    <soap:operation soapAction="urn:IPACCTipacct#ipbillGetPoolFreeIps6" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillLockPoolIp">
+    <soap:operation soapAction="urn:IPACCTipacct#ipbillLockPoolIp" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillLockPoolIp6">
+    <soap:operation soapAction="urn:IPACCTipacct#ipbillLockPoolIp6" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipacct" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetServerIds">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetServerIds" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetServerIdsByZone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetServerIdsByZone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetZones">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetZones" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetZone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetZone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillAddZone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillAddZone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillSetZone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillSetZone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillInvTotalZone">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillInvTotalZone" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillTopupList">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillTopupList" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillTopup">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillTopup" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillTopupCheck">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillTopupCheck" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillZoneTopup">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillZoneTopup" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillZoneTopupCheck">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillZoneTopupCheck" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillZoneBalance">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillZoneBalance" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillZonesBalance">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillZonesBalance" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCheckLogin">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCheckLogin" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCheckAdminLogin">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCheckAdminLogin" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCancelGet">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCancelGet" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillCancelDo">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillCancelDo" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillZoneBill">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillZoneBill" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetInvoices">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetInvoices" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetUserCashier">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetUserCashier" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGenGraph">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGenGraph" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillMakeSession">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillMakeSession" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetTrafficTypes">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetTrafficTypes" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillGetPackage">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillGetPackage" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillSetPackage">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillSetPackage" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillAddPackage">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillAddPackage" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="ipbillMap">
+    <soap:operation soapAction="urn:IPACCTipbill#ipbillMap" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:IPACCTipbill" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+</binding>
+<service name="IPACCT">
+  <port name="IPACCTPort" binding="tns:IPACCTBinding">
+    <soap:address location="https://103.255.232.146:443/0/bgpost"/>
+  </port>
+</service>
+</definitions>

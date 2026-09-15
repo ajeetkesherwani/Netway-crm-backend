@@ -252,7 +252,8 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
 
     try {
       const iptvResponse = await axios.get(
-        "http://159.89.146.245:5004/api/admin/package/iptv-packages/list",
+        // "http://159.89.146.245:5004/api/admin/package/iptv-packages/list",
+        `${process.env.API_BASE_URL}/package/iptv-packages/list`,
         {
           timeout: 15000,
           headers: {

@@ -26,6 +26,10 @@ exports.getUserFullDetails = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
+  // Explicitly add IPACCT IDs to the root level for easy access in frontend
+  user.ipactId = user.generalInformation?.ipactId || "";
+  user.ipacctCustomerId = user.generalInformation?.ipacctCustomerId || "";
+
   // USER PURCHASED PLANS
   const purchasedPlans = await PurchasedPlan.find({ userId })
     .populate("userId", "generalInformation.name generalInformation.username")  

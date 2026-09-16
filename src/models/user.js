@@ -24,6 +24,7 @@ const UserSchema = new mongoose.Schema(
       phone: { type: String, required: [true, "Mobile number is required"] },
       alternatePhone: { type: String },
       ipactId: { type: String },
+      ipacctCustomerId: { type: String },
       connectionType: {
         type: String,
         enum: ["ill", "ftth", "rf", "other"],

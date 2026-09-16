@@ -6,6 +6,7 @@ const UserPackage = require("../../../models/userPackage");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
 const { addIpacctUser } = require("../../../services/ipacctUserServices");
+const Zone = require("../../../models/zone");
 
 
 // Assign package to user
@@ -373,27 +374,64 @@ exports.createUser = async (req, res, next) => {
     try {
       // Find the first assigned package to get its IPACCT ID if any
       let ipacctPackageId = null;
+      let ipacctPackageName = "";
+      let ipacctFee = "0";
       if (packageInfomation.length > 0) {
         const firstPkg = await Package.findById(packageInfomation[0].packageId);
         if (firstPkg && firstPkg.IppactId) {
            ipacctPackageId = firstPkg.IppactId;
+        }
+        ipacctPackageName = firstPkg ? (firstPkg.name || "") : packageInfomation[0].packageName;
+        ipacctFee = firstPkg ? String(firstPkg.basePrice || firstPkg.offerPrice || "0") : String(packageInfomation[0].price || "0");
+      }
+
+      // Find the selected zone to get its IPACCT ID
+      let ipacctZoneId = 0;
+      let ipacctZoneName = "";
+      if (addressDetails.area) {
+        const selectedZone = await Zone.findById(addressDetails.area);
+        if (selectedZone && selectedZone.ipacctZoneId) {
+          ipacctZoneId = selectedZone.ipacctZoneId;
+        }
+        if (selectedZone) {
+          ipacctZoneName = selectedZone.name || "";
         }
       }
 
       console.log("---- STARTING IPACCT USER CREATION ----");
       const ipacctRes = await addIpacctUser({
         name: generalInformation.name,
-        address: addressDetails.installationAddress?.addressine1 || "",
+        address: addressDetails.billingAddress?.addressine1 || "",
+        pin: addressDetails.billingAddress?.pincode || "",
         phone: generalInformation.phone,
         mobile: generalInformation.phone,
         username: generalInformation.username,
         password: generalInformation.plainPassword,
         email: generalInformation.email,
         packageId: ipacctPackageId,
+        packageName: ipacctPackageName,
+        fee: ipacctFee,
+        zoneid: ipacctZoneId,
+        zonename: ipacctZoneName,
       });
       console.log("---- IPACCT USER CREATION RESPONSE ----");
-      console.log(ipacctRes);
+      console.log(JSON.stringify(ipacctRes, null, 2));
       console.log("---------------------------------------");
+
+      if (ipacctRes && ipacctRes.return) {
+        const ret = ipacctRes.return;
+        
+        // Extract id and cid. Depending on xml2js parsing, they might have a '_' property or be direct strings.
+        const ipacctId = typeof ret.id === "object" ? (ret.id._ || ret.id) : ret.id;
+        const ipacctCid = typeof ret.cid === "object" ? (ret.cid._ || ret.cid) : ret.cid;
+        
+        if (ipacctId && ipacctId !== "-1") {
+          newUser.generalInformation.ipactId = ipacctId;
+          newUser.generalInformation.ipacctCustomerId = ipacctCid;
+          await newUser.save();
+          console.log(`Saved IPACCT IDs to CRM User: ipactId=${ipacctId}, ipacctCustomerId=${ipacctCid}`);
+        }
+      }
     } catch (ipacctErr) {
       console.error("Failed to create user in IPACCT:", ipacctErr.message);
     }

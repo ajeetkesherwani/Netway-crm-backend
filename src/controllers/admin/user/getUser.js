@@ -117,8 +117,15 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     ];
   }
 
-  const user = await User.find(query).sort({ createdAt: -1 });
-  if (!user) return next(new AppError("User not found", 404));
+  const users = await User.find(query).sort({ createdAt: -1 }).lean();
+  if (!users) return next(new AppError("User not found", 404));
 
-  successResponse(res, "User found successfully", user);
+  // Explicitly add IPACCT IDs to the root level for easy access in frontend
+  const mappedUsers = users.map(user => {
+    user.ipactId = user.generalInformation?.ipactId || "";
+    user.ipacctCustomerId = user.generalInformation?.ipacctCustomerId || "";
+    return user;
+  });
+
+  successResponse(res, "User found successfully", mappedUsers);
 });

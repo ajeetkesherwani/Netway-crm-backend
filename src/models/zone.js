@@ -14,6 +14,10 @@ const zoneSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       refPath: "createdBy",
     },
+    ipacctZoneId: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );

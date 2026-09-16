@@ -6,16 +6,17 @@ const agent = new https.Agent({
   rejectUnauthorized: false
 });
 
-async function callSoap(method, params = {}) {
+async function callSoap(method, params = {}, rawParamsXML = "") {
   // convert params → XML
   let paramsXML = "";
   for (let key in params) {
     paramsXML += `<${key}>${params[key]}</${key}>`;
   }
+  paramsXML += rawParamsXML;
 
   // SOAP body
   const xml = `
-  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="${config.NAMESPACE}">
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="${config.NAMESPACE}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tns="urn:IPACCTipbill">
     <soapenv:Header/>
     <soapenv:Body>
       <urn:${method}>

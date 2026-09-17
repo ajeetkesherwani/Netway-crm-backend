@@ -6,7 +6,11 @@ const agent = new https.Agent({
   rejectUnauthorized: false
 });
 
-async function callSoap(method, params = {}, rawParamsXML = "") {
+async function callSoap(method, params = {}, rawParamsXML = "", customOpts = {}) {
+  const namespace = customOpts.namespace || config.NAMESPACE;
+  const endpoint = customOpts.endpoint || config.ENDPOINT;
+  const tns = customOpts.tns || "urn:IPACCTipbill";
+
   // convert params → XML
   let paramsXML = "";
   for (let key in params) {
@@ -16,7 +20,7 @@ async function callSoap(method, params = {}, rawParamsXML = "") {
 
   // SOAP body
   const xml = `
-  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="${config.NAMESPACE}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tns="urn:IPACCTipbill">
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="${namespace}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tns="${tns}">
     <soapenv:Header/>
     <soapenv:Body>
       <urn:${method}>
@@ -27,7 +31,7 @@ async function callSoap(method, params = {}, rawParamsXML = "") {
   `;
 
   return new Promise((resolve, reject) => {
-    const url = new URL(config.ENDPOINT);
+    const url = new URL(endpoint);
     const options = {
       hostname: url.hostname,
       port: url.port || 443,
@@ -37,7 +41,7 @@ async function callSoap(method, params = {}, rawParamsXML = "") {
       headers: {
         "Content-Type": "text/xml; charset=utf-8",
         "Content-Length": Buffer.byteLength(xml, "utf8"),
-        "SOAPAction": `"${config.NAMESPACE}#${method}"`
+        "SOAPAction": `"${namespace}#${method}"`
       }
     };
 

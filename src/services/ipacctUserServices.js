@@ -7,7 +7,7 @@ async function addIpacctUser(userData) {
     const now = new Date();
     const createDateStr = now.toISOString().split('T')[0];
     const lastWarnStr = createDateStr + "T00:00:00";
-    
+
     // Calculate end date (1 month from now)
     const nextMonth = new Date(now);
     nextMonth.setMonth(now.getMonth() + 1);
@@ -91,17 +91,18 @@ async function addIpacctUser(userData) {
   }
 }
 
+/*
+// OLD FUNCTION - Hits .58 /0/bgpost and fails with sql error
 async function syncIpacctUserExpiry(username, newExpiryDate) {
   try {
     console.log(`Syncing expiry date for IPACCT user ${username} to ${newExpiryDate}`);
-    
-    // Construct the keyvalue list for updating the enddate
+
     const rawParamsXML = `
-      <id xsi:type="xsd:string">${username}</id>
-      <keyvalue xsi:type="SOAP-ENC:Array" SOAP-ENC:arrayType="tns:keyvalue[1]">
-          <item xsi:type="tns:keyvalue">
-              <key xsi:type="xsd:string">enddate</key>
-              <value xsi:type="xsd:string">${newExpiryDate}</value>
+      <id>${username}</id>
+      <keyvalue>
+          <item>
+              <key>enddate</key>
+              <value>${newExpiryDate}</value>
           </item>
       </keyvalue>
     `;
@@ -112,13 +113,59 @@ async function syncIpacctUserExpiry(username, newExpiryDate) {
     };
 
     const response = await callSoap("ipbillSetUserData", params, rawParamsXML);
-    console.log("IPACCT set user data response:", JSON.stringify(response, null, 2));
+    console.log("IPACCT set user expiry response:", JSON.stringify(response, null, 2));
+
+    if (!response || typeof response === 'string') {
+      return { error: `Invalid response from IPACCT endpoint: ${response || 'empty'}` };
+    }
 
     const envelope = response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"];
     const body = envelope?.["SOAP-ENV:Body"] || envelope?.["soapenv:Body"];
     
     if (body && body["ns1:ipbillSetUserDataResponse"]) {
       return body["ns1:ipbillSetUserDataResponse"]?.return || body["ns1:ipbillSetUserDataResponse"];
+    }
+    
+    return response;
+  } catch (err) {
+    console.error("Error syncing IPACCT user expiry:", err.message);
+    return { error: err.message };
+  }
+}
+*/
+
+// NEW FUNCTION - Hits .59 /0/api endpoint with the correct credentials
+async function syncIpacctUserExpiry(ipacctId, newExpiryDate) {
+  try {
+    console.log(`Syncing expiry date for IPACCT user ID ${ipacctId} to ${newExpiryDate} using .59 API`);
+    
+    // Vendor specified API: setClientExpDate on /0/api endpoint
+    const params = {
+      user: process.env.IPACCT_USER, // Need new credential for .59
+      pass: process.env.IPACCT_PASS, // Need new credential for .59
+      cid: ipacctId, // We are correctly passing the numeric IPACCT ID here!
+      expdate: newExpiryDate,
+      expdateisnull: "false"
+    };
+
+    const customOpts = {
+      endpoint: "https://139.5.198.59:443/0/api", // The API server
+      namespace: "urn:IPACCTipacct",
+      tns: "urn:IPACCTipacct"
+    };
+
+    const response = await callSoap("setClientExpDate", params, "", customOpts);
+    console.log("IPACCT set user expiry response:", JSON.stringify(response, null, 2));
+
+    if (!response || typeof response === 'string') {
+      return { error: `Invalid response from IPACCT endpoint: ${response || 'empty'}` };
+    }
+
+    const envelope = response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"];
+    const body = envelope?.["SOAP-ENV:Body"] || envelope?.["soapenv:Body"];
+    
+    if (body && body["ns1:setClientExpDateResponse"]) {
+      return body["ns1:setClientExpDateResponse"]?.return || body["ns1:setClientExpDateResponse"];
     }
     
     return response;

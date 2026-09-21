@@ -1,48 +1,37 @@
-const { syncIpacctUserExpiry } = require("../../../services/ipacctUserServices");
-const User = require("../../../models/user");
-const AppError = require("../../../utils/AppError");
-const catchAsync = require("../../../utils/catchAsync");
+const {
+  syncIpacctUserExpiry,
+} = require("../../../services/ipacctUserServices");
 
 /**
- * Controller to sync a CRM user's expiry date to IPACCT
- * Expected payload: { userId: "...", newExpiryDate: "YYYY-MM-DD" }
+ * Controller to sync an IPACCT user's expiry date.
+ * Expected payload: { ipacctId: "...", expiryDate: "YYYY-MM-DD" }
  */
-exports.syncUserExpiryToIpacct = catchAsync(async (req, res, next) => {
-  const { userId, newExpiryDate } = req.body;
+exports.syncUserExpiryToIpacct = async (req, res) => {
+  try {
+    const { ipacctId, expiryDate } = req.body;
 
-  if (!userId || !newExpiryDate) {
-    return next(new AppError("userId and newExpiryDate are required", 400));
+    if (!ipacctId || !expiryDate) {
+      return res.status(400).json({
+        error: "ipacctId and expiryDate are required in the body",
+      });
+    }
+
+    console.log(
+      `Syncing IPACCT expiry for ID: ${ipacctId} with date: ${expiryDate}`,
+    );
+
+    const result = await syncIpacctUserExpiry(ipacctId, expiryDate);
+
+    if (result && result.error) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    return res.status(200).json({
+      message: "Test completed. Check console for exact XML payload.",
+      ipacctResponse: result,
+    });
+  } catch (error) {
+    console.error("Expiry sync failed:", error);
+    return res.status(500).json({ error: error.message });
   }
-
-  // Find the CRM user
-  const user = await User.findById(userId);
-  if (!user) {
-    return next(new AppError("User not found in CRM", 404));
-  }
-
-  // Get the numeric IPACCT ID that we saved during creation
-  const ipacctUserId = user.generalInformation?.ipactId;
-
-  if (!ipacctUserId) {
-    return next(new AppError("This user does not have an associated IPACCT numeric ID (ipactId)", 400));
-  }
-
-  // Call the IPACCT service using the numeric ID
-  const ipacctRes = await syncIpacctUserExpiry(ipacctUserId, newExpiryDate);
-
-  // Check if IPACCT returned an error
-  if (ipacctRes && ipacctRes.error) {
-    return next(new AppError(`IPACCT Error: ${ipacctRes.error}`, 500));
-  }
-
-  // Optionally check code/message if it's available in the successful SOAP envelope
-  if (ipacctRes && ipacctRes.code && ipacctRes.code._ !== "0") {
-     return next(new AppError(`IPACCT Error: ${ipacctRes.message?._ || "Unknown error"}`, 500));
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "Expiry date synced to IPACCT successfully",
-    data: ipacctRes,
-  });
-});
+};

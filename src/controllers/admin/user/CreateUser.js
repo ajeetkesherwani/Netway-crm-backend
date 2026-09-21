@@ -5,7 +5,7 @@ const { createLog } = require("../../../utils/userLogActivity");
 const UserPackage = require("../../../models/userPackage");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
-const { addIpacctUser } = require("../../../services/ipacctUserServices");
+const { addIpacctUser, syncIpacctUserExpiry } = require("../../../services/ipacctUserServices");
 const Zone = require("../../../models/zone");
 
 
@@ -376,6 +376,7 @@ exports.createUser = async (req, res, next) => {
       let ipacctPackageId = null;
       let ipacctPackageName = "";
       let ipacctFee = "0";
+      let ipacctExpiryDate = null;
       if (packageInfomation.length > 0) {
         const firstPkg = await Package.findById(packageInfomation[0].packageId);
         if (firstPkg && firstPkg.IppactId) {
@@ -383,6 +384,7 @@ exports.createUser = async (req, res, next) => {
         }
         ipacctPackageName = firstPkg ? (firstPkg.name || "") : packageInfomation[0].packageName;
         ipacctFee = firstPkg ? String(firstPkg.basePrice || firstPkg.offerPrice || "0") : String(packageInfomation[0].price || "0");
+        ipacctExpiryDate = firstPkg ? firstPkg.toDate : null;
       }
 
       // Find the selected zone to get its IPACCT ID
@@ -411,6 +413,7 @@ exports.createUser = async (req, res, next) => {
         packageId: ipacctPackageId,
         packageName: ipacctPackageName,
         fee: ipacctFee,
+        expiryDate: ipacctExpiryDate,
         zoneid: ipacctZoneId,
         zonename: ipacctZoneName,
       });
@@ -430,6 +433,18 @@ exports.createUser = async (req, res, next) => {
           newUser.generalInformation.ipacctCustomerId = ipacctCid;
           await newUser.save();
           console.log(`Saved IPACCT IDs to CRM User: ipactId=${ipacctId}, ipacctCustomerId=${ipacctCid}`);
+          
+          // The IPACCT add user API sometimes ignores the enddate or leaves it as 00.00.0000.
+          // We immediately call the .59 sync expiry API (which works) to enforce the date!
+          if (ipacctExpiryDate) {
+            try {
+              const expStr = new Date(ipacctExpiryDate).toISOString().split('T')[0];
+              await syncIpacctUserExpiry(ipacctId, expStr);
+              console.log(`Force-synced IPACCT expiry date to ${expStr} for new user ${ipacctId}`);
+            } catch (err) {
+              console.error("Failed to force-sync IPACCT expiry date:", err.message);
+            }
+          }
         }
       }
     } catch (ipacctErr) {

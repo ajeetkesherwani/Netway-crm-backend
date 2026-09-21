@@ -8,10 +8,18 @@ async function addIpacctUser(userData) {
     const createDateStr = now.toISOString().split('T')[0];
     const lastWarnStr = createDateStr + "T00:00:00";
 
-    // Calculate end date (1 month from now)
-    const nextMonth = new Date(now);
-    nextMonth.setMonth(now.getMonth() + 1);
-    const endDateStr = nextMonth.toISOString().split('T')[0];
+    // Calculate end date based on package expiry or default to today
+    let endDateStr = createDateStr;
+    if (userData.expiryDate) {
+      try {
+        const parsedExp = new Date(userData.expiryDate);
+        if (!isNaN(parsedExp.getTime())) {
+          endDateStr = parsedExp.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Invalid expiryDate format provided to IPACCT:", userData.expiryDate);
+      }
+    }
 
     // Construct the inner XML for the <user> object exactly matching the WSDL <xsd:complexType name="user">
     const userXml = `
@@ -25,8 +33,8 @@ async function addIpacctUser(userData) {
       <mobile>${userData.mobile || ""}</mobile>
       <pid></pid>
       <idid>${userData.username || ""}</idid>
-      <enddate>${endDateStr}</enddate>
-      <enddateisnull>false</enddateisnull>
+      <enddate xsi:type="xsd:date">${endDateStr}</enddate>
+      <enddateisnull xsi:type="xsd:boolean">false</enddateisnull>
       <stopped>n</stopped>
       <pass>${userData.password || ""}</pass>
       <fuppackageid>16</fuppackageid>
@@ -141,8 +149,8 @@ async function syncIpacctUserExpiry(ipacctId, newExpiryDate) {
     
     // Vendor specified API: setClientExpDate on /0/api endpoint
     const params = {
-      user: process.env.IPACCT_USER, // Need new credential for .59
-      pass: process.env.IPACCT_PASS, // Need new credential for .59
+      user: process.env.IPACCT_API_USER, // Need new credential for .59
+      pass: process.env.IPACCT_API_PASS, // Need new credential for .59
       cid: ipacctId, // We are correctly passing the numeric IPACCT ID here!
       expdate: newExpiryDate,
       expdateisnull: "false"
@@ -154,8 +162,17 @@ async function syncIpacctUserExpiry(ipacctId, newExpiryDate) {
       tns: "urn:IPACCTipacct"
     };
 
+    console.log("---- IPACCT EXPIRY SYNC PAYLOAD (.59 SERVER) ----");
+    console.log("Endpoint:", customOpts.endpoint);
+    console.log("Method:", "setClientExpDate");
+    console.log("Params:", JSON.stringify(params, null, 2));
+    console.log("--------------------------------------------------");
+
     const response = await callSoap("setClientExpDate", params, "", customOpts);
-    console.log("IPACCT set user expiry response:", JSON.stringify(response, null, 2));
+    
+    console.log("---- IPACCT EXPIRY SYNC RESPONSE ----");
+    console.log(JSON.stringify(response, null, 2));
+    console.log("-------------------------------------");
 
     if (!response || typeof response === 'string') {
       return { error: `Invalid response from IPACCT endpoint: ${response || 'empty'}` };

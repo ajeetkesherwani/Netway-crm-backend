@@ -16,10 +16,15 @@ const {
     syncUserExpiryToIpacct
 } = require("../../controllers/admin/IpacctApis/ipBillSyncUserExpiry");
 
+const {
+    testIpacctExpiry
+} = require("../../controllers/admin/IpacctApis/testIpacctExpiry");
+
 const router = express.Router();
 
 router.post("/updateipPackages", adminAuthenticate, getSoapPackages);
 router.get("/sync-zones", adminAuthenticate, syncIpacctZones);
 router.post("/sync-user-expiry", adminAuthenticate, syncUserExpiryToIpacct);
+router.post("/test-expiry", testIpacctExpiry);
 
 module.exports = router;

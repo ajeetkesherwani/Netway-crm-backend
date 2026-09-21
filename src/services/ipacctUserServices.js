@@ -148,27 +148,32 @@ async function syncIpacctUserExpiry(ipacctId, newExpiryDate) {
     console.log(`Syncing expiry date for IPACCT user ID ${ipacctId} to ${newExpiryDate} using .59 API`);
     
     // Vendor specified API: setClientExpDate on /0/api endpoint
-    const params = {
-      user: process.env.IPACCT_API_USER, // Need new credential for .59
-      pass: process.env.IPACCT_API_PASS, // Need new credential for .59
-      cid: ipacctId, // We are correctly passing the numeric IPACCT ID here!
-      expdate: newExpiryDate,
-      expdateisnull: "false"
-    };
-
     const customOpts = {
       endpoint: "https://139.5.198.59:443/0/api", // The API server
       namespace: "urn:IPACCTipacct",
       tns: "urn:IPACCTipacct"
     };
 
+    const user = process.env.IPACCT_API_USER || "admin";
+    const pass = process.env.IPACCT_API_PASS || "sm@rtw@y";
+
+    // Build the EXACT XML requested by user with xsi:type attributes
+    const rawParamsXML = `
+      <user xsi:type="xsd:string">${user}</user>
+      <pass xsi:type="xsd:string">${pass}</pass>
+      <cid xsi:type="xsd:integer">${ipacctId}</cid>
+      <expdate xsi:type="xsd:date">${newExpiryDate}</expdate>
+      <expdateisnull xsi:type="xsd:boolean">false</expdateisnull>
+    `;
+
     console.log("---- IPACCT EXPIRY SYNC PAYLOAD (.59 SERVER) ----");
     console.log("Endpoint:", customOpts.endpoint);
     console.log("Method:", "setClientExpDate");
-    console.log("Params:", JSON.stringify(params, null, 2));
+    console.log("Raw Params XML:", rawParamsXML);
     console.log("--------------------------------------------------");
 
-    const response = await callSoap("setClientExpDate", params, "", customOpts);
+    // Pass empty params object, and pass rawParamsXML as the string
+    const response = await callSoap("setClientExpDate", {}, rawParamsXML, customOpts);
     
     console.log("---- IPACCT EXPIRY SYNC RESPONSE ----");
     console.log(JSON.stringify(response, null, 2));

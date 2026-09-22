@@ -20,6 +20,7 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     cafUploaded,
     connectionType,
     installationBy,
+    serverType,
   } = req.query;
 
   const query = {};
@@ -56,6 +57,10 @@ exports.getUserList = catchAsync(async (req, res, next) => {
 
   if (connectionType) {
     query["generalInformation.connectionType"] = connectionType.toLowerCase();
+  }
+
+  if (serverType && serverType.trim()) {
+    query["generalInformation.serverType"] = { $regex: serverType.trim(), $options: "i" };
   }
 
   if (installationBy) {
@@ -120,10 +125,11 @@ exports.getUserList = catchAsync(async (req, res, next) => {
   const users = await User.find(query).sort({ createdAt: -1 }).lean();
   if (!users) return next(new AppError("User not found", 404));
 
-  // Explicitly add IPACCT IDs to the root level for easy access in frontend
+  // Explicitly add IPACCT IDs and serverType to the root level for easy access in frontend
   const mappedUsers = users.map(user => {
     user.ipactId = user.generalInformation?.ipactId || "";
     user.ipacctCustomerId = user.generalInformation?.ipacctCustomerId || "";
+    user.serverType = user.generalInformation?.serverType || null;
     return user;
   });
 

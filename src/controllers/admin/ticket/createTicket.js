@@ -26,6 +26,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
     callDescription,
     assignToId,
     assignToModel,
+    serverType,
   } = req.body;
 
   // ✅ Step 1: Basic validation
@@ -131,6 +132,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
     createdByType: userRole,
     assignToId: finalAssignToId,
     assignToModel: finalAssignToModel,
+    serverType,
     status: finalAssignToId ? "Assigned" : "Open",
     lcoId,
     resellerId,

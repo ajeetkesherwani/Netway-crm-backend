@@ -184,14 +184,6 @@ exports.createUser = async (req, res, next) => {
     const finalDocuments = [];
 
     for (const [type, files] of Object.entries(documentMap)) {
-      // Block multiple files for any type except "Other"
-      if (type !== "Other" && files.length > 1) {
-        throw new AppError(
-          `Multiple files are not allowed for '${type}'. Only 'Other' type supports multiple images.`,
-          400
-        );
-      }
-
       finalDocuments.push({
         documentType: type,
         documentImage: files, // array → single or multiple based on type
@@ -220,6 +212,7 @@ exports.createUser = async (req, res, next) => {
       phone: customer.mobile,
       alternatePhone: customer.alternateMobile || "",
       ipactId: customer.accountId || "",
+      serverType: customer.serverType || null,
       connectionType: customer.connectionType?.toLowerCase() || "other",
       selsExecutive: customer.selsExecutive || null,
       installationBy: customer.installationBy || [],
@@ -380,7 +373,7 @@ exports.createUser = async (req, res, next) => {
       if (packageInfomation.length > 0) {
         const firstPkg = await Package.findById(packageInfomation[0].packageId);
         if (firstPkg && firstPkg.IppactId) {
-           ipacctPackageId = firstPkg.IppactId;
+          ipacctPackageId = firstPkg.IppactId;
         }
         ipacctPackageName = firstPkg ? (firstPkg.name || "") : packageInfomation[0].packageName;
         ipacctFee = firstPkg ? String(firstPkg.basePrice || firstPkg.offerPrice || "0") : String(packageInfomation[0].price || "0");
@@ -423,17 +416,17 @@ exports.createUser = async (req, res, next) => {
 
       if (ipacctRes && ipacctRes.return) {
         const ret = ipacctRes.return;
-        
+
         // Extract id and cid. Depending on xml2js parsing, they might have a '_' property or be direct strings.
         const ipacctId = typeof ret.id === "object" ? (ret.id._ || ret.id) : ret.id;
         const ipacctCid = typeof ret.cid === "object" ? (ret.cid._ || ret.cid) : ret.cid;
-        
+
         if (ipacctId && ipacctId !== "-1") {
           newUser.generalInformation.ipactId = ipacctId;
           newUser.generalInformation.ipacctCustomerId = ipacctCid;
           await newUser.save();
           console.log(`Saved IPACCT IDs to CRM User: ipactId=${ipacctId}, ipacctCustomerId=${ipacctCid}`);
-          
+
           // The IPACCT add user API sometimes ignores the enddate or leaves it as 00.00.0000.
           // We immediately call the .59 sync expiry API (which works) to enforce the date!
           if (ipacctExpiryDate) {

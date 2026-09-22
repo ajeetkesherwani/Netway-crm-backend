@@ -146,6 +146,7 @@ exports.getManageTicketList = catchAsync(async (req, res, next) => {
     "assignToId",
     "assignToModel",
     "category",
+    "serverType",
   ].join(" ");
 
   // Correct population: get zoneName and category name

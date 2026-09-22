@@ -40,6 +40,10 @@ const ticketSchema = new mongoose.Schema(
       enum: ["Low", "Medium", "High", "Critical"],
       default: "Medium",
     },
+    serverType: {
+      type: String,
+      default: null,
+    },
     assignToId: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "assignToModel", // 👈 can dynamically refer to Admin, Reseller, or LCO

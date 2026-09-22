@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema(
       alternatePhone: { type: String },
       ipactId: { type: String },
       ipacctCustomerId: { type: String },
+      serverType: { type: String, default: null },
       connectionType: {
         type: String,
         enum: ["ill", "ftth", "rf", "other"],

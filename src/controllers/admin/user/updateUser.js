@@ -439,8 +439,8 @@ exports.updateUser = catchAsync(async (req, res, next) => {
         const images = Array.isArray(doc.documentImage)
           ? doc.documentImage
           : doc.documentImage
-          ? [doc.documentImage]
-          : [];
+            ? [doc.documentImage]
+            : [];
 
         const remainingImages = images.filter(img =>
           typeof img === "string" && filesToKeep.includes(img.split(/[/\\]/).pop())
@@ -459,8 +459,8 @@ exports.updateUser = catchAsync(async (req, res, next) => {
         documentImage: Array.isArray(doc.documentImage)
           ? [...doc.documentImage]
           : doc.documentImage
-          ? [doc.documentImage]
-          : []
+            ? [doc.documentImage]
+            : []
       }));
     }
 
@@ -485,14 +485,10 @@ exports.updateUser = catchAsync(async (req, res, next) => {
         updatedDocuments.push(existingDoc);
       }
 
-      if (type === "Other") {
-        if (!Array.isArray(existingDoc.documentImage)) {
-          existingDoc.documentImage = existingDoc.documentImage ? [existingDoc.documentImage] : [];
-        }
-        existingDoc.documentImage.push(normalizedPath);
-      } else {
-        existingDoc.documentImage = [normalizedPath];
+      if (!Array.isArray(existingDoc.documentImage)) {
+        existingDoc.documentImage = existingDoc.documentImage ? [existingDoc.documentImage] : [];
       }
+      existingDoc.documentImage.push(normalizedPath);
     });
 
     user.document = updatedDocuments;
@@ -747,6 +743,9 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
     if (parsedCustomer.ipactId !== undefined)
       user.generalInformation.ipactId = parsedCustomer.ipactId;
+
+    if (parsedCustomer.serverType !== undefined)
+      user.generalInformation.serverType = parsedCustomer.serverType || null;
 
     if (parsedCustomer.connectionType !== undefined) {
       if (!parsedCustomer.connectionType.trim()) {

@@ -21,6 +21,7 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     callDescription,
     assignToId,
     status,
+    serverType,
   } = req.body;
 
   try{
@@ -110,8 +111,17 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
     ticket.isChargeable = typeof isChargeable === "boolean" ? isChargeable : ticket.isChargeable;
     ticket.price = price || ticket.price;
     ticket.callDescription = callDescription || ticket.callDescription;
+    if (serverType !== undefined) {
+      ticket.serverType = serverType || null;
+    }
     ticket.assignToId = finalAssignToId;
     ticket.assignToModel = finalAssignToModel;
+    
+    // ✅ Auto-update status if a staff member is assigned
+    if (assignToId) {
+      ticket.status = ticket.status === "Assigned" ? "Reassigned" : "Assigned";
+    }
+    
     if (status) ticket.status = status;
 
   

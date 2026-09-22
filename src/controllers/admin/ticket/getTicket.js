@@ -20,6 +20,7 @@ exports.getTicketList = catchAsync(async (req, res) => {
     lcoId,
     zoneId,
     subZoneId,
+    serverType,
   } = req.query;
 
   const fixedByIds = [];
@@ -102,6 +103,9 @@ if (subZoneId) {
   if (category) {
     match.category = new mongoose.Types.ObjectId(category);
   }
+  if (serverType) {
+    match.serverType = { $regex: serverType, $options: "i" };
+  }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -143,6 +147,7 @@ if (subZoneId) {
         fixedAt: 1,
         category: 1,
         resolution: 1,
+        serverType: 1,
       },
     },
 

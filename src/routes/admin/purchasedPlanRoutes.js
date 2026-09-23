@@ -29,6 +29,10 @@ const {
     refundPurchasedPlan 
 } = require("../../controllers/admin/purchasedPlan/refundPlan");
 
+const {
+    getRefundHistory
+} = require("../../controllers/admin/purchasedPlan/getRefundHistory");
+
 const router = express.Router();
 
 router.post("/create", adminAuthenticate, createPurchasedPlan);
@@ -38,5 +42,6 @@ router.delete("/delete/:id", adminAuthenticate, deletePurchasedPlan);
 
 router.post("/renew/:id", adminAuthenticate, renewPurchasedPlan);
 router.post("/refund/:planId", adminAuthenticate, refundPurchasedPlan);
+router.get("/refund-history", adminAuthenticate, getRefundHistory);
 
 module.exports = router;

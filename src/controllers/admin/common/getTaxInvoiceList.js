@@ -3,7 +3,7 @@ const User = require("../../../models/user");
 const Admin = require("../../../models/admin");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
-const Package = require("../../../models/package"); // ← Make sure you import your Package model
+const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const mongoose = require("mongoose");
@@ -46,8 +46,8 @@ const calculateEndDate = (startDate, validity) => {
   return end;
 };
 
-/* ───────────── GET INVOICE LIST ───────────── */
-exports.getInvoiceList = catchAsync(async (req, res) => {
+/* ───────────── GET TAX INVOICE LIST ───────────── */
+exports.getTaxInvoiceList = catchAsync(async (req, res) => {
   const {
     page = 1,
     limit = 15,
@@ -65,7 +65,11 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
   } = req.query;
 
   const filter = {};
-  let userFilter = {};
+  
+  // ── Always filter for GST users ─────────────────────────────
+  let userFilter = { 
+    "generalInformation.gst": { $exists: true, $ne: null, $ne: "" }
+  };
 
   // ── Date range filter ───────────────────────────────────────
   if (fromDate || toDate) {
@@ -80,36 +84,34 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
   }
 
   // ── User-based filters (area, reseller, lco, servertype) ────────────────
-  if (areaId || resellerId || lcoId || subZoneId || servertype) {
-    if (areaId) userFilter["addressDetails.area"] = areaId;
-    if (subZoneId) userFilter["addressDetails.subZone"] = subZoneId;
-    if (resellerId) {
-      userFilter["generalInformation.createdFor.type"] = "Reseller";
-      userFilter["generalInformation.createdFor.id"] = resellerId;
-    }
-    if (lcoId) {
-      userFilter["generalInformation.createdFor.type"] = "Lco";
-      userFilter["generalInformation.createdFor.id"] = lcoId;
-    }
-    if (servertype) {
-      userFilter["generalInformation.serverType"] = servertype;
-    }
-
-    const users = await User.find(userFilter, { _id: 1 }).lean();
-    const userIds = users.map((u) => u._id);
-
-    if (userIds.length === 0) {
-      return successResponse(res, "Invoice list fetched successfully", {
-        totalCount: 0,
-        invoices: [],
-        page: Number(page),
-        pages: 0,
-        limit: Number(limit),
-      });
-    }
-
-    filter.userId = { $in: userIds };
+  if (areaId) userFilter["addressDetails.area"] = areaId;
+  if (subZoneId) userFilter["addressDetails.subZone"] = subZoneId;
+  if (resellerId) {
+    userFilter["generalInformation.createdFor.type"] = "Reseller";
+    userFilter["generalInformation.createdFor.id"] = resellerId;
   }
+  if (lcoId) {
+    userFilter["generalInformation.createdFor.type"] = "Lco";
+    userFilter["generalInformation.createdFor.id"] = lcoId;
+  }
+  if (servertype) {
+    userFilter["generalInformation.serverType"] = servertype;
+  }
+
+  const users = await User.find(userFilter, { _id: 1 }).lean();
+  const userIds = users.map((u) => u._id);
+
+  if (userIds.length === 0) {
+    return successResponse(res, "Tax Invoice list fetched successfully", {
+      totalCount: 0,
+      invoices: [],
+      page: Number(page),
+      pages: 0,
+      limit: Number(limit),
+    });
+  }
+
+  filter.userId = { $in: userIds };
 
   // ── Other filters ───────────────────────────────────────────
   if (packageId) filter.package = new mongoose.Types.ObjectId(packageId);
@@ -123,25 +125,21 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
   let invoices = await Invoice.find(filter)
     .populate({
       path: "userId",
-      select: "generalInformation.name generalInformation.username generalInformation.createdFor addressDetails.area addressDetails.subZone",
-      // populate: {
-      //   path: "addressDetails.area",
-      //   select: "zoneName",
-      // },
-        populate: [
-    {
-      path: "addressDetails.area",
-      select: "zoneName",
-    },
-    {
-      path: "addressDetails.subZone",
-      select: "name",
-    },
-  ],
+      select: "generalInformation.name generalInformation.username generalInformation.createdFor generalInformation.gst addressDetails.area addressDetails.subZone",
+      populate: [
+        {
+          path: "addressDetails.area",
+          select: "zoneName",
+        },
+        {
+          path: "addressDetails.subZone",
+          select: "name",
+        },
+      ],
     })
     .populate({
       path: "package",
-      select: "name validity isOtt isIptv internet ottType iptvType", // add what you need
+      select: "name validity isOtt isIptv internet ottType iptvType",
     })
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -156,7 +154,8 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
         regex.test(inv.userId?.generalInformation?.name) ||
         regex.test(inv.userId?.generalInformation?.username) ||
         regex.test(inv.userId?.generalInformation?.email) ||
-        regex.test(inv.userId?.generalInformation?.phone)
+        regex.test(inv.userId?.generalInformation?.phone) ||
+        regex.test(inv.userId?.generalInformation?.gst)
     );
   }
 
@@ -168,7 +167,7 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
       let packageType = {
         isOtt: !!invoice.package?.isOtt,
         isIptv: !!invoice.package?.isIptv,
-        internet: !invoice.package?.isOtt && !invoice.package?.isIptv, // fallback
+        internet: !invoice.package?.isOtt && !invoice.package?.isIptv,
       };
 
       // 2. Duration
@@ -205,18 +204,18 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
 
       return {
         ...invoice,
-        packageName,                    // ← now filled
-        packageType,                    // ← now correct
-        duration: {                     // ← new key your frontend uses
+        packageName,
+        packageType,
+        duration: {
           startDate,
           endDate,
         },
-        addedBy,                        // ← now populated name
+        addedBy,
         userId: {
           ...invoice.userId,
           generalInformation: {
             ...invoice.userId?.generalInformation,
-            createdForName,             // ← Reseller / LCO name
+            createdForName,
           },
         },
       };
@@ -225,7 +224,7 @@ exports.getInvoiceList = catchAsync(async (req, res) => {
 
   const totalCount = await Invoice.countDocuments(filter);
 
-  successResponse(res, "Invoice list fetched successfully", {
+  successResponse(res, "Tax Invoice list fetched successfully", {
     totalCount,
     invoices: enrichedInvoices,
     page: Number(page),

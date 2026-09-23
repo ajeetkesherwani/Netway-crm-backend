@@ -41,6 +41,10 @@ const {
 } = require("../../controllers/admin/common/getInvoiceList");
 
 const {
+    getTaxInvoiceList
+} = require("../../controllers/admin/common/getTaxInvoiceList");
+
+const {
     getInvoiceDetails
 } = require("../../controllers/admin/common/getInvoiceDetails");
 
@@ -68,6 +72,7 @@ router.get("/user/Global/details/:id", adminAuthenticate, userGlobalDetails);
 router.get("/logList/:role/:id", adminAuthenticate, getLogsByRoleAndId);
 router.get("/filterPackage/list", adminAuthenticate, getPackageList);
 router.get("/invoiceList", adminAuthenticate, getInvoiceList);
+router.get("/taxInvoiceList", adminAuthenticate, getTaxInvoiceList);
 router.get("/invoice/:invoiceId", adminAuthenticate, getInvoiceDetails);
 router.delete("/delete/:invoiceId", adminAuthenticate, deleteInvoice);
 router.get("/user/invoice/:userId", adminAuthenticate, getUserInvoice);

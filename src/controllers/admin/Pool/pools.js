@@ -6,14 +6,18 @@ const { successResponse } = require("../../../utils/responseHandler");
 // CREATE POOL
 exports.createPool = catchAsync(async (req, res, next) => {
 
-    const { poolName } = req.body;
+    const { poolName, zone } = req.body;
 
     if (!poolName) {
         return next(new AppError("poolName is required"));
     }
+    if (!zone) {
+        return next(new AppError("zone is required"));
+    }
 
     const newPool = await Pool.create({
-        poolName
+        poolName,
+        zone
     });
 
     successResponse(res, "pools created successfully", newPool);
@@ -53,6 +57,7 @@ exports.getAllPools = catchAsync(async (req, res, next) => {
 
     // 3. Fetch data
     const pools = await Pool.find(filter)
+        .populate("zone", "zoneName ipacctZoneId")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -80,7 +85,7 @@ exports.getPoolById = catchAsync(async (req, res, next) => {
 
     const { id } = req.params;
 
-    const pool = await Pool.findById(id);
+    const pool = await Pool.findById(id).populate("zone", "zoneName ipacctZoneId");
 
     if (!pool) {
         return next(new AppError("pools not found"));
@@ -93,11 +98,11 @@ exports.getPoolById = catchAsync(async (req, res, next) => {
 exports.updatePool = catchAsync(async (req, res, next) => {
 
     const { id } = req.params;
-    const { poolName } = req.body;
+    const { poolName, zone } = req.body;
 
     const updatedPool = await Pool.findByIdAndUpdate(
         id,
-        { poolName },
+        { poolName, zone },
         { new: true, runValidators: true }
     );
 

@@ -51,6 +51,9 @@ async function callSoap(method, params = {}, rawParamsXML = "", customOpts = {})
         data += chunk;
       });
       res.on("end", async () => {
+        // --- ADDED FOR DEBUGGING ---
+        console.log(`\n=== SOAP RAW RESPONSE FOR ${method} ===\n`, data, `\n===================================\n`);
+        // ---------------------------
         try {
           const json = await parseStringPromise(data, {
             explicitArray: false

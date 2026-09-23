@@ -3,7 +3,7 @@ const AppError = require("../../../utils/AppError");
 
 exports.getPoolsFromIpacct = async (req, res, next) => {
   try {
-    const { zoneid } = req.body;
+    const { zoneid, ipacctid } = req.body;
 
     if (zoneid === undefined || zoneid === null) {
       return next(new AppError("Please provide a zoneid", 400));
@@ -12,12 +12,17 @@ exports.getPoolsFromIpacct = async (req, res, next) => {
     const params = {
       user: process.env.IPACCT_USER,
       pass: process.env.IPACCT_PASS,
-      ipacctid: "0",
+      ipacctid: ipacctid !== undefined ? ipacctid.toString() : "1",
       zoneid: zoneid.toString(),
     };
 
+    const customOpts = {
+      namespace: "urn:IPACCTipacct",
+      tns: "urn:IPACCTipacct"
+    };
+
     console.log(`Fetching pools for zoneid ${zoneid} from IPACCT...`);
-    const response = await callSoap("ipbillGetPools", params);
+    const response = await callSoap("ipbillGetPools", params, "", customOpts);
 
     const envelope = response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"];
     const body = envelope?.["SOAP-ENV:Body"] || envelope?.["soapenv:Body"];
@@ -25,10 +30,14 @@ exports.getPoolsFromIpacct = async (req, res, next) => {
 
     let poolsList = [];
     if (returnData && returnData.item) {
-      poolsList = returnData.item;
-      if (!Array.isArray(poolsList)) {
-        poolsList = [poolsList];
-      }
+      const items = Array.isArray(returnData.item) ? returnData.item : [returnData.item];
+      poolsList = items.map((pool) => {
+        return {
+          id: typeof pool.id === "object" ? pool.id._ : pool.id,
+          name: typeof pool.name === "object" ? pool.name._ : pool.name,
+          zoneid: typeof pool.zoneid === "object" ? pool.zoneid._ : pool.zoneid,
+        };
+      });
     }
 
     res.status(200).json({

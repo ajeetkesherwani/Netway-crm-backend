@@ -218,6 +218,7 @@ exports.createUser = async (req, res, next) => {
       installationBy: customer.installationBy || [],
       installationByName: customer.installationByName || "",
       ipAdress: customer.ipAddress || "",
+      pool: customer.pool || "",
       ipType: customer.ipType || "static",
       serialNo: customer.serialNo || "",
       macId: customer.macId || "",
@@ -409,6 +410,8 @@ exports.createUser = async (req, res, next) => {
         expiryDate: ipacctExpiryDate,
         zoneid: ipacctZoneId,
         zonename: ipacctZoneName,
+        ipAdress: generalInformation.ipAdress,
+        poolId: generalInformation.pool,
       });
       console.log("---- IPACCT USER CREATION RESPONSE ----");
       console.log(JSON.stringify(ipacctRes, null, 2));

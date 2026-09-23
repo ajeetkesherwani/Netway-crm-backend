@@ -44,6 +44,7 @@ const UserSchema = new mongoose.Schema(
       ],
       installationByName: { type: String, default: null },
       ipAdress: { type: String },
+      pool: { type: String },
       ipType: { type: String, default: "static" },
       //  ipType: { type: String, enum: ["static", "dynamic"], default: "static" },
       serialNo: { type: String },

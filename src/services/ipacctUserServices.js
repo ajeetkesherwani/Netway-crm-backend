@@ -57,7 +57,48 @@ async function addIpacctUser(userData) {
       <zonepubname></zonepubname>
       <zonepubadr></zonepubadr>
       <zonepubpho></zonepubpho>
-      <ips xsi:type="tns:ips" SOAP-ENC:arrayType="tns:ip[0]"></ips>
+      <ips xsi:type="tns:ips" SOAP-ENC:arrayType="tns:ip[1]">
+        <item xsi:type="tns:ip">
+          <id xsi:type="xsd:integer">0</id>
+          <login xsi:type="xsd:string">${userData.username || ""}</login>
+          <ip xsi:type="xsd:string">${userData.ipAdress || "192.168.1.100"}</ip>
+          <st_isweblogin xsi:type="xsd:boolean">false</st_isweblogin>
+          <st_isonpppoe xsi:type="xsd:boolean">false</st_isonpppoe>
+          <st_onlinemac xsi:type="xsd:string"></st_onlinemac>
+          <st_onu xsi:type="xsd:string"></st_onu>
+          <disabled xsi:type="xsd:boolean">false</disabled>
+          <staticip xsi:type="xsd:string">${userData.ipAdress || "192.168.1.100"}</staticip>
+          <stopped xsi:type="xsd:boolean">false</stopped>
+          <pass xsi:type="xsd:string">${userData.password || ""}</pass>
+          <protection xsi:type="tns:protection">none</protection>
+          <graphip xsi:type="xsd:boolean">false</graphip>
+          <interface xsi:type="xsd:string"></interface>
+          <cmtsip xsi:type="xsd:string"></cmtsip>
+          <cmtscfgid xsi:type="xsd:integer">0</cmtscfgid>
+          <cmtsmodemmac xsi:type="xsd:string"></cmtsmodemmac>
+          <cmtsremote xsi:type="xsd:boolean">false</cmtsremote>
+          <radiusremote xsi:type="xsd:boolean">false</radiusremote>
+          <monitor xsi:type="xsd:boolean">false</monitor>
+          <disabledhcp xsi:type="xsd:boolean">false</disabledhcp>
+          <autosaveif xsi:type="xsd:boolean">false</autosaveif>
+          <autosavemac xsi:type="xsd:boolean">false</autosavemac>
+          <hostname xsi:type="xsd:string"></hostname>
+          <filename xsi:type="xsd:string"></filename>
+          <macs xsi:type="tns:strlist" SOAP-ENC:arrayType="xsd:string[${userData.macId ? 1 : 0}]">
+            ${userData.macId ? `<item xsi:type="xsd:string">${userData.macId}</item>` : ''}
+          </macs>
+          <pools xsi:type="tns:idnamelist" SOAP-ENC:arrayType="tns:idname[1]">
+              <item xsi:type="tns:idname">
+                  <id xsi:type="xsd:integer">${userData.poolId || 1}</id>
+                  <name xsi:type="xsd:string"></name>
+              </item>
+          </pools>
+          <lat xsi:type="xsd:string"></lat>
+          <lon xsi:type="xsd:string"></lon>
+          <ip6 xsi:type="xsd:string"></ip6>
+          <disabled6 xsi:type="xsd:boolean">false</disabled6>
+        </item>
+      </ips>
       <havecontract>false</havecontract>
       <contractno></contractno>
       <contractdate></contractdate>

@@ -31,8 +31,8 @@ async function addIpacctUser(userData) {
       <pin>${userData.pin || ""}</pin>
       <phone>${userData.phone || ""}</phone>
       <mobile>${userData.mobile || ""}</mobile>
-      <pid></pid>
-      <idid>${userData.username || ""}</idid>
+      <pid>${userData.panNumber || ""}</pid>
+      <idid>${userData.adharNo || ""}</idid>
       <enddate xsi:type="xsd:date">${endDateStr}</enddate>
       <enddateisnull xsi:type="xsd:boolean">false</enddateisnull>
       <stopped>n</stopped>

@@ -17,8 +17,8 @@ const testPayload = (bodyXml) => `<?xml version="1.0" encoding="utf-8"?>
         <pin>201301</pin>
         <phone>9999999999</phone>
         <mobile>9999999999</mobile>
-        <pid></pid>
-        <idid>TESTPOOL${Math.floor(100000 + Math.random()*900000)}</idid>
+        <pid>MYPAN123</pid>
+        <idid>MYAADHAAR456</idid>
         <enddate>2026-12-16</enddate>
         <enddateisnull>false</enddateisnull>
         <stopped>n</stopped>

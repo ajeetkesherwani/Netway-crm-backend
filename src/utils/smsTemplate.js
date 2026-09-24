@@ -89,7 +89,12 @@ const smsTemplates = {
 
   "your account has been created": {
     content:
-      "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternet.co.in"
+      "Welcome to Netway Internet Services, your account has been created, you have chosen {plan}. Your username is {username} and password is {password}. For login https://erp.netwayinternetservices.co.in/"
+  },
+
+  "your account created": {
+    content:
+      "Welcome to Netway Internet Services, your account has been created, you have chosen {plan}. Your username is {username} and password is {password}. For login https://erp.netwayinternetservices.co.in/"
   },
 
   "Your Ticket has been resolved": {

@@ -152,7 +152,7 @@ const UserSchema = new mongoose.Schema(
         nas: { type: [String], enum: [""], default: "" },
         category: { type: String, enum: [""], default: "" },
       },
-      dynamicIpPool: { type: String, enum: [""], default: "" },
+      dynamicIpPool: { type: String, default: "" },
     },
 
     additionalInformation: {

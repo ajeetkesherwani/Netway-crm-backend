@@ -57,17 +57,18 @@ async function addIpacctUser(userData) {
       <zonepubname></zonepubname>
       <zonepubadr></zonepubadr>
       <zonepubpho></zonepubpho>
+      ${userData.ipAdress && userData.ipAdress.trim() && userData.ipAdress.trim() !== "0.0.0.0" ? `
       <ips xsi:type="tns:ips" SOAP-ENC:arrayType="tns:ip[1]">
         <item xsi:type="tns:ip">
           <id xsi:type="xsd:integer">0</id>
           <login xsi:type="xsd:string">${userData.username || ""}</login>
-          <ip xsi:type="xsd:string">${userData.ipAdress || "192.168.1.100"}</ip>
+          <ip xsi:type="xsd:string">${userData.ipAdress.trim()}</ip>
           <st_isweblogin xsi:type="xsd:boolean">false</st_isweblogin>
           <st_isonpppoe xsi:type="xsd:boolean">false</st_isonpppoe>
           <st_onlinemac xsi:type="xsd:string"></st_onlinemac>
           <st_onu xsi:type="xsd:string"></st_onu>
           <disabled xsi:type="xsd:boolean">false</disabled>
-          <staticip xsi:type="xsd:string">${userData.ipAdress || "192.168.1.100"}</staticip>
+          <staticip xsi:type="xsd:string">${userData.ipAdress.trim()}</staticip>
           <stopped xsi:type="xsd:boolean">false</stopped>
           <pass xsi:type="xsd:string">${userData.password || ""}</pass>
           <protection xsi:type="tns:protection">none</protection>
@@ -87,18 +88,19 @@ async function addIpacctUser(userData) {
           <macs xsi:type="tns:strlist" SOAP-ENC:arrayType="xsd:string[${userData.macId ? 1 : 0}]">
             ${userData.macId ? `<item xsi:type="xsd:string">${userData.macId}</item>` : ''}
           </macs>
-          <pools xsi:type="tns:idnamelist" SOAP-ENC:arrayType="tns:idname[1]">
+          <pools xsi:type="tns:idnamelist" SOAP-ENC:arrayType="tns:idname[${userData.poolId ? 1 : 0}]">
+              ${userData.poolId ? `
               <item xsi:type="tns:idname">
-                  <id xsi:type="xsd:integer">${userData.poolId || 1}</id>
-                  <name xsi:type="xsd:string"></name>
-              </item>
+                  <id xsi:type="xsd:integer">${!isNaN(userData.poolId) ? userData.poolId : 0}</id>
+                  <name xsi:type="xsd:string">${isNaN(userData.poolId) ? userData.poolId : ""}</name>
+              </item>` : ''}
           </pools>
           <lat xsi:type="xsd:string"></lat>
           <lon xsi:type="xsd:string"></lon>
           <ip6 xsi:type="xsd:string"></ip6>
           <disabled6 xsi:type="xsd:boolean">false</disabled6>
         </item>
-      </ips>
+      </ips>` : `<ips xsi:type="tns:ips" SOAP-ENC:arrayType="tns:ip[0]"></ips>`}
       <havecontract>false</havecontract>
       <contractno></contractno>
       <contractdate></contractdate>
@@ -126,11 +128,12 @@ async function addIpacctUser(userData) {
     const response = await callSoap("ipbillAddUser", params, rawParamsXML);
     console.log("IPACCT add user response:", JSON.stringify(response, null, 2));
 
-    const envelope = response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"];
-    const body = envelope?.["SOAP-ENV:Body"] || envelope?.["soapenv:Body"];
+    const envelope = response["SOAP-ENV:Envelope"] || response["soapenv:Envelope"] || response;
+    const body = envelope?.["SOAP-ENV:Body"] || envelope?.["soapenv:Body"] || envelope?.Body;
 
-    if (body && body["ns1:ipbillAddUserResponse"]) {
-      return body["ns1:ipbillAddUserResponse"]?.result || body["ns1:ipbillAddUserResponse"];
+    if (body) {
+      const addResp = body["ns1:ipbillAddUserResponse"] || body["ipbillAddUserResponse"] || body;
+      return addResp;
     }
 
     return response;

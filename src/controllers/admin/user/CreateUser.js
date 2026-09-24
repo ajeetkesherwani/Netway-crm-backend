@@ -419,6 +419,8 @@ exports.createUser = async (req, res, next) => {
         zonename: ipacctZoneName,
         ipAdress: ipacctIp,
         poolId: poolValue,
+        adharNo: generalInformation.adharNo,
+        panNumber: generalInformation.panNumber,
       });
       console.log("---- IPACCT USER CREATION RESPONSE ----");
       console.log(JSON.stringify(ipacctRes, null, 2));

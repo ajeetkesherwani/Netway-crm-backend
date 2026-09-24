@@ -1,0 +1,250 @@
+{
+  "activeNotifications": [
+    {
+      "S_No": 1,
+      "Channel": "SMS",
+      "Action_Name": "Cron Job: Plan Expiry Reminder (3 Days Before)",
+      "Trigger_Condition": "Plan diffDays === 3 and !smsReminder3Sent",
+      "Source_API_Route": "node-cron schedule -> expirePurchasedPlans()",
+      "Notification_Template_Name": "your internet going to be expired soon",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/jobs/expirePurchasedPlans.js",
+      "Line_Number": 83,
+      "Message_Content": "Dear Customer your internet going to be expired soon, kindly renew it today. Please ignore if you already renewed. Netway Internet Services",
+      "Status": "Active"
+    },
+    {
+      "S_No": 2,
+      "Channel": "SMS",
+      "Action_Name": "Cron Job: Plan Expiry Reminder (1 Day Before)",
+      "Trigger_Condition": "Plan diffDays === 1 and !smsReminder1Sent",
+      "Source_API_Route": "node-cron schedule -> expirePurchasedPlans()",
+      "Notification_Template_Name": "your internet going to be expired soon",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/jobs/expirePurchasedPlans.js",
+      "Line_Number": 89,
+      "Message_Content": "Dear Customer your internet going to be expired soon, kindly renew it today. Please ignore if you already renewed. Netway Internet Services",
+      "Status": "Active"
+    },
+    {
+      "S_No": 3,
+      "Channel": "SMS",
+      "Action_Name": "Cron Job: Account Expiry Alert (On Expiry Day)",
+      "Trigger_Condition": "Plan diffDays === 0 and !smsExpirySent",
+      "Source_API_Route": "node-cron schedule -> expirePurchasedPlans()",
+      "Notification_Template_Name": "Account Expiry",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/jobs/expirePurchasedPlans.js",
+      "Line_Number": 95,
+      "Message_Content": "Dear Customer, Your account will expire on {expiryDate}. Please renew the same to avoid disconnection. Netway Internet.",
+      "Status": "Active"
+    },
+    {
+      "S_No": 4,
+      "Channel": "SMS",
+      "Action_Name": "Purchased Plan Created: Internet Bill Notification",
+      "Trigger_Condition": "Plan successfully purchased and invoice generated",
+      "Source_API_Route": "POST /api/admin/purchasedPlan/create",
+      "Notification_Template_Name": "Internet bill",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/controllers/admin/purchasedPlan/createPurchasedPlan.js",
+      "Line_Number": 249,
+      "Message_Content": "Dear Customer, your internet bill {billNo} has been generated. Please pay your bill before due date {dueDate} to avoid suspension of internet. Regards, Netway Internet Services",
+      "Status": "Active"
+    },
+    {
+      "S_No": 5,
+      "Channel": "SMS",
+      "Action_Name": "Purchased Plan Created: Login Credentials Notification",
+      "Trigger_Condition": "Plan purchased and credentials distributed",
+      "Source_API_Route": "POST /api/admin/purchasedPlan/create",
+      "Notification_Template_Name": "Plan login credentials",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/controllers/admin/purchasedPlan/createPurchasedPlan.js",
+      "Line_Number": 343,
+      "Message_Content": "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternetservices.co.in",
+      "Status": "Active"
+    },
+    {
+      "S_No": 6,
+      "Channel": "SMS",
+      "Action_Name": "User Creation: Welcome & Credentials Notification",
+      "Trigger_Condition": "New customer registered by Admin",
+      "Source_API_Route": "POST /api/admin/user/create",
+      "Notification_Template_Name": "your account created (Intended: your account has been created)",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/controllers/admin/user/CreateUser.js",
+      "Line_Number": 473,
+      "Message_Content": "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternet.co.in",
+      "Status": "Active (Key requires template alignment)"
+    },
+    {
+      "S_No": 7,
+      "Channel": "SMS",
+      "Action_Name": "Retailer / Reseller Creation: Account Created Notification",
+      "Trigger_Condition": "New retailer/reseller account created",
+      "Source_API_Route": "POST /api/admin/retailer/create",
+      "Notification_Template_Name": "Your_account_created",
+      "Recipient": "Retailer Mobile Number",
+      "File_Path": "src/controllers/admin/retailer/createRetailer.js",
+      "Line_Number": 125,
+      "Message_Content": "Welcome to Netway Internet Services, your account has been created, you have chosen {plan}. Your username is {username} and password is {password}. For login https://erp.netwayinternetservices.co.in/",
+      "Status": "Active"
+    },
+    {
+      "S_No": 8,
+      "Channel": "SMS",
+      "Action_Name": "Ticket Creation: Complaint Registered Notification",
+      "Trigger_Condition": "New complaint ticket created by Admin",
+      "Source_API_Route": "POST /api/admin/ticket/create",
+      "Notification_Template_Name": "Complaint_has_been_registered",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/controllers/admin/ticket/createTicket.js",
+      "Line_Number": 156,
+      "Message_Content": "Dear Customer, your complaint has been registered. Your ticket no is {ticketNo} Regards, Netway Internet Services",
+      "Status": "Active"
+    },
+    {
+      "S_No": 9,
+      "Channel": "SMS",
+      "Action_Name": "Ticket Update: Complaint Assigned to Engineer",
+      "Trigger_Condition": "Ticket updated or assigned/reassigned to engineer",
+      "Source_API_Route": "PATCH /api/admin/ticket/status/:ticketId or PUT update",
+      "Notification_Template_Name": "A_complaint_assigned_to_Engineer",
+      "Recipient": "Engineer / Staff Mobile Phone",
+      "File_Path": "src/controllers/admin/ticket/updateTicket.js",
+      "Line_Number": 147,
+      "Message_Content": "Dear {engineerName} A complaint assign to you. Client Id :{clientId} Client Name:{clientName} Ticket No:{ticketNo} Mobile:{mobile} Address:{address} Detail:{detail} Netway Internet",
+      "Status": "Active"
+    },
+    {
+      "S_No": 10,
+      "Channel": "SMS",
+      "Action_Name": "Ticket Reply: Complaint Reply / Registration Update",
+      "Trigger_Condition": "Staff / Admin replies to ticket",
+      "Source_API_Route": "POST /api/admin/ticketReply/create",
+      "Notification_Template_Name": "complaint has been registered",
+      "Recipient": "Customer Mobile Number",
+      "File_Path": "src/controllers/admin/ticketReply/createTickerReply.js",
+      "Line_Number": 51,
+      "Message_Content": "Dear Customer, your complaint has been registered. Your ticket no is {ticketNo} Regards, Netway Internet",
+      "Status": "Active"
+    },
+    {
+      "S_No": 11,
+      "Channel": "Email",
+      "Action_Name": "Admin Forgot Password: Password Reset OTP",
+      "Trigger_Condition": "Admin initiates forgot password request",
+      "Source_API_Route": "POST /api/admin/auth/forgotPassword",
+      "Notification_Template_Name": "Password Reset OTP Email",
+      "Recipient": "Admin Email Address",
+      "File_Path": "src/controllers/admin/auth/sendOtpForResetPassword.js",
+      "Line_Number": 21,
+      "Message_Content": "Subject: Your Password Reset OTP | Body: Your password reset OTP is: {otp}. It is valid for 10 minutes.",
+      "Status": "Active"
+    },
+    {
+      "S_No": 12,
+      "Channel": "Email",
+      "Action_Name": "Website New Connection Request Notification",
+      "Trigger_Condition": "Lead submits connection inquiry from public website",
+      "Source_API_Route": "POST /api/admin/website/sendNewConnection",
+      "Notification_Template_Name": "Website New Connection Request Email",
+      "Recipient": "Admin / Sales Inbox (kesherwaniajeet@gmail.com / process.env.EMAIL_RECIVER)",
+      "File_Path": "src/controllers/webiste/mailController/sendNewConnection.js",
+      "Line_Number": 27,
+      "Message_Content": "Subject: Website New Connection Request! | Body: Customer Name: {name}, Customer Mobile: {mobile}, City: {city}, Locality: {locality}",
+      "Status": "Active"
+    },
+    {
+      "S_No": 13,
+      "Channel": "SOAP / IPACCT Server",
+      "Action_Name": "IPACCT User Provisioning: Automated SMS & Invoice",
+      "Trigger_Condition": "Admin creates customer (synced with IPACCT billing gateway)",
+      "Source_API_Route": "POST /api/admin/user/create -> ipbillAddUser",
+      "Notification_Template_Name": "<sendinvoice>true</sendinvoice> & <sendsms>true</sendsms>",
+      "Recipient": "Customer Mobile / IPACCT Account",
+      "File_Path": "src/services/ipacctUserServices.js",
+      "Line_Number": 109,
+      "Message_Content": "SOAP parameters instructs IPACCT Server to send SMS and Invoice automatically",
+      "Status": "Active"
+    }
+  ],
+  "smsTemplatesLibrary": {
+    "ERP login OTP": {
+      "content": "Your ERP login OTP is {otp}. Thanks, Netway Internet"
+    },
+    "your internet going to be expired soon": {
+      "content": "Dear Customer your internet going to be expired soon, kindly renew it today. Please ignore if you already renewed. Netway Internet Services"
+    },
+    "Your_account_created": {
+      "content": "Welcome to Netway Internet Services, your account has been created, you have chosen {plan}. Your username is {username} and password is {password}. For login https://erp.netwayinternetservices.co.in/"
+    },
+    "Complaint_has_been_registered": {
+      "content": "Dear Customer, your complaint has been registered. Your ticket no is {ticketNo} Regards, Netway Internet Services"
+    },
+    "Internet bill": {
+      "content": "Dear Customer, your internet bill {billNo} has been generated. Please pay your bill before due date {dueDate} to avoid suspension of internet. Regards, Netway Internet Services"
+    },
+    "Account Expiry": {
+      "content": "Dear Customer, Your account will expire on {expiryDate}. Please renew the same to avoid disconnection. Netway Internet."
+    },
+    "Fiber outage in your society": {
+      "content": "Dear Customer There is some fiber outage in your society due to which your internet is not working, please allow some time for resolution, sorry for this Inconveniences Netway Internet."
+    },
+    "Mobile verification code": {
+      "content": "Dear Customer, Your Netway Internet mobile verification code is {otp} Thanks Netway"
+    },
+    "OTP generation": {
+      "content": "OTP generation Dear Customer your OTP is {otp} Netway WiFi"
+    },
+    "Plan login credentials": {
+      "content": "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternetservices.co.in"
+    },
+    "A_complaint_assigned_to_Engineer": {
+      "content": "Dear {engineerName} A complaint assign to you. Client Id :{clientId} Client Name:{clientName} Ticket No:{ticketNo} Mobile:{mobile} Address:{address} Detail:{detail} Netway Internet"
+    },
+    "Dear Customer, some fiber outage in back-end": {
+      "content": "Dear Customer, some fiber outage in back-end, allow some time for resolution. Sorry for inconveniences. Netway Internet."
+    },
+    "Dear Engg, A complaint assign to you": {
+      "content": "Dear Engg, A complaint assign to you. Client Id : {clientId}, Client Name: {clientName}, Ticket No: {ticketNo}, Mobile: {mobile}, Address: {address}, Detail: {detail} Netway Internet"
+    },
+    "Dear Customer, Your Ticket has been resolved": {
+      "content": "Dear Customer, Your Ticket {ticketNo} has been resolved successfully. Regards Netway Internet"
+    },
+    "You can pay your amount by using this app URL": {
+      "content": "You can pay your amount by using this app URL call to this no for your user ID {userId} and pwd {password} 7303090705, 7065566188 Click: https://bit.ly/3GgjTuF Netway Internet"
+    },
+    "Dear Customer We called you several times": {
+      "content": "Dear Customer We called you several times, but due to no response from you, we are closing your complaint.Please check your internet, If you have any issue with your internet please contact us on this no -9210014455,01202807200-NETWAY INTERNET."
+    },
+    "Dear Customer, some hardware faulty in back-end.": {
+      "content": "Dear Customer, some hardware faulty in back-end. Now Internet is working. Sorry for inconveniences. Netway Internet."
+    },
+    "A complaint assign to Engg": {
+      "content": "Dear Engg, A complaint assign to you. Client Id : {clientId}, Client Name: {clientName}, Ticket No: {ticketNo}, Mobile: {mobile}, Address: {address}, Detail: {detail} Netway Internet"
+    },
+    "your account has been created": {
+      "content": "Welcome to Netway Internet, your account has been created, you have chosen {plan} plan. Your username is {username} and password is {password}. For login http://erp.netwayinternet.co.in"
+    },
+    "Your Ticket has been resolved": {
+      "content": "Dear Customer, Your Ticket {ticketNo} has been resolved successfully. Regards, Netway Internet"
+    },
+    "happy new year": {
+      "content": "Dear Customers You have been a great customer for our business and on behalf of our company, I want to wish you a very happy new year. May this year brings lots of happiness in your Life Thanks for choosing NETWAY INTERNET and putting your trust in our service, wishing to serve you again in this New Year."
+    },
+    "Your OTP code": {
+      "content": "{otp} is Your OTP code for Netway. Do not Share it with anyone. Netway Internet"
+    },
+    "Your internet bill payment has been update": {
+      "content": "Dear Customer, Your internet bill payment has been update {paymentDetails} Netway Internet"
+    },
+    "your complaint has been registered": {
+      "content": "Dear Customer, your complaint has been registered. Your ticket no is {ticketNo} Regards, Netway Internet"
+    },
+    "your internet bill has been generated": {
+      "content": "Dear Customer, your internet bill {billNo} has been generated. Please pay your bill before due date {dueDate} to avoid suspension of internet. Netway Internet"
+    }
+  }
+}

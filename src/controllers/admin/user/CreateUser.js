@@ -218,8 +218,8 @@ exports.createUser = async (req, res, next) => {
       installationBy: customer.installationBy || [],
       installationByName: customer.installationByName || "",
       ipAdress: customer.ipAddress || "",
-      pool: customer.pool || "",
-      ipType: customer.ipType || "static",
+      pool: customer.pool || customer.dynamicIpPool || "",
+      ipType: customer.ipType || "Dynamic IP Pool",
       serialNo: customer.serialNo || "",
       macId: customer.macId || "",
       serviceOpted: ["intercom", "broadband", "coporate"].includes(
@@ -321,14 +321,18 @@ exports.createUser = async (req, res, next) => {
     /** ------------------------------
      * 6. Network Information
      * ------------------------------*/
+    const isStaticUser =
+      customer.ipType === "Static IP" ||
+      customer.ipType?.toLowerCase() === "static";
+
     const networkInformation = {
       networkType: customer.networkType || "PPPOE",
-      ipType: customer.ipType === "Static IP" ? "Static IP" : "Dynamic IP Pool",
+      ipType: isStaticUser ? "Static IP" : "Dynamic IP Pool",
       statisIp:
-        customer.ipType === "Static IP"
+        isStaticUser
           ? { nas: [""], category: "" }
           : undefined,
-      dynamicIpPool: customer.dynamicIpPool || "",
+      dynamicIpPool: customer.dynamicIpPool || customer.pool || "",
     };
 
     /** ------------------------------
@@ -390,11 +394,14 @@ exports.createUser = async (req, res, next) => {
           ipacctZoneId = selectedZone.ipacctZoneId;
         }
         if (selectedZone) {
-          ipacctZoneName = selectedZone.name || "";
+          ipacctZoneName = selectedZone.zoneName || selectedZone.name || "TEST";
         }
       }
 
       console.log("---- STARTING IPACCT USER CREATION ----");
+      const ipacctIp = (customer.ipAddress || generalInformation.ipAdress || "").trim();
+      const poolValue = customer.pool || customer.dynamicIpPool || generalInformation.pool || "";
+
       const ipacctRes = await addIpacctUser({
         name: generalInformation.name,
         address: addressDetails.billingAddress?.addressine1 || "",
@@ -410,8 +417,8 @@ exports.createUser = async (req, res, next) => {
         expiryDate: ipacctExpiryDate,
         zoneid: ipacctZoneId,
         zonename: ipacctZoneName,
-        ipAdress: generalInformation.ipAdress,
-        poolId: generalInformation.pool,
+        ipAdress: ipacctIp,
+        poolId: poolValue,
       });
       console.log("---- IPACCT USER CREATION RESPONSE ----");
       console.log(JSON.stringify(ipacctRes, null, 2));
@@ -441,6 +448,8 @@ exports.createUser = async (req, res, next) => {
               console.error("Failed to force-sync IPACCT expiry date:", err.message);
             }
           }
+        } else {
+          console.error("IPACCT rejected user creation:", ret.message || ret.code);
         }
       }
     } catch (ipacctErr) {
@@ -457,6 +466,11 @@ exports.createUser = async (req, res, next) => {
         phone: newUser.generalInformation.phone,
         userId: newUser.generalInformation.username,
       },
+      addedBy: {
+        id: req.user?._id,
+        role: req.user?.role || "Admin",
+      },
+      ip: req.ip || "0.0.0.0",
     });
 
     /** ------------------------------
@@ -468,17 +482,18 @@ exports.createUser = async (req, res, next) => {
       if (mobile) {
         const planNames =
           packageInfomation.map((p) => p.packageName).filter(Boolean).join(", ") ||
-          "Default Plan";
+          "Internet Plan";
 
-        await sendTemplateSMS(
+        const smsRes = await sendTemplateSMS(
           mobile,
-          "your account created",
+          "Your_account_created",
           {
             plan: planNames,
             username: newUser.generalInformation.username,
-            password: newUser.generalInformation.plainPassword
+            password: newUser.generalInformation.plainPassword || customer.password || ""
           }
         );
+        console.log("User creation SMS result:", smsRes);
       }
     } catch (error) {
       console.log("User creation SMS failed:", error.message);

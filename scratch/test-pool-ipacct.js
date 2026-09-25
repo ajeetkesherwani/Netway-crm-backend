@@ -102,13 +102,13 @@ function call(xml) {
       <item xsi:type="tns:ip">
         <id xsi:type="xsd:integer">0</id>
         <login xsi:type="xsd:string">TESTLOGIN${Math.floor(1000 + Math.random()*9000)}</login>
-        <ip xsi:type="xsd:string">192.168.10.150</ip>
+        <ip xsi:type="xsd:string">192.168.10.102</ip>
         <st_isweblogin xsi:type="xsd:boolean">false</st_isweblogin>
         <st_isonpppoe xsi:type="xsd:boolean">false</st_isonpppoe>
         <st_onlinemac xsi:type="xsd:string"></st_onlinemac>
         <st_onu xsi:type="xsd:string"></st_onu>
         <disabled xsi:type="xsd:boolean">false</disabled>
-        <staticip xsi:type="xsd:string">192.168.10.150</staticip>
+        <staticip xsi:type="xsd:string">192.168.10.102</staticip>
         <stopped xsi:type="xsd:boolean">false</stopped>
         <pass xsi:type="xsd:string">123456</pass>
         <protection xsi:type="tns:protection">none</protection>

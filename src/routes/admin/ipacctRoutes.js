@@ -24,6 +24,14 @@ const {
     getPoolsFromIpacct
 } = require("../../controllers/admin/IpacctApis/ipBillGetPools");
 
+const {
+    getIpacctUserDetails
+} = require("../../controllers/admin/IpacctApis/ipBillGetUser");
+
+const {
+    listIpacctUsersController
+} = require("../../controllers/admin/IpacctApis/ipBillListUsers");
+
 const router = express.Router();
 
 router.post("/updateipPackages", adminAuthenticate, getSoapPackages);
@@ -31,5 +39,16 @@ router.get("/sync-zones", adminAuthenticate, syncIpacctZones);
 router.post("/sync-user-expiry", adminAuthenticate, syncUserExpiryToIpacct);
 router.post("/test-expiry", testIpacctExpiry);
 router.post("/get-pools", adminAuthenticate, getPoolsFromIpacct);
+
+// IPACCT ipbillGetUser endpoint for Postman testing
+router.post("/get-user", getIpacctUserDetails);
+router.get("/get-user/:id", getIpacctUserDetails);
+router.get("/get-user", getIpacctUserDetails);
+
+// IPACCT listUsers endpoint for Postman testing
+router.post("/list-users", listIpacctUsersController);
+router.get("/list-users", listIpacctUsersController);
+router.post("/listUsers", listIpacctUsersController);
+router.get("/listUsers", listIpacctUsersController);
 
 module.exports = router;

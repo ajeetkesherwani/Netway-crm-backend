@@ -803,11 +803,42 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     if (parsedCustomer.gstNo !== undefined)
       user.generalInformation.gst = parsedCustomer.gstNo;
 
-    if (parsedCustomer.aadharNo !== undefined)
-      user.generalInformation.adharNo = parsedCustomer.aadharNo;
+    const incomingAadhar = parsedCustomer.aadharNo ?? parsedCustomer.adharNo ?? parsedCustomer.aadhaarNo;
+    if (incomingAadhar !== undefined)
+      user.generalInformation.adharNo = incomingAadhar;
 
-    if (parsedCustomer.panNumber !== undefined)
-      user.generalInformation.panNumber = parsedCustomer.panNumber;
+    const incomingPan = parsedCustomer.panNumber ?? parsedCustomer.panNo ?? parsedCustomer.pan ?? parsedCustomer.panCard ?? parsedCustomer.pancard ?? parsedAdditional.panNumber ?? parsedAdditional.panNo;
+    if (incomingPan !== undefined) {
+      user.generalInformation.panNumber = incomingPan;
+
+      // Sync PAN update to IPACCT if user is registered in IPACCT
+      const ipacctId = user.generalInformation?.ipacctCustomerId || user.generalInformation?.ipactId;
+      if (ipacctId) {
+        try {
+          const { updateIpacctUserPan } = require("../../../services/ipacctUserServices");
+          updateIpacctUserPan(ipacctId, incomingPan).catch(err => {
+            console.error("Failed to sync updated PAN to IPACCT:", err.message);
+          });
+        } catch (e) {
+          console.error("Error calling updateIpacctUserPan:", e.message);
+        }
+      }
+    }
+
+    const incomingPool = parsedCustomer.pool ?? parsedCustomer.dynamicIpPool ?? req.body.pool ?? req.body.dynamicIpPool;
+    if (incomingPool !== undefined) {
+      try {
+        const { resolvePoolDynamic } = require("../../../services/ipacctUserServices");
+        const match = await resolvePoolDynamic(incomingPool, user.addressDetails?.area);
+        const pName = match?.name || incomingPool;
+        user.generalInformation.pool = pName;
+        if (user.networkInformation) {
+          user.networkInformation.dynamicIpPool = pName;
+        }
+      } catch (e) {
+        user.generalInformation.pool = incomingPool;
+      }
+    }
 
     user.markModified("generalInformation");
 

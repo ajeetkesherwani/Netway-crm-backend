@@ -5,7 +5,7 @@ const { createLog } = require("../../../utils/userLogActivity");
 const UserPackage = require("../../../models/userPackage");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
-const { addIpacctUser, syncIpacctUserExpiry } = require("../../../services/ipacctUserServices");
+const { addIpacctUser, syncIpacctUserExpiry, resolvePoolDynamic } = require("../../../services/ipacctUserServices");
 const Zone = require("../../../models/zone");
 
 
@@ -198,6 +198,31 @@ exports.createUser = async (req, res, next) => {
 
     const rawPassword = customer.password;
 
+    // Dynamically resolve pool Name from pool ID so the NAME is automatically saved in DB
+    const rawPool = (customer.pool || customer.dynamicIpPool || req.body.pool || req.body.dynamicIpPool || "").toString().trim();
+    let resolvedPoolName = rawPool;
+    let resolvedPoolId = rawPool;
+
+    if (rawPool) {
+      try {
+        let tempZoneId = 0;
+        if (req.body.area) {
+          const selectedZone = await Zone.findById(req.body.area).lean();
+          if (selectedZone && selectedZone.ipacctZoneId) {
+            tempZoneId = selectedZone.ipacctZoneId;
+          }
+        }
+        const matched = await resolvePoolDynamic(rawPool, tempZoneId);
+        if (matched && matched.name) {
+          resolvedPoolName = matched.name;
+          resolvedPoolId = matched.id;
+          console.log(`[CRM] Converted Pool ID "${rawPool}" to Pool Name "${resolvedPoolName}" (ID=${resolvedPoolId})`);
+        }
+      } catch (poolErr) {
+        console.error("Error resolving pool name in CreateUser:", poolErr.message);
+      }
+    }
+
     const generalInformation = {
       title: customer.title || "Mr",
       name: customer.name?.trim(),
@@ -218,7 +243,7 @@ exports.createUser = async (req, res, next) => {
       installationBy: customer.installationBy || [],
       installationByName: customer.installationByName || "",
       ipAdress: customer.ipAddress || "",
-      pool: customer.pool || customer.dynamicIpPool || "",
+      pool: resolvedPoolName,
       ipType: customer.ipType || "Dynamic IP Pool",
       serialNo: customer.serialNo || "",
       macId: customer.macId || "",
@@ -231,9 +256,29 @@ exports.createUser = async (req, res, next) => {
       vcNo: customer.vcNo || "",
       circuitId: customer.circuitId || "",
       cafNo: "",
-      gst: customer.gstNo || "",
-      adharNo: customer.aadharNo || "",
-      panNumber: customer.panNumber || "",
+      gst: customer.gstNo || customer.gst || "",
+      adharNo: (
+        customer.aadharNo ||
+        customer.adharNo ||
+        customer.aadhaarNo ||
+        additional.aadharNo ||
+        additional.adharNo ||
+        ""
+      ).toString().trim(),
+      panNumber: (
+        customer.panNumber ||
+        customer.panNo ||
+        customer.pan ||
+        customer.panCard ||
+        customer.pancard ||
+        additional.panNumber ||
+        additional.panNo ||
+        additional.pan ||
+        req.body.panNumber ||
+        req.body.panNo ||
+        req.body.pan ||
+        ""
+      ).toString().trim(),
       address: "",
       pincode: "",
       state: "",
@@ -332,7 +377,7 @@ exports.createUser = async (req, res, next) => {
         isStaticUser
           ? { nas: [""], category: "" }
           : undefined,
-      dynamicIpPool: customer.dynamicIpPool || customer.pool || "",
+      dynamicIpPool: resolvedPoolName,
     };
 
     /** ------------------------------
@@ -400,7 +445,6 @@ exports.createUser = async (req, res, next) => {
 
       console.log("---- STARTING IPACCT USER CREATION ----");
       const ipacctIp = (customer.ipAddress || generalInformation.ipAdress || "").trim();
-      const poolValue = customer.pool || customer.dynamicIpPool || generalInformation.pool || "";
 
       const ipacctRes = await addIpacctUser({
         name: generalInformation.name,
@@ -418,7 +462,8 @@ exports.createUser = async (req, res, next) => {
         zoneid: ipacctZoneId,
         zonename: ipacctZoneName,
         ipAdress: ipacctIp,
-        poolId: poolValue,
+        poolId: resolvedPoolId,
+        poolName: resolvedPoolName,
         adharNo: generalInformation.adharNo,
         panNumber: generalInformation.panNumber,
       });
@@ -436,6 +481,12 @@ exports.createUser = async (req, res, next) => {
         if (ipacctId && ipacctId !== "-1") {
           newUser.generalInformation.ipactId = ipacctId;
           newUser.generalInformation.ipacctCustomerId = ipacctCid;
+          if (ipacctRes.allocatedIp && !newUser.generalInformation.ipAdress) {
+            newUser.generalInformation.ipAdress = ipacctRes.allocatedIp;
+          }
+          if (ipacctRes.poolName && !newUser.generalInformation.pool) {
+            newUser.generalInformation.pool = ipacctRes.poolName;
+          }
           await newUser.save();
           console.log(`Saved IPACCT IDs to CRM User: ipactId=${ipacctId}, ipacctCustomerId=${ipacctCid}`);
 

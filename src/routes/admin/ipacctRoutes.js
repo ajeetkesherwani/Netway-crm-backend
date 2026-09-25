@@ -32,6 +32,10 @@ const {
     listIpacctUsersController
 } = require("../../controllers/admin/IpacctApis/ipBillListUsers");
 
+const {
+    getPoolIpsController
+} = require("../../controllers/admin/IpacctApis/ipBillGetPoolIps");
+
 const router = express.Router();
 
 router.post("/updateipPackages", adminAuthenticate, getSoapPackages);
@@ -50,5 +54,13 @@ router.post("/list-users", listIpacctUsersController);
 router.get("/list-users", listIpacctUsersController);
 router.post("/listUsers", listIpacctUsersController);
 router.get("/listUsers", listIpacctUsersController);
+
+// IPACCT getPoolFreeIps endpoint for Postman testing
+router.get("/get-pool-ips", getPoolIpsController);
+router.get("/get-pool-ips/:poolId", getPoolIpsController);
+router.get("/pool-ips", getPoolIpsController);
+router.get("/pool-ips/:poolId", getPoolIpsController);
+router.post("/get-pool-ips", getPoolIpsController);
+router.post("/pool-ips", getPoolIpsController);
 
 module.exports = router;

@@ -84,8 +84,8 @@ async function resolvePoolDynamic(poolInput, zoneIdInput) {
   return null;
 }
 
-// Dynamically get a free IP from an IPACCT pool
-async function getFreeIpForPool(poolId) {
+// Dynamically get multiple free IPs from an IPACCT pool
+async function getIpacctPoolFreeIpsList(poolId, count = 1) {
   try {
     const customOpts = {
       endpoint: "https://139.5.198.59:443/0/api",
@@ -95,11 +95,12 @@ async function getFreeIpForPool(poolId) {
     const user = process.env.IPACCT_API_USER || "admin";
     const pass = process.env.IPACCT_API_PASS || "sm@rtw@y";
 
+    const countNum = Math.max(1, parseInt(count, 10) || 1);
     const rawParams = `
       <user xsi:type="xsd:string">${user}</user>
       <pass xsi:type="xsd:string">${pass}</pass>
       <poolid xsi:type="xsd:integer">${poolId}</poolid>
-      <count xsi:type="xsd:integer">1</count>
+      <count xsi:type="xsd:integer">${countNum}</count>
       <cmts xsi:type="xsd:boolean">false</cmts>
     `;
     const freeIpRes = await callSoap("getPoolFreeIps", {}, rawParams, customOpts);
@@ -109,16 +110,22 @@ async function getFreeIpForPool(poolId) {
     const responseData = responseKey ? body[responseKey] : body;
     const returnData = responseData?.return;
 
-    let items = returnData?.item;
-    if (Array.isArray(items)) {
-      items = items[0];
+    let items = returnData?.item || [];
+    if (!Array.isArray(items)) {
+      items = items ? [items] : [];
     }
-    const ip = items?._ !== undefined ? items._ : (typeof items === "string" ? items : "");
-    return ip;
+    const ips = items.map(it => it?._ !== undefined ? it._ : (typeof it === "string" ? it : "")).filter(Boolean);
+    return ips;
   } catch (err) {
-    console.error("Error fetching free IP from pool in getFreeIpForPool:", err.message);
-    return "";
+    console.error("Error fetching free IPs from pool in getIpacctPoolFreeIpsList:", err.message);
+    return [];
   }
+}
+
+// Dynamically get a single free IP from an IPACCT pool
+async function getFreeIpForPool(poolId) {
+  const ips = await getIpacctPoolFreeIpsList(poolId, 1);
+  return ips[0] || "";
 }
 
 async function addIpacctUser(userData) {
@@ -179,32 +186,24 @@ async function addIpacctUser(userData) {
       activePoolName = isNaN(poolInput) ? poolInput : "";
     }
 
-    // Determine IP address: if static IP provided, check if it belongs to chosen pool
-    const isIpInPoolSubnet = (ip, poolId) => {
-      if (!ip) return false;
-      if (poolId === 2 && ip.startsWith("192.168.1.")) return true;
-      if (poolId === 1 && ip.startsWith("100.64.40.")) return true;
-      return false;
-    };
-
+    // User's entered IP is ALWAYS preserved exactly as entered; do not replace with auto-pool IP
     let assignedIp = (userData.ipAdress || userData.ipAddress || "").trim();
-    let isStaticIp = false;
+    let isStaticIp = Boolean(assignedIp && assignedIp !== "0.0.0.0");
 
-    if (activePoolId) {
-      if (assignedIp && assignedIp !== "0.0.0.0" && isIpInPoolSubnet(assignedIp, activePoolId)) {
-        isStaticIp = true;
-        console.log(`[IPACCT] Using provided IP "${assignedIp}" within pool ${activePoolId} (${activePoolName})`);
-      } else {
-        const freeIp = await getFreeIpForPool(activePoolId);
-        if (freeIp) {
-          assignedIp = freeIp;
-          isStaticIp = false;
-          console.log(`[IPACCT] Allocated free IP "${assignedIp}" from pool ${activePoolId} (${activePoolName})`);
-        }
+    console.log(`[IPACCT] Using user-entered IP: "${assignedIp}" (pool: ${activePoolId} - ${activePoolName})`);
+
+    /*
+    // getFreeIpForPool commented out as requested:
+    // If user enters IP, keep that IP. If user doesn't enter IP, do not assign another IP.
+    if (activePoolId && (!assignedIp || assignedIp === "0.0.0.0")) {
+      const freeIp = await getFreeIpForPool(activePoolId);
+      if (freeIp) {
+        assignedIp = freeIp;
+        isStaticIp = false;
+        console.log(`[IPACCT] Allocated free IP "${assignedIp}" from pool ${activePoolId} (${activePoolName})`);
       }
-    } else if (assignedIp && assignedIp !== "0.0.0.0") {
-      isStaticIp = true;
     }
+    */
 
     const hasIps = Boolean(assignedIp || activePoolId || userData.username);
 
@@ -715,6 +714,7 @@ module.exports = {
   listIpacctUsers,
   resolvePoolDynamic,
   getIpacctPoolsList,
-  getFreeIpForPool
+  getFreeIpForPool,
+  getIpacctPoolFreeIpsList
 };
 

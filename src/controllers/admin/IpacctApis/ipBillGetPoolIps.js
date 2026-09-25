@@ -1,3 +1,4 @@
+const User = require("../../../models/user");
 const {
   resolvePoolDynamic,
   getIpacctPoolsList,
@@ -42,42 +43,99 @@ exports.getPoolIpsController = async (req, res) => {
         });
       }
 
-      const ips = await getIpacctPoolFreeIpsList(resolved.id, count);
+      const freeIpsFromIpacct = await getIpacctPoolFreeIpsList(resolved.id, count);
+      
+      // Get assigned IPs from the CRM database for this pool
+      // User model stores pool as String, it could be the name or ID. We can search for both just in case.
+      const poolSearchCriteria = [
+        { "generalInformation.pool": String(resolved.id) },
+        { "generalInformation.pool": resolved.name }
+      ];
+      if (poolInput) {
+         poolSearchCriteria.push({ "generalInformation.pool": String(poolInput) });
+      }
+
+      const assignedUsers = await User.find({
+        $or: poolSearchCriteria,
+        "generalInformation.ipAdress": { $exists: true, $ne: "" }
+      }).select("generalInformation.ipAdress").lean();
+
+      const assignedIps = new Set(assignedUsers.map(u => u.generalInformation?.ipAdress));
+      
+      const allIpsMap = new Map();
+      
+      // Add assigned IPs (unavailable)
+      for (const ip of assignedIps) {
+        allIpsMap.set(ip, { ip, available: false });
+      }
+      
+      // Add free IPs from IPACCT (available) - unless already in DB
+      for (const ip of freeIpsFromIpacct) {
+        if (!allIpsMap.has(ip)) {
+          allIpsMap.set(ip, { ip, available: true });
+        }
+      }
+      
+      const combinedIpsList = Array.from(allIpsMap.values());
 
       return res.status(200).json({
         status: true,
-        message: `Free IP(s) retrieved successfully for pool ${resolved.name || resolved.id}`,
+        message: `IP(s) retrieved successfully for pool ${resolved.name || resolved.id}`,
         data: {
           poolId: resolved.id,
           poolName: resolved.name || `Pool ${resolved.id}`,
           zoneId: resolved.zoneid,
-          ip: ips[0] || "",
-          ips: ips,
-          count: ips.length,
+          ip: freeIpsFromIpacct[0] || (combinedIpsList[0] ? combinedIpsList[0].ip : ""),
+          ips: combinedIpsList,
+          count: combinedIpsList.length,
           requestedCount: count
         }
       });
     }
 
-    // Case 2: No specific pool passed -> fetch free IPs for all available pools
+    // Case 2: No specific pool passed -> fetch IPs for all available pools
     const allPools = await getIpacctPoolsList();
     const results = [];
+    
+    // For all pools, we just fetch all assigned IPs once
+    const allAssignedUsers = await User.find({
+      "generalInformation.ipAdress": { $exists: true, $ne: "" }
+    }).select("generalInformation.ipAdress generalInformation.pool").lean();
 
     for (const p of allPools) {
-      const ips = await getIpacctPoolFreeIpsList(p.id, count);
+      const freeIpsFromIpacct = await getIpacctPoolFreeIpsList(p.id, count);
+      
+      // Filter DB assigned IPs by this pool (id or name)
+      const poolAssignedIps = new Set(
+        allAssignedUsers
+          .filter(u => u.generalInformation?.pool === String(p.id) || u.generalInformation?.pool === p.name)
+          .map(u => u.generalInformation?.ipAdress)
+      );
+
+      const allIpsMap = new Map();
+      for (const ip of poolAssignedIps) {
+        allIpsMap.set(ip, { ip, available: false });
+      }
+      for (const ip of freeIpsFromIpacct) {
+        if (!allIpsMap.has(ip)) {
+          allIpsMap.set(ip, { ip, available: true });
+        }
+      }
+      const combinedIpsList = Array.from(allIpsMap.values());
+
       results.push({
         poolId: p.id,
         poolName: p.name,
         zoneId: p.zoneid,
-        ip: ips[0] || "",
-        ips: ips,
-        count: ips.length
+        ip: freeIpsFromIpacct[0] || (combinedIpsList[0] ? combinedIpsList[0].ip : ""),
+        ips: combinedIpsList,
+        count: combinedIpsList.length
       });
     }
 
     return res.status(200).json({
       status: true,
-      message: "Free IP(s) retrieved successfully for all available pools",
+      message: "IP(s) retrieved successfully for all available pools",
       totalPools: results.length,
       data: results
     });
@@ -85,7 +143,7 @@ exports.getPoolIpsController = async (req, res) => {
     console.error("Error in getPoolIpsController:", error);
     return res.status(500).json({
       status: false,
-      message: "Failed to fetch free IP(s) for pool from IPACCT",
+      message: "Failed to fetch IP(s) for pool",
       error: error.message
     });
   }

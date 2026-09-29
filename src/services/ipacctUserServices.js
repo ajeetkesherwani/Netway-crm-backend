@@ -207,6 +207,13 @@ async function addIpacctUser(userData) {
 
     const hasIps = Boolean(assignedIp || activePoolId || userData.username);
 
+    // User stopped status: default to "a" (auto) or "n" when creating user in IPACCT
+    const userStoppedStatus = userData.stopped !== undefined ? String(userData.stopped) : "a";
+    const isIpStopped = userStoppedStatus === "y" ? true : false;
+    const autoSaveMac = userData.autosavemac !== undefined ? Boolean(userData.autosavemac) : true;
+    const autoSaveIf = userData.autosaveif !== undefined ? Boolean(userData.autosaveif) : true;
+    const protectionType = userData.protection || "lmac";
+
     // Construct the inner XML for the <user> object exactly matching the WSDL <xsd:complexType name="user">
     const userXml = `
       <id>0</id>
@@ -221,7 +228,7 @@ async function addIpacctUser(userData) {
       <idid>${adharNo}</idid>
       <enddate xsi:type="xsd:date">${endDateStr}</enddate>
       <enddateisnull xsi:type="xsd:boolean">false</enddateisnull>
-      <stopped>n</stopped>
+      <stopped>${userStoppedStatus}</stopped>
       <pass>${userData.password || ""}</pass>
       <fuppackageid>16</fuppackageid>
       <tcpmax>60</tcpmax>
@@ -255,9 +262,9 @@ async function addIpacctUser(userData) {
           <st_onu xsi:type="xsd:string"></st_onu>
           <disabled xsi:type="xsd:boolean">false</disabled>
           <staticip xsi:type="xsd:string">${isStaticIp ? assignedIp : ""}</staticip>
-          <stopped xsi:type="xsd:boolean">false</stopped>
+          <stopped xsi:type="xsd:boolean">${isIpStopped}</stopped>
           <pass xsi:type="xsd:string">${userData.password || ""}</pass>
-          <protection xsi:type="tns:protection">none</protection>
+          <protection xsi:type="tns:protection">${protectionType}</protection>
           <graphip xsi:type="xsd:boolean">false</graphip>
           <interface xsi:type="xsd:string"></interface>
           <cmtsip xsi:type="xsd:string"></cmtsip>
@@ -267,8 +274,8 @@ async function addIpacctUser(userData) {
           <radiusremote xsi:type="xsd:boolean">false</radiusremote>
           <monitor xsi:type="xsd:boolean">false</monitor>
           <disabledhcp xsi:type="xsd:boolean">false</disabledhcp>
-          <autosaveif xsi:type="xsd:boolean">false</autosaveif>
-          <autosavemac xsi:type="xsd:boolean">false</autosavemac>
+          <autosaveif xsi:type="xsd:boolean">${autoSaveIf}</autosaveif>
+          <autosavemac xsi:type="xsd:boolean">${autoSaveMac}</autosavemac>
           <hostname xsi:type="xsd:string"></hostname>
           <filename xsi:type="xsd:string"></filename>
           <macs xsi:type="tns:strlist" SOAP-ENC:arrayType="xsd:string[${userData.macId ? 1 : 0}]">

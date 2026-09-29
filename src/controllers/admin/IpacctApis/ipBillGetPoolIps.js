@@ -60,7 +60,19 @@ exports.getPoolIpsController = async (req, res) => {
         "generalInformation.ipAdress": { $exists: true, $ne: "" }
       }).select("generalInformation.ipAdress").lean();
 
-      const assignedIps = new Set(assignedUsers.map(u => u.generalInformation?.ipAdress));
+      const assignedIps = new Set(assignedUsers.map(u => u.generalInformation?.ipAdress).filter(Boolean));
+
+      // NEW CODE to fetch assigned IPs that are in IPACCT but missing in CRM
+      const subnetMatch = (resolved.name || "").match(/(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}\/24/);
+      if (subnetMatch) {
+        const baseIp = subnetMatch[1];
+        for (let i = 1; i <= 254; i++) {
+          const generatedIp = `${baseIp}.${i}`;
+          if (!freeIpsFromIpacct.includes(generatedIp)) {
+            assignedIps.add(generatedIp);
+          }
+        }
+      }
       
       const allIpsMap = new Map();
       

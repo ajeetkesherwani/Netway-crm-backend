@@ -1,3 +1,4 @@
+const { syncUserIpFromIpacct } = require("../../controllers/admin/IpacctApis/ipBillSyncUserIp");
 const express = require("express");
 
 const {
@@ -62,5 +63,9 @@ router.get("/pool-ips", getPoolIpsController);
 router.get("/pool-ips/:poolId", getPoolIpsController);
 router.post("/get-pool-ips", getPoolIpsController);
 router.post("/pool-ips", getPoolIpsController);
+
+
+// Sync IPACCT IP to CRM
+router.post("/sync-user-ip", adminAuthenticate, syncUserIpFromIpacct);
 
 module.exports = router;

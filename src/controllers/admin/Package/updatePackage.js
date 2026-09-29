@@ -307,20 +307,18 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
 
   if (isOtt) {
     console.log("----- OTT UPDATE FLOW -----");
+    
+    if (!req.headers.authorization) {
+      return next(new AppError("Admin token missing for OTT", 401));
+    }
 
     try {
-      const setting = await Setting.findOne();
-      if (!setting?.playBoxToken) {
-        return next(new AppError("OTT token missing", 401));
-      }
-
       const ottResponse = await axios.get(
-        "http://159.89.146.245:5004/api/admin/package/ott-package/list",
+        `${process.env.API_BASE_URL}/package/ott-package/list`,
         {
           timeout: 15000,
           headers: {
-            "x-api-key": "2ZsafDI6OV2IH5m18pqtS9k2C6Onnq5D82FcNsRh",
-            Authorization: `Bearer ${setting.playBoxToken}`,
+            Authorization: req.headers.authorization,
             "Content-Type": "application/json",
           },
         }

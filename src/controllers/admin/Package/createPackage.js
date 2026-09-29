@@ -305,31 +305,45 @@ exports.createPackage = catchAsync(async (req, res, next) => {
     }
   }
 
-  /* ================= OTT LOGIC (FINAL FIX) ================= */
+/* ================= OTT LOGIC (FINAL FIX) ================= */
 let ottPackageData = null;
 
 if (isOtt) {
-  const ottListResponse = await axios.get(
-    "http://159.89.146.245:5004/api/admin/package/ott-package/list",
-    { timeout: 10000 }
-  );
-
-  const packages = ottListResponse?.data?.data || [];
-
-  if (!Array.isArray(packages)) {
-    return next(new AppError("Invalid OTT package list", 500));
+  if (!req.headers.authorization) {
+    return next(new AppError("Admin token missing for OTT", 401));
   }
 
-  const selectedOtt = packages.find(
-    (p) => String(p.packId) === String(ottPackageId)
-  );
+  try {
+    const ottListResponse = await axios.get(
+      `${process.env.API_BASE_URL}/package/ott-package/list`,
+      {
+        timeout: 10000,
+        headers: {
+          Authorization: req.headers.authorization,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  if (!selectedOtt) {
-    return next(new AppError("Selected OTT package not found", 404));
+    const packages = ottListResponse?.data?.data || [];
+
+    if (!Array.isArray(packages)) {
+      return next(new AppError("Invalid OTT package list", 500));
+    }
+
+    const selectedOtt = packages.find(
+      (p) => String(p.packId) === String(ottPackageId)
+    );
+
+    if (!selectedOtt) {
+      return next(new AppError("Selected OTT package not found", 404));
+    }
+
+    // ✅ THIS OBJECT ALREADY MATCHES SCHEMA
+    ottPackageData = selectedOtt;
+  } catch (error) {
+    return next(new AppError("Could not fetch OTT packages", 500));
   }
-
-  // ✅ THIS OBJECT ALREADY MATCHES SCHEMA
-  ottPackageData = selectedOtt;
 }
 
 

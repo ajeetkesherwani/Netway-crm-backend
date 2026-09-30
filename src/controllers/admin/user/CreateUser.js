@@ -512,7 +512,8 @@ exports.createUser = async (req, res, next) => {
     }
     // ────────────────────────────────────────────────────────────────
 
-    // ── PlayBoxTV Integration ───────────────────────────────────────
+    // ── PlayBoxTV Integration (Moved to purchase/renew) ────────────
+    /*
     try {
       if (packageInfomation.length > 0) {
         const firstPkg = await Package.findById(packageInfomation[0].packageId);
@@ -527,9 +528,11 @@ exports.createUser = async (req, res, next) => {
     } catch (playboxErr) {
       console.error("Failed to create user in PlayBox:", playboxErr.message);
     }
+    */
     // ────────────────────────────────────────────────────────────────
 
-    // ── ZiggTV Integration ──────────────────────────────────────────
+    // ── ZiggTV Integration (Moved to purchase/renew) ───────────────
+    /*
     try {
       console.log("---- STARTING ZIGGTV USER CREATION ----");
       const ziggtvRes = await createZiggTvUser(newUser);
@@ -551,6 +554,7 @@ exports.createUser = async (req, res, next) => {
     } catch (ziggtvErr) {
       console.error("Failed to create user/assign pack in ZiggTV:", ziggtvErr.message);
     }
+    */
     // ────────────────────────────────────────────────────────────────
 
     await createLog({

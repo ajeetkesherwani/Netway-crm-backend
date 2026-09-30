@@ -39,7 +39,7 @@ async function createZiggTvUser(user) {
   }
 }
 
-async function assignZiggTvPack(user, planId) {
+async function assignZiggTvPack(user, planId, month = "1") {
   try {
     // Attempt to create user first, ignoring errors if they already exist
     try {
@@ -57,7 +57,7 @@ async function assignZiggTvPack(user, planId) {
       ...creds,
       phone: phone,
       plan_id: String(planId),
-      month: "1",
+      month: String(month),
       mode: "ADD"
     };
 

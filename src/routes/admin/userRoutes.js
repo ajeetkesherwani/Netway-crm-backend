@@ -23,6 +23,10 @@ const {
 } = require("../../controllers/admin/user/ziggtvControllers");
 
 const {
+  getPlayboxDetails,
+} = require("../../controllers/admin/user/playboxControllers");
+
+const {
   getUserFullDetails,
 } = require("../../controllers/admin/user/userProfileDetails");
 
@@ -84,5 +88,8 @@ router.get("/receipt/:userId/:receiptId", adminAuthenticate, getPaymentReceiptDe
 // ZiggTv Routes
 router.get("/ziggtv/details/:phone", adminAuthenticate, getZiggtvDetails);
 router.post("/ziggtv/cancel", adminAuthenticate, cancelZiggtvPackage);
+
+// PlayBox Routes
+router.get("/playbox/details/:phone", adminAuthenticate, getPlayboxDetails);
 
 module.exports = router;

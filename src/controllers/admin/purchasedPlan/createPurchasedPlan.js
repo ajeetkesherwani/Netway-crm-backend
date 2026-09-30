@@ -124,6 +124,9 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
 
 
   // ---------------- Calculate validity ---------------- //
+  const { processThirdPartyPackages } = require("../../../services/processOttIptvPackages");
+  processThirdPartyPackages(userId, packageId); // Background call
+
   const validityNumber = selectedPackage.validity.number;
   const validityUnit = selectedPackage.validity.unit.toLowerCase();
 
@@ -370,4 +373,5 @@ try {
     invoice
   });
 });
+
 

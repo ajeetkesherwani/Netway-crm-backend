@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema(
       alternatePhone: { type: String },
       ipactId: { type: String },
       ipacctCustomerId: { type: String },
+      ziggtvUserId: { type: String },
       serverType: { type: String, default: null },
       connectionType: {
         type: String,

@@ -7,7 +7,8 @@ const { sendTemplateSMS } = require("../../../utils/smsService");
 const Package = require("../../../models/package");
 const { addIpacctUser, syncIpacctUserExpiry, resolvePoolDynamic } = require("../../../services/ipacctUserServices");
 const Zone = require("../../../models/zone");
-
+const { assignPlayboxPack } = require("../../../services/playboxServices");
+const { createZiggTvUser, assignZiggTvPack } = require("../../../services/ziggtvServices");
 
 // Assign package to user
 
@@ -508,6 +509,47 @@ exports.createUser = async (req, res, next) => {
       }
     } catch (ipacctErr) {
       console.error("Failed to create user in IPACCT:", ipacctErr.message);
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // ── PlayBoxTV Integration ───────────────────────────────────────
+    try {
+      if (packageInfomation.length > 0) {
+        const firstPkg = await Package.findById(packageInfomation[0].packageId);
+        if (firstPkg && firstPkg.isOtt && firstPkg.ottPackageId && firstPkg.ottPackageId.packId) {
+          console.log("---- STARTING PLAYBOX USER CREATION ----");
+          const playboxRes = await assignPlayboxPack(newUser, firstPkg.ottPackageId.packId);
+          console.log("---- PLAYBOX USER CREATION SUCCESS ----");
+          console.log(JSON.stringify(playboxRes, null, 2));
+          console.log("----------------------------------------");
+        }
+      }
+    } catch (playboxErr) {
+      console.error("Failed to create user in PlayBox:", playboxErr.message);
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // ── ZiggTV Integration ──────────────────────────────────────────
+    try {
+      console.log("---- STARTING ZIGGTV USER CREATION ----");
+      const ziggtvRes = await createZiggTvUser(newUser);
+      if (ziggtvRes && ziggtvRes.subscriberCode) {
+        newUser.generalInformation.ziggtvUserId = ziggtvRes.subscriberCode;
+        await newUser.save();
+        console.log("Saved ZiggTV User ID:", ziggtvRes.subscriberCode);
+      }
+      
+      if (packageInfomation.length > 0) {
+        const firstPkg = await Package.findById(packageInfomation[0].packageId);
+        if (firstPkg && firstPkg.isIptv && firstPkg.ipTvPackageId) {
+          console.log("---- STARTING ZIGGTV PACKAGE ASSIGNMENT ----");
+          const assignRes = await assignZiggTvPack(newUser, firstPkg.ipTvPackageId);
+          console.log("---- ZIGGTV PACKAGE ASSIGN SUCCESS ----");
+          console.log(JSON.stringify(assignRes, null, 2));
+        }
+      }
+    } catch (ziggtvErr) {
+      console.error("Failed to create user/assign pack in ZiggTV:", ziggtvErr.message);
     }
     // ────────────────────────────────────────────────────────────────
 

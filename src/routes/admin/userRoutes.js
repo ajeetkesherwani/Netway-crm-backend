@@ -18,6 +18,11 @@ const { updateUser } = require("../../controllers/admin/user/updateUser");
 const { deleteUser } = require("../../controllers/admin/user/deleteUser");
 
 const {
+  getZiggtvDetails,
+  cancelZiggtvPackage,
+} = require("../../controllers/admin/user/ziggtvControllers");
+
+const {
   getUserFullDetails,
 } = require("../../controllers/admin/user/userProfileDetails");
 
@@ -74,5 +79,10 @@ router.post(
   addUserWalletPayment
 );
 router.get("/receipt/:userId/:receiptId", adminAuthenticate, getPaymentReceiptDetails);
+
+
+// ZiggTv Routes
+router.get("/ziggtv/details/:phone", adminAuthenticate, getZiggtvDetails);
+router.post("/ziggtv/cancel", adminAuthenticate, cancelZiggtvPackage);
 
 module.exports = router;

@@ -6,6 +6,7 @@ const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const User = require("../../../models/user");
 const { sendTemplateSMS } = require("../../../utils/smsService");
+const { sendWhatsappNotification } = require("../../../services/whatsappService");
 
 exports.createTicket = catchAsync(async (req, res, next) => {
   const {
@@ -160,6 +161,12 @@ exports.createTicket = catchAsync(async (req, res, next) => {
         ticketNo: ticketNumber, 
         }
     );
+
+    // Send WhatsApp notification
+    if (personNumber) {
+        sendWhatsappNotification(personNumber, "create_ticket1", [ticketNumber])
+            .catch(err => console.error("[WhatsApp] Notification failed in createTicket:", err.message));
+    }
 
   return successResponse(res, "Ticket created successfully", populatedTicket);
 });

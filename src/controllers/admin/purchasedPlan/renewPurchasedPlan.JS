@@ -89,6 +89,10 @@ exports.renewPurchasedPlan = catchAsync(async (req, res, next) => {
     return next(new AppError("Package details not found", 404));
   }
 
+  // Process OTT/IPTV packages in background
+  const { processThirdPartyPackages } = require("../../../services/processOttIptvPackages");
+  processThirdPartyPackages(plan.userId, selectedPackage._id);
+
   // 2️⃣ Calculate new expiry
   const validityNumber = selectedPackage.validity.number;
   const validityUnit = selectedPackage.validity.unit.toLowerCase();

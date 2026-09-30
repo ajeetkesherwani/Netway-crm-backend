@@ -86,6 +86,33 @@ async function assignPlayboxPack(user, packCode) {
   }
 }
 
+async function getPlayboxUserDetails(phone) {
+  try {
+    const token = await getPlayboxToken();
+    const partnerKey = process.env.PLAYBOX_PARTNER_KEY;
+    
+    console.log("[PlayBoxTV] Fetching details for phone:", phone);
+    
+    const response = await axios.get(`${PLAYBOX_BASE_URL}/getPack`, {
+      params: {
+        partnerKey: partnerKey,
+        phone: phone
+      },
+      headers: {
+        "Authorization": token,
+        "x-api-key": process.env.PLAYBOX_API_KEY
+      }
+    });
+
+    console.log("[PlayBoxTV] Fetch success:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("[PlayBoxTV] Fetch details error:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
 module.exports = {
-  assignPlayboxPack
+  assignPlayboxPack,
+  getPlayboxUserDetails
 };

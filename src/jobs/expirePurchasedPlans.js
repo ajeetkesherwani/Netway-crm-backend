@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const PurchasedPlan = require("../models/purchasedPlan");
 const WalletHistory = require("../models/userWalletHistory");
 const { sendTemplateSMS } = require("../utils/smsService");
+const { sendWhatsappNotification } = require("../services/whatsappService");
 
 const formatDate = (date) =>
   new Date(date).toLocaleDateString("en-IN");
@@ -248,6 +249,15 @@ const expirePurchasedPlans = async () => {
       plan.status = "expired";
       await plan.save();
       console.log(`[CRON] Expired plan ${plan._id}`);
+
+      // Send WhatsApp notification for expired plan
+      const mobile = user?.generalInformation?.phone || user?.phone;
+      if (mobile) {
+        // The template expects an image in the header. Using a generic placeholder image URL.
+        const headerParams = ["https://dummyimage.com/600x400/000/fff&text=Netway+Internet"];
+        sendWhatsappNotification(mobile, "after_recharge_complaint2", [], headerParams)
+          .catch(err => console.error("[WhatsApp] Failed to send expiry notification:", err.message));
+      }
     }
 
     console.log("[CRON] ✅ Completed expire & auto-renew check");

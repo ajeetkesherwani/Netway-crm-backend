@@ -7,6 +7,7 @@ const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
 const { sendTemplateSMS } = require("../../../utils/smsService");
+const { sendWhatsappNotification } = require("../../../services/whatsappService");
 
 exports.updateTicket = catchAsync(async (req, res, next) => {
   const { ticketId } = req.params;
@@ -54,7 +55,7 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
         finalAssignToId = assignToId;
         finalAssignToModel = "Staff";
   
-        emp = await Staff.findById(assignToId).select("name");
+        emp = await Staff.findById(assignToId).select("name phoneNo");
         console.log("Admin assigning to Staff:", emp);
         if (!emp) {
           return next(new AppError("Staff member not found", 404));
@@ -144,19 +145,39 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
       userId: ticket.userId,
       callDescription: ticket.callDescription,
     });
-    await sendTemplateSMS(
-      ticket.createdById.phoneNo,
-      "A_complaint_assigned_to_Engineer",
-      { 
-        engineerName: emp.employeeName,
-        clientId: assignToId ? "reassigned" : "updated",
-        clientName: ticket.userId ? ticket.userId.generalInformation.name : "N/A",
-        ticketNo: ticket.ticketNumber,
-        mobile: ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A",
-        address: ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A",
-        detail: ticket.callDescription || "N/A",
-      }
-    );
+    
+    if (emp) {
+      await sendTemplateSMS(
+        ticket.createdById.phoneNo,
+        "A_complaint_assigned_to_Engineer",
+        { 
+          engineerName: emp.employeeName || emp.name || "Engineer",
+          clientId: assignToId ? "reassigned" : "updated",
+          clientName: ticket.userId ? ticket.userId.generalInformation.name : "N/A",
+          ticketNo: ticket.ticketNumber,
+          mobile: ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A",
+          address: ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A",
+          detail: ticket.callDescription || "N/A",
+        }
+      ).catch(err => console.error("SMS failed:", err.message));
+    }
+
+    // ✅ Send WhatsApp notification to Engineer
+    const engPhone = emp ? (emp.phoneNo || emp.mobile || emp.mobileNo) : null;
+    if (assignToId && engPhone) {
+      const clientId = assignToId ? "reassigned" : "updated";
+      const clientName = ticket.userId ? ticket.userId.generalInformation.name : "N/A";
+      const ticketNo = ticket.ticketNumber;
+      const clientMobile = ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A";
+      const clientAddress = ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A";
+      const detail = ticket.callDescription || "N/A";
+      
+      sendWhatsappNotification(
+        String(engPhone), 
+        "assign_complaint_engg1", 
+        [clientId, clientName, ticketNo, clientMobile, clientAddress, detail]
+      ).catch(err => console.error("[WhatsApp] Notification failed for Engineer assignment:", err.message));
+    }
   
     // ✅ Return populated ticket
     const populatedTicket = await Ticket.findById(ticket._id)

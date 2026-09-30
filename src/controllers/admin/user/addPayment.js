@@ -2,6 +2,7 @@ const User = require("../../../models/user");
 const AddUserWallet = require("../../../models/AddUserWallet");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
+const { sendWhatsappNotification } = require("../../../services/whatsappService");
 
 exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
@@ -73,6 +74,14 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
     imageProof,
     sms: sms === true || sms === "true",
   });
+
+  // --- Send WhatsApp Notification ---
+  const phone = user.generalInformation?.phone || user.generalInformation?.mobile || user.phone;
+  const customerName = user.generalInformation?.name || "Customer";
+  if (phone) {
+    sendWhatsappNotification(phone, "add_payment1", [customerName, String(paidAmount)])
+      .catch(err => console.error("[WhatsApp] Notification failed in addPayment:", err.message));
+  }
 
   res.status(200).json({
     status: true,

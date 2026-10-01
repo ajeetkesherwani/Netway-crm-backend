@@ -10,6 +10,7 @@ const { createLog } = require("../../../utils/userLogActivity");
 const Payment = require("../../../models/payment");
 const Invoice = require("../../../models/invoice");
 const { sendTemplateSMS } = require("../../../utils/smsService");
+const { sendWhatsappNotification } = require("../../../services/whatsappService");
 const mongoose = require("mongoose");
 
 //generate invoice number
@@ -353,6 +354,18 @@ try {
       }
     );
 
+  }
+  if (mobile) {
+    const planName = selectedPackage.packageName || selectedPackage.name || "Plan";
+    sendWhatsappNotification(String(mobile), "create_invoice_recharge1", [String(planName), String(packagePrice)])
+      .then(() => console.log("[WhatsApp] ? create_invoice_recharge1 sent to ", mobile)).catch(err => console.error("[WhatsApp] ? create_invoice_recharge1 failed:", err.message));
+
+    if (newWalletBalance < 0) {
+      const dueAmount = Math.abs(newWalletBalance);
+      const formattedExpiryDate = expiry.toLocaleDateString("en-IN");
+      sendWhatsappNotification(String(mobile), "create_invoice11", [String(dueAmount), String(formattedExpiryDate)], [], ["https://netwayinternet.com/pay"])
+        .then(() => console.log("[WhatsApp] ? create_invoice11 sent to ", mobile)).catch(err => console.error("[WhatsApp] ? create_invoice11 failed:", err.message));
+    }
   }
 } catch (error) {
   console.log("SMS sending failed:", error.message);

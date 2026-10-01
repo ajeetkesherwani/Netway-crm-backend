@@ -1,4 +1,5 @@
 const catchAsync = require("../../../utils/catchAsync");
+const { sendWhatsappNotification } = require("../../../services/whatsappService");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
 const PurchasedPlan = require("../../../models/purchasedPlan");
@@ -304,6 +305,24 @@ await UserWalletHistory.create({
       role: purchaser.role
     }
   });
+
+  try {
+    const mobile = user.generalInformation?.phone || user.phone;
+    if (mobile) {
+      const planName = selectedPackage.packageName || selectedPackage.name || "Plan";
+      sendWhatsappNotification(String(mobile), "create_invoice_recharge1", [String(planName), String(packageAmount)])
+        .then(() => console.log("[WhatsApp] ? create_invoice_recharge1 sent to ", mobile)).catch(err => console.error("[WhatsApp] ? create_invoice_recharge1 failed:", err.message));
+
+      if (newWalletBalance < 0) {
+        const dueAmount = Math.abs(newWalletBalance);
+        const formattedExpiryDate = newExpiry.toLocaleDateString("en-IN");
+        sendWhatsappNotification(String(mobile), "create_invoice11", [String(dueAmount), String(formattedExpiryDate)], [], ["https://netwayinternet.com/pay"])
+          .then(() => console.log("[WhatsApp] ? create_invoice11 sent to ", mobile)).catch(err => console.error("[WhatsApp] ? create_invoice11 failed:", err.message));
+      }
+    }
+  } catch(e) {
+    console.error("[WhatsApp] error in renew", e.message);
+  }
 
   return successResponse(res, "Plan renewed successfully",
     {

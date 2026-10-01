@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { signup } = require("../../controllers/admin/auth/signup");
 const { login } = require("../../controllers/admin/auth/login");
+const { verifyOtp } = require("../../controllers/admin/auth/verifyOtp");
 const {
   sendOtpForResetPassword,
 } = require("../../controllers/admin/auth/sendOtpForResetPassword");
@@ -21,6 +22,7 @@ const { verifyToken } = require("../../controllers/admin/auth/verifyToken");
 
 //=============== CRM Auth ==========================//
 router.post("/login", login);
+router.post("/verify-otp", verifyOtp);
 
 //=============== CRM Auth ==========================//
 router.post(

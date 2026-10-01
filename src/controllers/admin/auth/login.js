@@ -159,21 +159,22 @@ exports.login = catchAsync(async (req, res, next) => {
   // 1️⃣ ADMIN LOGIN
   if (email) {
     user = await Admin.findOne({ email }).populate("role");
-    if (!user) return next(new AppError("Invalid email or password.", 401));
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return next(new AppError("Invalid email or password.", 401));
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return next(new AppError("Invalid email or password.", 401));
 
-    userType = "admin";
-    employee = {
-      type: "Admin",
-      employeeName: user.title || "Administrator",
-      _id: user._id,
-      employeeUserName: email,
-      email: email,
-      phoneNo: user.phoneNo || null,
-      status: "active",
-    };
+      userType = "admin";
+      employee = {
+        type: "Admin",
+        employeeName: user.title || "Administrator",
+        _id: user._id,
+        employeeUserName: email,
+        email: email,
+        phoneNo: user.phoneNo || null,
+        status: "active",
+      };
+    }
   }
 
   // 2️⃣ RESELLER EMPLOYEE LOGIN
@@ -241,8 +242,11 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 4️⃣ STAFF LOGIN
-  if (!user && userName) {
-    const staff = await Staff.findOne({ userName })
+  if (!user && (userName || email)) {
+    const searchValue = userName || email;
+    const staff = await Staff.findOne({
+      $or: [{ logId: searchValue }, { userName: searchValue }, { email: searchValue }]
+    })
       .populate({
         path: "role",
         select: "roleName permissions",
@@ -360,6 +364,53 @@ exports.login = catchAsync(async (req, res, next) => {
     };
   }
 
-  // 6️⃣ CREATE TOKEN
-  createToken(cleanUser, 200, res, userType, employee);
+  // 6️⃣ GENERATE AND SEND OTP
+  const LoginOtp = require("../../../models/loginOtp");
+  const { sendWhatsappNotification } = require("../../../services/whatsappService");
+
+  // Determine mobile number
+  let mobile = "";
+  if (cleanUser.employee && cleanUser.employee.mobile) {
+    mobile = cleanUser.employee.mobile;
+  } else if (cleanUser.employee && cleanUser.employee.phoneNo) {
+    mobile = cleanUser.employee.phoneNo;
+  } else if (cleanUser.phoneNo) {
+    mobile = cleanUser.phoneNo;
+  } else if (cleanUser.mobile) {
+    mobile = cleanUser.mobile;
+  }
+
+  const mobileStr = mobile ? String(mobile) : "";
+
+  if (!mobileStr || mobileStr === "N/A" || mobileStr.trim() === "") {
+    // If the user literally has no mobile number saved, we fallback to standard login
+    console.log("[Login] No mobile number found. Proceeding without OTP.");
+    return createToken(cleanUser, 200, res, userType, employee);
+  }
+
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const newOtp = await LoginOtp.create({
+    otp: otpCode,
+    mobileSentTo: mobile,
+    cleanUser,
+    userType,
+    employee,
+  });
+
+  try {
+    // Send OTP to WhatsApp in body_params as required by QuickMessage template
+    await sendWhatsappNotification(String(mobile), "otp_login1", [otpCode], [], []);
+    console.log(`[Login] OTP sent to ${mobile}`);
+  } catch (error) {
+    console.error("[Login] Failed to send OTP to WhatsApp:", error.message);
+  }
+
+  return res.status(200).json({
+    status: "success",
+    message: "OTP sent to registered mobile number.",
+    requireOtp: true,
+    loginSessionId: newOtp._id,
+    mobileSentTo: mobile // Sending the full number as requested!
+  });
 });

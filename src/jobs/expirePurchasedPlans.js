@@ -253,9 +253,7 @@ const expirePurchasedPlans = async () => {
       // Send WhatsApp notification for expired plan
       const mobile = user?.generalInformation?.phone || user?.phone;
       if (mobile) {
-        // The template expects an image in the header. Using a generic placeholder image URL.
-        const headerParams = ["https://dummyimage.com/600x400/000/fff&text=Netway+Internet"];
-        sendWhatsappNotification(mobile, "after_recharge_complaint2", [], headerParams)
+        sendWhatsappNotification(String(mobile), "after_recharge_complaint1", [], [])
           .catch(err => console.error("[WhatsApp] Failed to send expiry notification:", err.message));
       }
     }

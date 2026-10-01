@@ -28,7 +28,7 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
   try{
 
     const ticket = await Ticket.findById(ticketId)
-      .populate("userId", "generalInformation.name generalInformation.phoneNo addressDetails.installationAddress")
+      .populate("userId", "generalInformation.name generalInformation.phone generalInformation.username generalInformation.address generalInformation.state generalInformation.pincode addressDetails.installationAddress")
       .populate("createdById", "name phoneNo"); // Populate user details for SMS
       
     if (!ticket) return next(new AppError("Ticket not found", 404));
@@ -146,36 +146,50 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
       callDescription: ticket.callDescription,
     });
     
-    if (emp) {
+    // ✅ Send WhatsApp notification to Engineer
+    const engPhone = emp ? (emp.phoneNo || emp.mobile || emp.mobileNo) : null;
+
+    if (emp && engPhone) {
+      const clientId = ticket.userId?.generalInformation?.username || ticket.userId?.generalInformation?.UserId || "N/A";
+      const clientName = ticket.userId?.generalInformation?.name || "N/A";
+      const ticketNo = ticket.ticketNumber || "N/A";
+      const clientMobile = ticket.userId?.generalInformation?.phone || "N/A";
+      const clientAddress = ticket.address || ticket.userId?.addressDetails?.installationAddress?.addressine1 || ticket.userId?.generalInformation?.address || "N/A";
+      
+      const state = ticket.userId?.addressDetails?.installationAddress?.state || ticket.userId?.generalInformation?.state || "N/A";
+      const pincode = ticket.userId?.addressDetails?.installationAddress?.pincode || ticket.userId?.generalInformation?.pincode || "N/A";
+      const detail = ticket.callDescription ? `${ticket.callDescription}, State: ${state}, Pincode: ${pincode}` : `State: ${state}, Pincode: ${pincode}`;
+
       await sendTemplateSMS(
-        ticket.createdById.phoneNo,
+        engPhone,
         "A_complaint_assigned_to_Engineer",
         { 
           engineerName: emp.employeeName || emp.name || "Engineer",
-          clientId: assignToId ? "reassigned" : "updated",
-          clientName: ticket.userId ? ticket.userId.generalInformation.name : "N/A",
-          ticketNo: ticket.ticketNumber,
-          mobile: ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A",
-          address: ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A",
-          detail: ticket.callDescription || "N/A",
+          clientId: clientId,
+          clientName: clientName,
+          ticketNo: ticketNo,
+          mobile: clientMobile,
+          address: clientAddress,
+          detail: detail,
         }
       ).catch(err => console.error("SMS failed:", err.message));
     }
 
-    // ✅ Send WhatsApp notification to Engineer
-    const engPhone = emp ? (emp.phoneNo || emp.mobile || emp.mobileNo) : null;
     if (assignToId && engPhone) {
-      const clientId = assignToId ? "reassigned" : "updated";
-      const clientName = ticket.userId ? ticket.userId.generalInformation.name : "N/A";
-      const ticketNo = ticket.ticketNumber;
-      const clientMobile = ticket.userId ? ticket.userId.generalInformation.phoneNo : "N/A";
-      const clientAddress = ticket.userId ? ticket.userId.addressDetails.installationAddress.addressine1 : "N/A";
-      const detail = ticket.callDescription || "N/A";
+      const clientId = ticket.userId?.generalInformation?.username || ticket.userId?.generalInformation?.UserId || "N/A";
+      const clientName = ticket.userId?.generalInformation?.name || "N/A";
+      const ticketNo = ticket.ticketNumber || "N/A";
+      const clientMobile = ticket.userId?.generalInformation?.phone || "N/A";
+      const clientAddress = ticket.address || ticket.userId?.addressDetails?.installationAddress?.addressine1 || ticket.userId?.generalInformation?.address || "N/A";
+      
+      const state = ticket.userId?.addressDetails?.installationAddress?.state || ticket.userId?.generalInformation?.state || "N/A";
+      const pincode = ticket.userId?.addressDetails?.installationAddress?.pincode || ticket.userId?.generalInformation?.pincode || "N/A";
+      const detail = ticket.callDescription ? `${ticket.callDescription}, State: ${state}, Pincode: ${pincode}` : `State: ${state}, Pincode: ${pincode}`;
       
       sendWhatsappNotification(
         String(engPhone), 
         "assign_complaint_engg1", 
-        [clientId, clientName, ticketNo, clientMobile, clientAddress, detail]
+        [String(clientId), String(clientName), String(ticketNo), String(clientMobile), String(clientAddress), String(detail)]
       ).catch(err => console.error("[WhatsApp] Notification failed for Engineer assignment:", err.message));
     }
   

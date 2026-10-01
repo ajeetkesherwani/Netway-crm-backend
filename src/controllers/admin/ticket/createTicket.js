@@ -1,4 +1,5 @@
 const Ticket = require("../../../models/ticket");
+const Staff = require("../../../models/Staff");
 const Retailer = require("../../../models/retailer");
 const Lco = require("../../../models/lco");
 const AppError = require("../../../utils/AppError");
@@ -49,6 +50,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
 
   let finalAssignToId = null;
   let finalAssignToModel = null;
+  let emp = null;
 
   // ✅ Step 2: Handle assignment role rules
   if (assignToId && assignToModel) {
@@ -59,12 +61,13 @@ exports.createTicket = catchAsync(async (req, res, next) => {
       }
       finalAssignToId = assignToId;
       finalAssignToModel = "Staff";
+      emp = await Staff.findById(assignToId).select("name phoneNo");
     } else if (userRole === "Reseller") {
       // Reseller can assign only to their own employees
       const reseller = await Retailer.findById(creatorId);
       if (!reseller) return next(new AppError("Reseller not found", 404));
 
-      const emp = reseller.employeeAssociation.id(assignToId);
+      emp = reseller.employeeAssociation.id(assignToId);
       if (!emp) {
         return next(
           new AppError("You can assign tickets only to your own employees", 403)
@@ -78,7 +81,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
       const lco = await Lco.findById(creatorId);
       if (!lco) return next(new AppError("LCO not found", 404));
 
-      const emp = lco.employeeAssociation.id(assignToId);
+      emp = lco.employeeAssociation.id(assignToId);
       if (!emp) {
         return next(
           new AppError("You can assign tickets only to your own employees", 403)
@@ -96,7 +99,7 @@ exports.createTicket = catchAsync(async (req, res, next) => {
   let resellerId = null;
 
   const user = await User.findById(userId).select(
-    "createdFor addressDetails.area addressDetails.subZone"
+    "createdFor addressDetails.area addressDetails.subZone generalInformation.username generalInformation.UserId generalInformation.address generalInformation.state generalInformation.pincode addressDetails.installationAddress"
   );
   if (!user) return next(new AppError("User not found", 404));
 
@@ -166,6 +169,40 @@ exports.createTicket = catchAsync(async (req, res, next) => {
     if (personNumber) {
         sendWhatsappNotification(personNumber, "create_ticket1", [ticketNumber])
             .catch(err => console.error("[WhatsApp] Notification failed in createTicket:", err.message));
+    }
+
+    // ✅ Send SMS and WhatsApp to Engineer if assigned
+    const engPhone = emp ? (emp.phoneNo || emp.mobile || emp.mobileNo) : null;
+    if (emp && engPhone) {
+      const clientId = user?.generalInformation?.username || user?.generalInformation?.UserId || "N/A";
+      const clientName = personName || "N/A";
+      const ticketNo = ticketNumber || "N/A";
+      const clientMobile = personNumber || "N/A";
+      const clientAddress = address || user?.addressDetails?.installationAddress?.addressine1 || user?.generalInformation?.address || "N/A";
+      
+      const state = user?.addressDetails?.installationAddress?.state || user?.generalInformation?.state || "N/A";
+      const pincode = user?.addressDetails?.installationAddress?.pincode || user?.generalInformation?.pincode || "N/A";
+      const detail = callDescription ? `${callDescription}, State: ${state}, Pincode: ${pincode}` : `State: ${state}, Pincode: ${pincode}`;
+
+      await sendTemplateSMS(
+        engPhone,
+        "A_complaint_assigned_to_Engineer",
+        { 
+          engineerName: emp.employeeName || emp.name || "Engineer",
+          clientId: clientId,
+          clientName: clientName,
+          ticketNo: ticketNo,
+          mobile: clientMobile,
+          address: clientAddress,
+          detail: detail,
+        }
+      ).catch(err => console.error("SMS failed to Engineer:", err.message));
+
+      sendWhatsappNotification(
+        String(engPhone), 
+        "assign_complaint_engg1", 
+        [String(clientId), String(clientName), String(ticketNo), String(clientMobile), String(clientAddress), String(detail)]
+      ).catch(err => console.error("[WhatsApp] Notification failed for Engineer assignment:", err.message));
     }
 
   return successResponse(res, "Ticket created successfully", populatedTicket);

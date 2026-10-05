@@ -19,10 +19,10 @@ exports.getPackagesByRole = catchAsync(async (req, res, next) => {
   // ─────────────────────────────
   // ADMIN
   // ─────────────────────────────
-  if (creator.role === "Admin") {
+  if ((creator.role === "Admin" || creator.role === "admin" || creator.role === "ADMIN")) {
 
     // Admin → Self
-    if (targetRole === "Admin" || targetRole === "Self") {
+    if ((targetRole === "Admin" || targetRole === "admin" || targetRole === "ADMIN") || (targetRole === "Self" || targetRole === "self")) {
       const packages = await Package.find({ status: "active" }).sort({ createdAt: -1 });
 
       finalPackages = packages.map(p => ({
@@ -38,7 +38,7 @@ exports.getPackagesByRole = catchAsync(async (req, res, next) => {
     }
 
     // Admin → Reseller
-    if (targetRole === "Reseller") {
+    if ((targetRole === "Reseller" || targetRole === "reseller" || targetRole === "retailer" || targetRole === "Retailer")) {
       if (!targetId) return next(new AppError("targetId is required for Reseller", 400));
 
       const assigned = await AssignedPackage.find({
@@ -61,7 +61,7 @@ exports.getPackagesByRole = catchAsync(async (req, res, next) => {
     }
 
     // Admin → LCO
-    if (targetRole === "Lco") {
+    if ((targetRole === "Lco" || targetRole === "lco")) {
       if (!targetId) return next(new AppError("targetId is required for LCO", 400));
 
       const assigned = await AssignedPackage.find({
@@ -87,7 +87,7 @@ exports.getPackagesByRole = catchAsync(async (req, res, next) => {
   // ─────────────────────────────
   // RESELLER → LCO
   // ─────────────────────────────
-  if (creator.role === "Reseller" && targetRole === "Lco") {
+  if ((creator.role === "Reseller" || creator.role === "reseller" || creator.role === "retailer" || creator.role === "Retailer") && (targetRole === "Lco" || targetRole === "lco")) {
     if (!targetId) return next(new AppError("targetId is required for LCO", 400));
 
     const assigned = await AssignedPackage.find({
@@ -112,7 +112,7 @@ exports.getPackagesByRole = catchAsync(async (req, res, next) => {
   // ─────────────────────────────
   // LCO → SELF
   // ─────────────────────────────
-  if (creator.role === "Lco" && targetRole === "Self") {
+  if ((creator.role === "Lco" || creator.role === "lco") && (targetRole === "Self" || targetRole === "self")) {
     const assigned = await AssignedPackage.find({
       assignTo: "Lco",
       assignToId: creator._id

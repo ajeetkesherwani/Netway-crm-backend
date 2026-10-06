@@ -128,24 +128,28 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
   const { processThirdPartyPackages } = require("../../../services/processOttIptvPackages");
   processThirdPartyPackages(userId, packageId); // Background call
 
-  const validityNumber = selectedPackage.validity.number;
-  const validityUnit = selectedPackage.validity.unit.toLowerCase();
+  const finalValidityNumber = Number(req.body.validityNumber) || selectedPackage.validity.number;
+  const finalValidityUnit = (req.body.validityUnit || selectedPackage.validity.unit).toLowerCase();
 
   const start = startDate ? new Date(startDate) : new Date();
   const expiry = new Date(start);
 
-  switch (validityUnit) {
+  switch (finalValidityUnit) {
     case "day":
-      expiry.setDate(expiry.getDate() + validityNumber);
+    case "days":
+      expiry.setDate(expiry.getDate() + finalValidityNumber);
       break;
     case "week":
-      expiry.setDate(expiry.getDate() + validityNumber * 7);
+    case "weeks":
+      expiry.setDate(expiry.getDate() + finalValidityNumber * 7);
       break;
     case "month":
-      expiry.setMonth(expiry.getMonth() + validityNumber);
+    case "months":
+      expiry.setMonth(expiry.getMonth() + finalValidityNumber);
       break;
     case "year":
-      expiry.setFullYear(expiry.getFullYear() + validityNumber);
+    case "years":
+      expiry.setFullYear(expiry.getFullYear() + finalValidityNumber);
       break;
     default:
       return next(new AppError("Invalid validity unit in package", 400));
@@ -164,6 +168,10 @@ exports.createPurchasedPlan = catchAsync(async (req, res, next) => {
     purchaseDate: new Date(),
     startDate: start,
     expiryDate: expiry,
+    validity: {
+      number: finalValidityNumber,
+      unit: finalValidityUnit
+    },
     // status: "active",
     status: planStatus,
     advanceRenewal: isAdvance,

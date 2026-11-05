@@ -9,6 +9,7 @@ const generateOTP = () => {
 const sendOtp = async (req, res) => {
   try {
     const { mobileNo } = req.body;
+    console.log("Received mobile number:", mobileNo);
 
     if (!mobileNo) {
       return res.status(400).json({ success: false, message: "Mobile number is required" });

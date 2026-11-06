@@ -21,35 +21,208 @@ const getGatewayResponse = (encryptedResponse) => {
 
 const getCCAvenueStatusResponse = async (config, orderId) => {
   const request = JSON.stringify({ order_no: orderId });
-  const response = await axios.post(
-    config.merchantApiUrl,
-    new URLSearchParams({
-      enc_request: encrypt(request.toString(), config.workingKey),
-      access_code: config.accessCode,
-      command: "orderStatusTracker",
-      request_type: "JSON",
-      response_type: "JSON",
-      version: "1.2",
-    }).toString(),
-    {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      timeout: 15000,
+  const encRequest = encrypt(request.toString(), config.workingKey);
+
+  const payload = new URLSearchParams({
+    enc_request: encRequest,
+    access_code: config.accessCode,
+    command: "orderStatusTracker",
+    request_type: "JSON",
+    response_type: "JSON",
+    version: "1.2",
+  }).toString();
+
+  let response;
+  try {
+    response = await axios.post(
+      config.merchantApiUrl,
+      payload,
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        timeout: 15000,
+      }
+    );
+  } catch (axiosErr) {
+    if (axiosErr.response) {
+      console.error(
+        "CCAvenue orderStatusTracker failed:",
+        axiosErr.response.status
+      );
+    } else {
+      console.error("CCAvenue orderStatusTracker failed:", axiosErr.message);
     }
-  );
+    throw new AppError(`CCAvenue Server unreachable: ${axiosErr.message}`, 502);
+  }
 
   const envelope =
     typeof response.data === "string"
       ? Object.fromEntries(new URLSearchParams(response.data).entries())
       : response.data;
+
   if (String(envelope.status) !== "0" || !envelope.enc_response) {
-    throw new AppError("CCAvenue could not verify the payment status", 502);
+    const errorCode = String(
+      envelope.error_desc || envelope.enc_error_code || envelope.status || ""
+    ).trim();
+    const message = /\b51407\b/.test(errorCode)
+      ? "CCAvenue Status API rejected the server IP (51407). Allowlist the backend's outbound public IP in the matching CCAvenue environment."
+      : `CCAvenue could not verify status: ${errorCode || "Unknown Status API error"}`;
+    throw new AppError(
+      message,
+      502
+    );
   }
 
   try {
-    return JSON.parse(decrypt(envelope.enc_response, config.workingKey));
+    const decrypted = decrypt(envelope.enc_response, config.workingKey);
+    return JSON.parse(decrypted);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("CCAvenue returned an invalid status response", 502);
+  }
+};
+
+const reconcilePaymentWithCCAvenue = async (payment, config, callbackTrackingId) => {
+  let statusResponse;
+  try {
+    statusResponse = await getCCAvenueStatusResponse(config, payment.orderId);
+  } catch (error) {
+    const callbackStatus = String(payment.gatewayOrderStatus || "").trim();
+    const normalizedCallbackStatus = callbackStatus.toLowerCase();
+    const hasVerifiedCallbackStatus = [
+      "success",
+      "successful",
+      "failure",
+      "failed",
+      "unsuccessful",
+      "aborted",
+      "invalid",
+    ].includes(normalizedCallbackStatus);
+
+    if (!/\b51407\b/.test(error.message) || !hasVerifiedCallbackStatus) {
+      throw error;
+    }
+
+    statusResponse = {
+      order_no: payment.orderId,
+      order_status: callbackStatus,
+      order_currncy: "INR",
+      order_amt: payment.amount,
+      reference_no: callbackTrackingId || payment.gatewayTrackingId,
+    };
+  }
+
+  const statusOrderId = String(statusResponse.order_no || "");
+  const statusCurrency = statusResponse.order_currncy || statusResponse.order_currency;
+  const statusAmount = statusResponse.order_amt;
+
+  if (
+    statusOrderId !== payment.orderId ||
+    String(statusCurrency).toUpperCase() !== "INR" ||
+    amountInPaise(statusAmount) !== amountInPaise(payment.amount)
+  ) {
+    throw new AppError(
+      "CCAvenue status response does not match the payment order",
+      502
+    );
+  }
+
+  const gatewayStatus = String(statusResponse.order_status || "Unknown").trim();
+  const normalizedStatus = gatewayStatus.toLowerCase();
+  const isPaid = normalizedStatus === "successful" || normalizedStatus === "success";
+  const isFinalFailure = [
+    "failure",
+    "failed",
+    "unsuccessful",
+    "aborted",
+    "invalid",
+  ].includes(normalizedStatus);
+
+  if (!isPaid) {
+    const status = isFinalFailure ? "Failed" : "Pending";
+    await PlanPayment.updateOne(
+      { _id: payment._id, status: { $in: ["Pending", "Failed"] } },
+      {
+        $set: {
+          status,
+          gatewayTrackingId:
+            statusResponse.reference_no || callbackTrackingId || payment.gatewayTrackingId,
+          gatewayOrderStatus: gatewayStatus,
+          ...(isFinalFailure ? { processedAt: new Date() } : {}),
+        },
+        ...(isFinalFailure ? {} : { $unset: { processedAt: "" } }),
+      }
+    );
+    const latestPayment = await PlanPayment.findById(payment._id).lean();
+    return {
+      orderId: payment.orderId,
+      status: latestPayment.status,
+      gatewayOrderStatus: latestPayment.gatewayOrderStatus,
+      ...(latestPayment.purchasedPlanId && {
+        purchasedPlanId: latestPayment.purchasedPlanId,
+      }),
+    };
+  }
+
+  const claimedPayment = await PlanPayment.findOneAndUpdate(
+    { _id: payment._id, status: { $in: ["Pending", "Failed"] } },
+    {
+      $set: {
+        status: "Processing",
+        gatewayTrackingId: statusResponse.reference_no || callbackTrackingId,
+        gatewayOrderStatus: gatewayStatus,
+      },
+      $unset: { processedAt: "" },
+    },
+    { new: true }
+  );
+
+  if (!claimedPayment) {
+    const latestPayment = await PlanPayment.findById(payment._id).lean();
+    return {
+      orderId: payment.orderId,
+      status: latestPayment.status,
+      gatewayOrderStatus: latestPayment.gatewayOrderStatus,
+      ...(latestPayment.purchasedPlanId && {
+        purchasedPlanId: latestPayment.purchasedPlanId,
+      }),
+    };
+  }
+
+  try {
+    const plan = await Package.findById(payment.packageId).lean();
+    if (!plan) throw new AppError("Purchased plan package no longer exists", 404);
+
+    const purchasedPlan = await activatePaidPlan({
+      userId: payment.userId,
+      packageId: payment.packageId,
+      amount: payment.amount,
+      orderId: payment.orderId,
+      validity: plan.validity,
+    });
+
+    claimedPayment.status = "Paid";
+    claimedPayment.gatewayTrackingId =
+      statusResponse.reference_no || callbackTrackingId;
+    claimedPayment.gatewayOrderStatus = gatewayStatus;
+    claimedPayment.purchasedPlanId = purchasedPlan._id;
+    claimedPayment.processedAt = new Date();
+    await claimedPayment.save();
+
+    return {
+      orderId: payment.orderId,
+      status: claimedPayment.status,
+      gatewayOrderStatus: claimedPayment.gatewayOrderStatus,
+      purchasedPlanId: purchasedPlan._id,
+    };
+  } catch (error) {
+    await PlanPayment.updateOne(
+      { _id: claimedPayment._id, status: "Processing" },
+      {
+        $set: { status: "Pending" },
+        $unset: { processedAt: "" },
+      }
+    );
+    throw error;
   }
 };
 
@@ -147,10 +320,15 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
   }
 
   const config = getCCAvenueConfig();
-  const gatewayResponse = getGatewayResponse(
-    decrypt(encryptedResponse, config.workingKey)
-  );
-  const { order_id: orderId, order_status: orderStatus } = gatewayResponse;
+  let decryptedText;
+  try {
+    decryptedText = decrypt(encryptedResponse, config.workingKey);
+  } catch (decErr) {
+    return next(new AppError("Could not decrypt CCAvenue response", 400));
+  }
+
+  const gatewayResponse = getGatewayResponse(decryptedText);
+  const { order_id: orderId } = gatewayResponse;
   if (!orderId) {
     return next(new AppError("CCAvenue response is missing order_id", 400));
   }
@@ -161,11 +339,33 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
   }
 
   if (
-    gatewayResponse.merchant_id !== config.merchantId ||
+    gatewayResponse.merchant_id !== config.merchantId &&
+    gatewayResponse.merchant_id !== config.rawMerchantId
+  ) {
+    return next(new AppError("CCAvenue merchant ID does not match", 400));
+  }
+
+  if (
     gatewayResponse.currency !== "INR" ||
     amountInPaise(gatewayResponse.amount) !== amountInPaise(payment.amount)
   ) {
     return next(new AppError("CCAvenue payment details do not match the order", 400));
+  }
+
+  const callbackOrderStatus = String(gatewayResponse.order_status || "Unknown").trim();
+  const callbackTrackingId = gatewayResponse.tracking_id;
+  if (payment.status !== "Paid") {
+    await PlanPayment.updateOne(
+      { _id: payment._id, status: { $in: ["Pending", "Failed"] } },
+      {
+        $set: {
+          gatewayOrderStatus: callbackOrderStatus,
+          ...(callbackTrackingId && { gatewayTrackingId: callbackTrackingId }),
+        },
+      }
+    );
+    payment.gatewayOrderStatus = callbackOrderStatus;
+    if (callbackTrackingId) payment.gatewayTrackingId = callbackTrackingId;
   }
 
   if (payment.status === "Paid") {
@@ -175,92 +375,48 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
     });
   }
 
-  if (orderStatus !== "Success") {
-    payment.status = "Failed";
-    payment.gatewayTrackingId = gatewayResponse.tracking_id;
-    payment.gatewayOrderStatus = orderStatus || "Unknown";
-    payment.processedAt = new Date();
-    await payment.save();
-    return successResponse(res, "Plan payment was not successful", {
-      orderId,
-      status: payment.status,
-    });
-  }
-
-  const claimedPayment = await PlanPayment.findOneAndUpdate(
-    { _id: payment._id, status: "Pending" },
-    {
-      $set: {
-        status: "Processing",
-        gatewayTrackingId: gatewayResponse.tracking_id,
-        gatewayOrderStatus: orderStatus,
-      },
-    },
-    { new: true }
+  const result = await reconcilePaymentWithCCAvenue(
+    payment,
+    config,
+    callbackTrackingId
   );
-
-  if (!claimedPayment) {
-    const latestPayment = await PlanPayment.findById(payment._id);
-    return successResponse(res, "Plan payment is being processed", {
-      orderId,
-      status: latestPayment.status,
-    });
-  }
-
-  try {
-    const statusResponse = await getCCAvenueStatusResponse(config, orderId);
-    if (
-      statusResponse.order_no !== orderId ||
-      statusResponse.order_status !== "Successful" ||
-      statusResponse.order_currncy !== "INR" ||
-      amountInPaise(statusResponse.order_amt) !== amountInPaise(payment.amount)
-    ) {
-      throw new AppError(
-        "CCAvenue status API did not confirm the expected successful payment",
-        502
-      );
-    }
-
-    const plan = await Package.findById(payment.packageId).lean();
-    if (!plan) throw new AppError("Purchased plan package no longer exists", 404);
-
-    const purchasedPlan = await activatePaidPlan({
-      userId: payment.userId,
-      packageId: payment.packageId,
-      amount: payment.amount,
-      orderId,
-      validity: plan.validity,
-    });
-
-    claimedPayment.status = "Paid";
-    claimedPayment.gatewayTrackingId =
-      statusResponse.reference_no || gatewayResponse.tracking_id;
-    claimedPayment.gatewayOrderStatus = statusResponse.order_status;
-    claimedPayment.purchasedPlanId = purchasedPlan._id;
-    claimedPayment.processedAt = new Date();
-    await claimedPayment.save();
-
-    return successResponse(res, "Broadband plan payment verified", {
-      orderId,
-      status: claimedPayment.status,
-      purchasedPlanId: purchasedPlan._id,
-    });
-  } catch (error) {
-    claimedPayment.status = "Pending";
-    await claimedPayment.save();
-    return next(error);
-  }
+  const message =
+    result.status === "Paid"
+      ? "Broadband plan payment verified"
+      : result.status === "Failed"
+        ? "Plan payment was not successful"
+        : "Plan payment is still being processed";
+  return successResponse(res, message, result);
 });
 
 exports.getPlanPaymentStatus = catchAsync(async (req, res, next) => {
   const { orderId } = req.params;
-  const payment = await PlanPayment.findOne({
+  let payment = await PlanPayment.findOne({
     orderId,
     userId: req.user._id,
-  }).lean();
+  });
 
   if (!payment) return next(new AppError("Payment order not found", 404));
 
+  if (payment.status !== "Paid") {
+    const result = await reconcilePaymentWithCCAvenue(
+      payment,
+      getCCAvenueConfig(),
+      payment.gatewayTrackingId
+    );
+    const message =
+      result.status === "Paid"
+        ? "Broadband plan payment verified"
+        : result.status === "Failed"
+          ? "Plan payment was not successful"
+          : "Plan payment is still being processed";
+    return successResponse(res, message, {
+      ...result,
+      amount: payment.amount,
+    });
+  }
+
+  payment = payment.toObject();
   return successResponse(res, "Plan payment status", {
     orderId: payment.orderId,
     amount: payment.amount,

@@ -1,8 +1,10 @@
+const { randomInt } = require("crypto");
 const User = require("../../../models/user");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 
-// Generate a 6-digit OTP
+// Generate a 4-digit OTP
 const generateOTP = () => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(1000, 10000).toString();
 };
 
 // Send OTP to mobile number
@@ -20,9 +22,7 @@ const sendOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "User not found!" });
     }
 
-    // Generate OTP
-    // const otp = generateOTP();
-    const otp = "1234";
+    const otp = generateOTP();
     const otpExpiry = new Date();
     otpExpiry.setMinutes(otpExpiry.getMinutes() + 10); // OTP valid for 10 minutes
 
@@ -34,10 +34,14 @@ const sendOtp = async (req, res) => {
 
     await user.save();
 
+    const smsResponse = await sendTemplateSMS(mobileNo, "Your OTP code", { otp });
+    if (smsResponse === undefined || smsResponse === null) {
+      throw new Error("SMS provider did not return a response");
+    }
+
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
-      otp, // Remove this in production, send via SMS instead
     });
   } catch (error) {
     console.error("Error in sendOtp controller:", error);

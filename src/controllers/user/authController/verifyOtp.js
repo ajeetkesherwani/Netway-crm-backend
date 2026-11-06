@@ -25,9 +25,20 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "OTP has expired" });
     }
 
-    // Clear OTP after verification
+    // Clear OTP without validating unrelated fields on legacy user records.
+    const otpCleared = await User.updateOne(
+      {
+        _id: user._id,
+        "generalInformation.otp.code": otp,
+        "generalInformation.otp.expiresAt": { $gt: new Date() },
+      },
+      { $unset: { "generalInformation.otp": "" } }
+    );
+    if (otpCleared.modifiedCount !== 1) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
     user.generalInformation.otp = undefined;
-    await user.save();
 
     // Generate and send token with user info
     return createToken(user, 200, res);
@@ -40,4 +51,3 @@ exports.verifyOtp = async (req, res) => {
     });
   }
 };
-

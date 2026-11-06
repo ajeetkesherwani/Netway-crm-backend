@@ -35,16 +35,21 @@ const getCCAvenueConfig = () => {
 
   const callbackUrl = new URL(callbackUrlValue);
   if (
-    !["http:", "https:"].includes(callbackUrl.protocol) ||
-    (environment === "production" && callbackUrl.protocol !== "https:")
+    !["http:", "https:"].includes(callbackUrl.protocol)
   ) {
-    throw new Error("CCAvenue callback URL must use HTTPS in production");
+    throw new Error("CCAvenue callback URL must use HTTP or HTTPS");
   }
 
+  // Clean Merchant ID: CCAvenue requires strictly numeric Merchant ID (e.g. 1388489)
+  const rawMerchantId = (process.env.CCAVENUE_MERCHANT_ID || "").trim();
+  const numericMerchantId = rawMerchantId.replace(/\D/g, "");
+  const merchantId = numericMerchantId || rawMerchantId;
+
   return {
-    merchantId: process.env.CCAVENUE_MERCHANT_ID,
-    accessCode: process.env.CCAVENUE_ACCESS_CODE,
-    workingKey: process.env.CCAVENUE_WORKING_KEY,
+    merchantId,
+    rawMerchantId,
+    accessCode: (process.env.CCAVENUE_ACCESS_CODE || "").trim(),
+    workingKey: (process.env.CCAVENUE_WORKING_KEY || "").trim(),
     environment,
     callbackUrl: callbackUrl.toString(),
     paymentGatewayUrl:

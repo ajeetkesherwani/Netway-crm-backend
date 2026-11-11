@@ -14,6 +14,8 @@ const {
 
 const WebhookLog = require("../../../models/webhookLog");
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
 const amountInPaise = (amount) => Math.round(Number(amount) * 100);
 const SUCCESSFUL_STATUSES = ["success", "successful"];
 const FAILED_STATUSES = [
@@ -31,6 +33,21 @@ const getGatewayResponse = (encryptedResponse) => {
   const params = new URLSearchParams(encryptedResponse);
   return Object.fromEntries(params.entries());
 };
+
+/**
+ * Upsert a single WebhookLog document per orderId.
+ * ONE document per order — always updated, never duplicated.
+ */
+const upsertWebhookLog = (orderId, fields) => {
+  if (!orderId) return Promise.resolve(); // no orderId yet (early decrypt errors) – skip
+  return WebhookLog.findOneAndUpdate(
+    { orderId },
+    { $set: { ...fields, orderId } },
+    { upsert: true, new: true }
+  ).catch((err) => console.error("WebhookLog upsert error:", err.message));
+};
+
+// ─── CCAvenue status API ─────────────────────────────────────────────────────
 
 const getCCAvenueStatusResponse = async (config, orderId) => {
   const request = JSON.stringify({ order_no: orderId });
@@ -100,6 +117,8 @@ const getCCAvenueStatusResponse = async (config, orderId) => {
     throw new AppError("CCAvenue returned an invalid status response", 502);
   }
 };
+
+// ─── reconcile ───────────────────────────────────────────────────────────────
 
 const reconcilePaymentWithCCAvenue = async (payment, config, callbackTrackingId) => {
   let statusResponse;
@@ -259,6 +278,8 @@ const reconcilePaymentWithCCAvenue = async (payment, config, callbackTrackingId)
   }
 };
 
+// ─── controllers ─────────────────────────────────────────────────────────────
+
 exports.createPlanPayment = catchAsync(async (req, res, next) => {
   const { packageId } = req.body;
   const user = req.user;
@@ -309,17 +330,17 @@ exports.createPlanPayment = catchAsync(async (req, res, next) => {
     amount,
   });
 
-  // Log order creation event in WebhookLog
   const clientIp =
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
     req.socket?.remoteAddress ||
     req.ip;
 
-  await WebhookLog.create({
+  // ── ONE document per order: upsert on orderId ──
+  await upsertWebhookLog(orderId, {
     source: "ccavenue",
     event: "payment.initiated",
-    status: "processed",
-    orderId,
+    status: "Pending",
+    paymentId: null,
     purchaseId: packageId,
     payload: {
       userId: user._id,
@@ -328,8 +349,9 @@ exports.createPlanPayment = catchAsync(async (req, res, next) => {
       amount,
       billingDetails,
     },
+    error: null,
     ip: clientIp,
-  }).catch((err) => console.error("WebhookLog order creation error:", err.message));
+  });
 
   const gatewayRequest = new URLSearchParams({
     merchant_id: config.merchantId,
@@ -377,15 +399,8 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
 
   const encryptedResponse = req.body?.encResp;
   if (typeof encryptedResponse !== "string" || !encryptedResponse) {
-    await WebhookLog.create({
-      source: "ccavenue",
-      event: "payment.callback",
-      status: "failed",
-      payload: req.body,
-      error: "Missing CCAvenue encResp callback field",
-      ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    // No orderId yet — cannot upsert, just log to console
+    console.error("WebhookLog: callback missing encResp", req.body);
     return next(new AppError("Missing CCAvenue encResp callback field", 400));
   }
 
@@ -394,15 +409,8 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
   try {
     decryptedText = decrypt(encryptedResponse, config.workingKey);
   } catch (decErr) {
-    await WebhookLog.create({
-      source: "ccavenue",
-      event: "payment.callback",
-      status: "failed",
-      payload: req.body,
-      error: `Could not decrypt CCAvenue response: ${decErr.message}`,
-      ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    // No orderId available yet — cannot upsert
+    console.error("WebhookLog: decrypt failed", decErr.message, req.body);
     return next(new AppError("Could not decrypt CCAvenue response", 400));
   }
 
@@ -410,31 +418,22 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
   const { order_id: orderId, tracking_id: trackingId } = gatewayResponse;
 
   if (!orderId) {
-    await WebhookLog.create({
-      source: "ccavenue",
-      event: "payment.callback",
-      status: "failed",
-      payload: gatewayResponse,
-      error: "CCAvenue response is missing order_id",
-      ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    console.error("WebhookLog: callback missing order_id", gatewayResponse);
     return next(new AppError("CCAvenue response is missing order_id", 400));
   }
 
   const payment = await PlanPayment.findOne({ orderId });
   if (!payment) {
-    await WebhookLog.create({
+    // orderId exists but no PlanPayment — upsert with Failed status
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: "failed",
-      orderId,
+      status: "Failed",
       paymentId: trackingId,
       payload: gatewayResponse,
       error: "Payment order not found in database",
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    });
     return next(new AppError("Payment order not found", 404));
   }
 
@@ -442,17 +441,15 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
     gatewayResponse.merchant_id !== config.merchantId &&
     gatewayResponse.merchant_id !== config.rawMerchantId
   ) {
-    await WebhookLog.create({
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: "failed",
-      orderId,
+      status: "Failed",
       paymentId: trackingId,
       payload: gatewayResponse,
       error: `Merchant ID mismatch: got ${gatewayResponse.merchant_id}`,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    });
     return next(new AppError("CCAvenue merchant ID does not match", 400));
   }
 
@@ -460,17 +457,15 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
     gatewayResponse.currency !== "INR" ||
     amountInPaise(gatewayResponse.amount) !== amountInPaise(payment.amount)
   ) {
-    await WebhookLog.create({
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: "failed",
-      orderId,
+      status: "Failed",
       paymentId: trackingId,
       payload: gatewayResponse,
       error: `Amount/Currency mismatch. Got ${gatewayResponse.amount} ${gatewayResponse.currency}, expected ${payment.amount} INR`,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    });
     return next(new AppError("CCAvenue payment details do not match the order", 400));
   }
 
@@ -491,17 +486,17 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
   }
 
   if (payment.status === "Paid") {
-    await WebhookLog.create({
+    // Already paid — just update the log to show Paid, don't create a new doc
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: "duplicate",
-      orderId,
+      status: "Paid",
       paymentId: callbackTrackingId,
       purchaseId: payment.purchasedPlanId,
       payload: gatewayResponse,
+      error: null,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
-
+    });
     return successResponse(res, "Plan payment already processed", {
       orderId,
       status: payment.status,
@@ -516,27 +511,27 @@ exports.handleCCAvenueCallback = catchAsync(async (req, res, next) => {
       callbackTrackingId
     );
 
-    await WebhookLog.create({
+    // Update the SAME WebhookLog document with final status
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: result.status === "Paid" ? "processed" : "failed",
-      orderId,
+      status: result.status === "Paid" ? "Paid" : result.status === "Failed" ? "Failed" : "Pending",
       paymentId: callbackTrackingId,
-      purchaseId: result.purchasedPlanId,
+      purchaseId: result.purchasedPlanId || null,
       payload: gatewayResponse,
+      error: null,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
+    });
   } catch (reconcileErr) {
-    await WebhookLog.create({
+    await upsertWebhookLog(orderId, {
       source: "ccavenue",
       event: "payment.callback",
-      status: "failed",
-      orderId,
+      status: "Failed",
       paymentId: callbackTrackingId,
       payload: gatewayResponse,
       error: reconcileErr.message,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog error:", err.message));
+    });
     throw reconcileErr;
   }
 
@@ -571,26 +566,26 @@ exports.getPlanPaymentStatus = catchAsync(async (req, res, next) => {
           ? "Plan payment was not successful"
           : "Plan payment is still being processed";
 
-    // Auto-record WebhookLog when verified via Status API check
     const clientIp =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
       req.socket?.remoteAddress ||
       req.ip;
 
-    await WebhookLog.create({
+    // Update the SAME WebhookLog document — never create a new one
+    await upsertWebhookLog(payment.orderId, {
       source: "ccavenue",
       event: "payment.status_check",
-      status: result.status === "Paid" ? "processed" : result.status === "Failed" ? "failed" : "processed",
-      orderId: payment.orderId,
-      paymentId: result.gatewayTrackingId || payment.gatewayTrackingId,
-      purchaseId: result.purchasedPlanId || payment.purchasedPlanId,
+      status: result.status === "Paid" ? "Paid" : result.status === "Failed" ? "Failed" : "Pending",
+      paymentId: result.gatewayTrackingId || payment.gatewayTrackingId || null,
+      purchaseId: result.purchasedPlanId || payment.purchasedPlanId || null,
       payload: {
         amount: payment.amount,
         status: result.status,
         gatewayOrderStatus: result.gatewayOrderStatus,
       },
+      error: null,
       ip: clientIp,
-    }).catch((err) => console.error("WebhookLog status_check error:", err.message));
+    });
 
     return successResponse(res, message, {
       ...result,

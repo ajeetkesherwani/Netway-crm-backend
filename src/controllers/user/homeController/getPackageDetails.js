@@ -36,7 +36,7 @@ exports.getPackageDetails = catchAsync(async (req, res, next) => {
         const packageDetails = {
             id: finalPackage._id,
             planName: finalPackage.name,
-            price: finalPackage.offerPrice || finalPackage.basePrice,
+            price: finalPackage.basePrice || finalPackage.basePrice,
             validity: finalPackage.validity,
             billingType: finalPackage.typeOfPlan,
             category: finalPackage.categoryOfPlan,

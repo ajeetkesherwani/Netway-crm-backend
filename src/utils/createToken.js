@@ -41,11 +41,21 @@
 
 const jwt = require("jsonwebtoken");
 
-const createToken = (user, statusCode, res, verify = false) => {
-  // include role + email in payload
+const createToken = (user, statusCode, res, userType = false, employee = null) => {
+  // Account type and permission role are separate:
+  // - userType identifies which collection contains the account
+  // - role identifies the permissions assigned to that account
+  const accountType =
+    typeof userType === "string"
+      ? userType
+      : (user.accountType || "");
+  const permissionRole = user.role?.roleName || user.role || accountType;
+
   const payload = {
     id: user._id,
-    role: user.role?.roleName || user.role, // handles populated or plain ObjectId
+    userType: accountType,
+    accountType,
+    role: permissionRole,
     email: user.email,
   };
 
@@ -60,19 +70,20 @@ const createToken = (user, statusCode, res, verify = false) => {
     ),
   };
 
-  if (!verify) {
+  if (!userType) {
     res.cookie("xcvbexamstons", token, cookieOptions);
 
     res.status(statusCode).json({
       success: true,
       token,
       data: {
-        user: user.toJSON(),
+        user,
+        employee,
       },
     });
   }
 
-  if (verify) {
+  if (userType) {
     res.cookie("sfvbexamstons", token, cookieOptions);
 
     res.status(statusCode).json({
@@ -81,8 +92,8 @@ const createToken = (user, statusCode, res, verify = false) => {
       token,
       data: {
         user,
+        employee,
       },
-      isRegistered: verify.isRegistered,
     });
   }
 };

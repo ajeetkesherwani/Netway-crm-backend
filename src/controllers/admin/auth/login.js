@@ -145,11 +145,13 @@ const createToken = require("../../../utils/createToken");
 const ResellerConfig = require("../../../models/resellerConfig");
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { email, password, employeeUserName, userName } = req.body;
+  const { email, password, employeeUserName, userName, logId } = req.body;
   console.log("req.body", req.body);
 
-  if ((!email && !employeeUserName && !userName) || !password) {
-    return next(new AppError("Email or employeeUserName and password are required.", 400));
+  if ((!email && !employeeUserName && !userName && !logId) || !password) {
+    return next(
+      new AppError("Email or employeeUserName and password are required.", 400),
+    );
   }
 
   let user = null;
@@ -162,7 +164,8 @@ exports.login = catchAsync(async (req, res, next) => {
 
     if (user) {
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return next(new AppError("Invalid email or password.", 401));
+      if (!isMatch)
+        return next(new AppError("Invalid email or password.", 401));
 
       userType = "admin";
       employee = {
@@ -190,14 +193,18 @@ exports.login = catchAsync(async (req, res, next) => {
 
     if (reseller) {
       const foundEmployee = reseller.employeeAssociation.find(
-        (emp) => emp.employeeUserName === employeeUserName
+        (emp) => emp.employeeUserName === employeeUserName,
       );
       if (!foundEmployee)
-        return next(new AppError("Invalid employee username or password.", 401));
+        return next(
+          new AppError("Invalid employee username or password.", 401),
+        );
 
       const isMatch = await bcrypt.compare(password, foundEmployee.password);
       if (!isMatch)
-        return next(new AppError("Invalid employee username or password.", 401));
+        return next(
+          new AppError("Invalid employee username or password.", 401),
+        );
 
       user = reseller;
       employee = foundEmployee;
@@ -226,14 +233,18 @@ exports.login = catchAsync(async (req, res, next) => {
 
     if (lco) {
       const foundEmployee = lco.employeeAssociation.find(
-        (emp) => emp.employeeUserName === employeeUserName
+        (emp) => emp.employeeUserName === employeeUserName,
       );
       if (!foundEmployee)
-        return next(new AppError("Invalid employee username or password.", 401));
+        return next(
+          new AppError("Invalid employee username or password.", 401),
+        );
 
       const isMatch = await bcrypt.compare(password, foundEmployee.password);
       if (!isMatch)
-        return next(new AppError("Invalid employee username or password.", 401));
+        return next(
+          new AppError("Invalid employee username or password.", 401),
+        );
 
       user = lco;
       employee = foundEmployee;
@@ -242,10 +253,25 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 4️⃣ STAFF LOGIN
-  if (!user && (userName || email)) {
-    const searchValue = userName || email;
+  // if (!user && ( logId || userName || email)) {
+  //   const searchValue = logId || userName || email;
+  //   const staff = await Staff.findOne({
+  //     $or: [{ logId: searchValue }, { userName: searchValue }, { email: searchValue }]
+  //   })
+  //     .populate({
+  //       path: "role",
+  //       select: "roleName permissions",
+  //     })
+  //     .lean();
+  if (!user && (logId || userName || email)) {
+    const searchValue = logId || userName || email;
+
     const staff = await Staff.findOne({
-      $or: [{ logId: searchValue }, { userName: searchValue }, { email: searchValue }]
+      $or: [
+        { logId: searchValue },
+        { userName: searchValue },
+        { email: searchValue },
+      ],
     })
       .populate({
         path: "role",
@@ -256,7 +282,8 @@ exports.login = catchAsync(async (req, res, next) => {
     if (!staff) return next(new AppError("Invalid username or password.", 401));
 
     const isMatch = await bcrypt.compare(password, staff.password);
-    if (!isMatch) return next(new AppError("Invalid username or password.", 401));
+    if (!isMatch)
+      return next(new AppError("Invalid username or password.", 401));
 
     user = staff;
     userType = "staff";
@@ -336,12 +363,12 @@ exports.login = catchAsync(async (req, res, next) => {
       resellerConfig,
       parentReseller: user.retailerId
         ? {
-          _id: user.retailerId._id,
-          resellerName: user.retailerId.resellerName,
-          email: user.retailerId.email,
-          phoneNo: user.retailerId.phoneNo,
-          roleName: user.retailerId.role?.roleName || "Reseller",
-        }
+            _id: user.retailerId._id,
+            resellerName: user.retailerId.resellerName,
+            email: user.retailerId.email,
+            phoneNo: user.retailerId.phoneNo,
+            roleName: user.retailerId.role?.roleName || "Reseller",
+          }
         : null,
     };
   } else if (userType === "staff") {
@@ -366,7 +393,9 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 6️⃣ GENERATE AND SEND OTP
   const LoginOtp = require("../../../models/loginOtp");
-  const { sendWhatsappNotification } = require("../../../services/whatsappService");
+  const {
+    sendWhatsappNotification,
+  } = require("../../../services/whatsappService");
 
   // Determine mobile number
   let mobile = "";
@@ -400,7 +429,13 @@ exports.login = catchAsync(async (req, res, next) => {
 
   try {
     // Send OTP to WhatsApp in body_params as required by QuickMessage template
-    await sendWhatsappNotification(String(mobile), "otp_login1", [otpCode], [], []);
+    await sendWhatsappNotification(
+      String(mobile),
+      "otp_login1",
+      [otpCode],
+      [],
+      [],
+    );
     console.log(`[Login] OTP sent to ${mobile}`);
   } catch (error) {
     console.error("[Login] Failed to send OTP to WhatsApp:", error.message);
@@ -411,6 +446,6 @@ exports.login = catchAsync(async (req, res, next) => {
     message: "OTP sent to registered mobile number.",
     requireOtp: true,
     loginSessionId: newOtp._id,
-    mobileSentTo: mobile // Sending the full number as requested!
+    mobileSentTo: mobile, // Sending the full number as requested!
   });
 });

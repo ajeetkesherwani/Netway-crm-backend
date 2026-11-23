@@ -97,22 +97,34 @@ exports.adminAuthenticate = catchAsync(async (req, res, next) => {
 
   // ✅ Extract ID and role safely
   const userId = decoded.id || decoded._id;
+  const accountType = (
+    decoded.userType ||
+    decoded.accountType ||
+    ""
+  ).toLowerCase();
   const roleName = (decoded.role || "").toLowerCase();
 
   let user = null;
   let role = null;
 
   // ✅ Dynamically find user by role
-  if (roleName === "admin") {
+  if (accountType === "admin" || (!accountType && roleName === "admin")) {
     user = await Admin.findById(userId);
     role = "Admin";
-  } else if (roleName === "reseller" || roleName === "retailer") {
+  } else if (
+    accountType === "reseller" ||
+    accountType === "retailer" ||
+    (!accountType && (roleName === "reseller" || roleName === "retailer"))
+  ) {
     user = await Retailer.findById(userId);
     role = "Reseller";
-  } else if (roleName === "lco") {
+  } else if (
+    accountType === "lco" ||
+    (!accountType && roleName === "lco")
+  ) {
     user = await Lco.findById(userId);
     role = "Lco";
-  } else {
+  } else if (accountType === "staff" || !accountType) {
     user = await Staff.findById(userId);
     role = "Staff";
   }
@@ -125,7 +137,10 @@ exports.adminAuthenticate = catchAsync(async (req, res, next) => {
   // ✅ Attach verified user to request
   req.user = {
     _id: user._id,
+    accountType: accountType || role.toLowerCase(),
     role,
+    roleName: user.role?.roleName || role,
+    permissions: user.role?.permissions || {},
     name:
       user.adminName ||
       user.resellerName ||

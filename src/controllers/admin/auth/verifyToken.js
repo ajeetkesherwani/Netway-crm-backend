@@ -7,21 +7,27 @@ const catchAsync = require("../../../utils/catchAsync");
 exports.verifyToken = catchAsync(async (req, res, next) => {
     try {
         // ✅ adminAuthenticate middleware already verified JWT and set req.user
-        const { _id, role } = req.user;
+        const { _id, accountType, role, roleName, permissions } = req.user;
         let user = null;
 
-        if (role === "Admin") {
+        if (accountType === "staff") {
+            user = await Staff.findById(_id).populate("role");
+        } else if (accountType === "admin" || role === "Admin") {
             user = await Admin.findById(_id).populate("role");
-        } else if (role === "Reseller") {
+        } else if (accountType === "reseller" || role === "Reseller") {
             user = await Reseller.findById(_id).populate("role");
-        } else if (role === "Lco") {
+        } else if (accountType === "lco" || role === "Lco") {
             user = await Lco.findById(_id).populate("role");
         } else {
             user = await Staff.findById(_id).populate("role");
         }
 
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
+            return res.status(404).json({
+                success: false,
+                status: false,
+                message: "User does not exist.",
+            });
         }
 
         // ✅ Build uniform response
@@ -36,13 +42,14 @@ exports.verifyToken = catchAsync(async (req, res, next) => {
             email: user.email,
             phoneNo: user.phoneNo || user.mobile,
             role: {
-                roleName: user.role?.roleName || role,
-                permissions: user.role?.permissions || {},
+                roleName: user.role?.roleName || roleName || role,
+                permissions: user.role?.permissions || permissions || {},
             },
         };
 
         return res.status(200).json({
             success: true,
+            status: true,
             message: "Token verified successfully",
             data: {
                 user: userData,

@@ -1,5 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
+const whatsappTemplates = require("../utils/whatsappTemplates");
+const { recordMonitoringLog } = require("./monitoringLogService");
 
 const WHATSAPP_API_URL = "https://app.quickmessage.in/api/v1/send/template";
 
@@ -13,10 +15,42 @@ const WHATSAPP_API_URL = "https://app.quickmessage.in/api/v1/send/template";
  * @returns {Object} API response
  */
 async function sendWhatsappNotification(phone, templateName, bodyParams = [], headerParams = [], buttonParams = []) {
+  const template = whatsappTemplates[templateName];
+  const isAuthentication =
+    template?.category === "AUTHENTICATION" ||
+    /otp|password|login/i.test(String(templateName || ""));
+  const renderedMessage = template?.content
+    ? template.content.replace(/{{(\d+)}}/g, (placeholder, index) => {
+        if (isAuthentication) return "[REDACTED]";
+        const value = bodyParams[Number(index) - 1];
+        return value === undefined ? placeholder : String(value);
+      })
+    : "";
+  const recordMessageLog = async (entry) => {
+    try {
+      await recordMonitoringLog(entry);
+    } catch (logError) {
+      console.error("[Monitoring] Failed to save WhatsApp log:", logError.message);
+    }
+  };
+
   try {
     const apiKey = process.env.WHATSAPP_API_KEY;
     if (!apiKey) {
       console.warn("[WhatsApp] WHATSAPP_API_KEY is not defined in config.env. Skipping notification.");
+      await recordMessageLog({
+        type: "whatsapp",
+        action: "WHATSAPP_REJECTED",
+        module: "notifications",
+        description: "WhatsApp notification skipped because provider credentials are unavailable.",
+        channel: "whatsapp",
+        recipient: phone,
+        templateName,
+        message: renderedMessage,
+        isAuthentication: false,
+        provider: "QuickMessage",
+        status: "REJECTED",
+      });
       return null;
     }
 
@@ -42,8 +76,43 @@ async function sendWhatsappNotification(phone, templateName, bodyParams = [], he
     });
 
     console.log(`[WhatsApp] Sent template '${templateName}' to ${formattedPhone} successfully.`);
+    await recordMessageLog({
+      type: "whatsapp",
+      action: "WHATSAPP_SENT",
+      module: "notifications",
+      description: "WhatsApp template submitted to the provider.",
+      channel: "whatsapp",
+      recipient: formattedPhone,
+      templateName,
+      message: renderedMessage,
+      isAuthentication: false,
+      provider: "QuickMessage",
+      providerMessageId:
+        response.data?.messageId ||
+        response.data?.message_id ||
+        response.data?.id,
+      status: "SENT",
+      details: { providerStatusCode: response.status },
+    });
     return response.data;
   } catch (error) {
+    await recordMessageLog({
+      type: "whatsapp",
+      action: "WHATSAPP_FAILED",
+      module: "notifications",
+      description: "WhatsApp provider request failed.",
+      channel: "whatsapp",
+      recipient: phone,
+      templateName,
+      message: renderedMessage,
+      isAuthentication: false,
+      provider: "QuickMessage",
+      status: "FAILED",
+      details: {
+        providerStatusCode: error.response?.status,
+        errorCode: error.code,
+      },
+    });
     console.error("[WhatsApp] Failed to send template message:", error.response?.data || error.message);
     throw error;
   }

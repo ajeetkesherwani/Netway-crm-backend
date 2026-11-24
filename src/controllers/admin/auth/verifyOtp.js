@@ -2,6 +2,7 @@ const LoginOtp = require("../../../models/loginOtp");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
+const createLoginAuditLog = require("../../../utils/loginAuditLog");
 
 exports.verifyOtp = catchAsync(async (req, res, next) => {
   const { loginSessionId, otp } = req.body;
@@ -34,6 +35,13 @@ exports.verifyOtp = catchAsync(async (req, res, next) => {
 
   // Keep the OTP available for future logins until another OTP is sent.
   console.log(`[Login] OTP verified successfully for session ${loginSessionId}`);
+
+  await createLoginAuditLog({
+    req,
+    user: session.cleanUser,
+    userType: session.userType,
+    employee: session.employee,
+  });
 
   // createToken takes (user, statusCode, res, userType, employee)
   createToken(session.cleanUser, 200, res, session.userType, session.employee);

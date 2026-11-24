@@ -4,6 +4,7 @@ const router = express.Router();
 
 // Route modules
 router.use("/auth", require("./admin/authRoutes"));
+router.use("/monitoring", require("./admin/monitoringRoutes"));
 router.use("/cms", require("./admin/cmsRoutes"));
 router.use("/package", require("./admin/packageRoutes"));
 router.use("/role", require("./admin/roleRoutes"));

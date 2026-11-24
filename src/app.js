@@ -9,6 +9,8 @@ const AppError = require("./utils/AppError");
 const globalErrorHandler = require("./controllers/errorController");
 const scheduleExpirePlansJob = require("./jobs/expirePurchasedPlans");
 const scheduleMarketingReminders = require("./jobs/marketingReminders");
+const { requestContext } = require("./middleware/requestContext");
+const requestLogger = require("./middleware/requestLogger");
 
 const app = express();
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data (form data)
@@ -20,6 +22,8 @@ app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json());
+app.use(requestContext);
+app.use(requestLogger);
 scheduleExpirePlansJob(); // Start the cron job
 scheduleMarketingReminders(); // Start the 3x/day marketing reminders
 

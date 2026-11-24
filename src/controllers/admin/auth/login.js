@@ -143,6 +143,7 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
 const ResellerConfig = require("../../../models/resellerConfig");
+const createLoginAuditLog = require("../../../utils/loginAuditLog");
 
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password, employeeUserName, userName, logId } = req.body;
@@ -414,6 +415,7 @@ exports.login = catchAsync(async (req, res, next) => {
   if (!mobileStr || mobileStr === "N/A" || mobileStr.trim() === "") {
     // If the user literally has no mobile number saved, we fallback to standard login
     console.log("[Login] No mobile number found. Proceeding without OTP.");
+    await createLoginAuditLog({ req, user: cleanUser, userType, employee });
     return createToken(cleanUser, 200, res, userType, employee);
   }
 

@@ -1,4 +1,5 @@
 const Logs = require("../models/activity");
+const { recordMonitoringLog } = require("../services/monitoringLogService");
 
 const createLog = async ({ createdById, createdByRole, action, description = "" }) => {
   try {
@@ -7,6 +8,15 @@ const createLog = async ({ createdById, createdByRole, action, description = "" 
       createdByRole,
       action,
       description
+    });
+    await recordMonitoringLog({
+      type: "activity",
+      action,
+      module: "business",
+      description,
+      actorId: createdById,
+      actorRole: createdByRole,
+      status: "SUCCESS",
     });
   } catch (error) {
     console.error("Log creation failed:", error.message);

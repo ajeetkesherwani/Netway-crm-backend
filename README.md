@@ -24,6 +24,28 @@
 - **APIs:** RESTful APIs for frontend/backend communication
 - **Deployment:** VPS 
 
+## Admin monitoring logs
+
+Use the authenticated monitoring endpoint to inspect API activity, successful
+login audits, SMS submissions, and WhatsApp submissions:
+
+```http
+GET /api/admin/monitoring/logs?filter=activity&page=1&limit=25
+Authorization: Bearer <admin-token>
+```
+
+Set `filter` to `activity`, `audit`, `sms`, or `whatsapp`. Optional query filters
+include `from`, `to`, `actorId`, `role`, `action`, `status`, `module`,
+`recipient`, and `search`. Results are newest first; page sizes are limited to
+100. `audit` returns successful login events only. Recipient numbers are masked
+in monitoring responses, and authentication message content is redacted.
+Communication status `SENT` means submitted to the provider, not confirmed
+delivered. Existing activity-log routes remain available.
+
+API requests are logged without request or response bodies. SMS, WhatsApp, and
+existing business activity logging helpers add their corresponding event
+records to the monitoring log.
+
 ## Broadband plan payments with CCAvenue
 
 The broadband payment endpoints are separate from product orders:

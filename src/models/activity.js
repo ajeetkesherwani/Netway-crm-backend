@@ -17,6 +17,27 @@ const logsSchema = new Schema(
     action: {
       type: String,
     },
+    actorId: {
+      type: String,
+    },
+    actorName: {
+      type: String,
+    },
+    actorRole: {
+      type: String,
+    },
+    ip: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+    status: {
+      type: String,
+    },
+    requestId: {
+      type: String,
+    },
     description: {
       type: String,
       default: ""

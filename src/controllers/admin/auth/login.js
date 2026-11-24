@@ -417,34 +417,91 @@ exports.login = catchAsync(async (req, res, next) => {
     return createToken(cleanUser, 200, res, userType, employee);
   }
 
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  await LoginOtp.prepareCollection();
 
-  const newOtp = await LoginOtp.create({
-    otp: otpCode,
-    mobileSentTo: mobile,
-    cleanUser,
+  const loginKey = [
     userType,
-    employee,
-  });
+    String(user._id),
+    String(employee?._id || employee?.employeeUserName || employee?.email || ""),
+  ].join(":");
+  const previousOtpFilter = {
+    userType,
+    "cleanUser._id": user._id,
+  };
+  if (employee?.employeeUserName) {
+    previousOtpFilter["employee.employeeUserName"] = employee.employeeUserName;
+  } else if (employee?._id) {
+    previousOtpFilter["employee._id"] = employee._id;
+  } else if (employee?.email) {
+    previousOtpFilter["employee.email"] = employee.email;
+  } else {
+    previousOtpFilter.loginKey = loginKey;
+  }
 
-  try {
-    // Send OTP to WhatsApp in body_params as required by QuickMessage template
-    await sendWhatsappNotification(
-      String(mobile),
-      "otp_login1",
-      [otpCode],
-      [],
-      [],
+  const sendNewOtp = req.body.resendOtp === true;
+  let existingOtp = await LoginOtp.findOne({ loginKey });
+  if (!existingOtp && !sendNewOtp) {
+    existingOtp = await LoginOtp.findOne(previousOtpFilter).sort({ createdAt: -1 });
+  }
+
+  let newOtp;
+  let otpSent = false;
+  if (existingOtp && !sendNewOtp) {
+    newOtp = await LoginOtp.findByIdAndUpdate(
+      existingOtp._id,
+      { $set: { loginKey, cleanUser, employee } },
+      { new: true },
     );
-    console.log(`[Login] OTP sent to ${mobile}`);
-  } catch (error) {
-    console.error("[Login] Failed to send OTP to WhatsApp:", error.message);
+    await LoginOtp.deleteMany({
+      ...previousOtpFilter,
+      _id: { $ne: existingOtp._id },
+    });
+  } else {
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await LoginOtp.deleteMany(previousOtpFilter);
+    newOtp = await LoginOtp.findOneAndUpdate(
+      { loginKey },
+      {
+        $set: {
+          otp: otpCode,
+          mobileSentTo: mobile,
+          cleanUser,
+          userType,
+          employee,
+        },
+        $setOnInsert: { loginKey },
+      },
+      { new: true, upsert: true, runValidators: true },
+    );
+
+    try {
+      // Send OTP to WhatsApp in body_params as required by QuickMessage template
+      await sendWhatsappNotification(
+        String(mobile),
+        "otp_login1",
+        [otpCode],
+        [],
+        [],
+      );
+      otpSent = true;
+      console.log(`[Login] OTP sent to ${mobile}`);
+    } catch (error) {
+      console.error("[Login] Failed to send OTP to WhatsApp:", error.message);
+    }
+  }
+
+  if (!newOtp) {
+    return next(new AppError("Unable to retrieve the OTP login session.", 500));
   }
 
   return res.status(200).json({
     status: "success",
-    message: "OTP sent to registered mobile number.",
+    message: otpSent
+      ? "OTP sent to registered mobile number."
+      : "Enter your previously sent OTP, or select Send OTP to receive a new one.",
     requireOtp: true,
+    otpSent,
     loginSessionId: newOtp._id,
     mobileSentTo: mobile, // Sending the full number as requested!
   });

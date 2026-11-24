@@ -10,6 +10,8 @@ exports.verifyOtp = catchAsync(async (req, res, next) => {
     return next(new AppError("loginSessionId and otp are required.", 400));
   }
 
+  await LoginOtp.prepareCollection();
+
   // 1. Find the OTP session in the database
   const session = await LoginOtp.findById(loginSessionId);
 
@@ -30,10 +32,7 @@ exports.verifyOtp = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid OTP. Please try again.", 401));
   }
 
-  // 3. OTP is correct! Issue the token using the stored cleanUser context
-  // Delete the session so it can't be reused
-  await LoginOtp.findByIdAndDelete(loginSessionId);
-
+  // Keep the OTP available for future logins until another OTP is sent.
   console.log(`[Login] OTP verified successfully for session ${loginSessionId}`);
 
   // createToken takes (user, statusCode, res, userType, employee)

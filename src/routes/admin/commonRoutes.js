@@ -60,6 +60,7 @@ const {
     getCountSummary
 } = require("../../controllers/admin/common/getCounts");
 const { deleteInvoice } = require("../../controllers/admin/common/deleteInvoice");
+const { getSmsTemplates } = require("../../controllers/admin/common/getSmsTemplates");
 
 const router = express.Router();
 
@@ -78,6 +79,7 @@ router.delete("/delete/:invoiceId", adminAuthenticate, deleteInvoice);
 router.get("/user/invoice/:userId", adminAuthenticate, getUserInvoice);
 router.get("/user/hardware/:userId", adminAuthenticate, getUserAssignedHardware);
 router.get("/count/summary", adminAuthenticate, getCountSummary);
+router.get("/sms-templates", adminAuthenticate, getSmsTemplates);
 
 // Direct SMS Test endpoint for Postman
 router.post("/test-sms", async (req, res) => {

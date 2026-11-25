@@ -557,20 +557,57 @@ exports.createUser = async (req, res, next) => {
     */
     // ────────────────────────────────────────────────────────────────
 
+    const createdByName =
+      req.user?.name || req.user?.adminName || req.user?.role || "Unknown";
+    const billingAddress = [
+      addressDetails.billingAddress.addressine1,
+      addressDetails.billingAddress.addressine2,
+      addressDetails.billingAddress.city,
+      addressDetails.billingAddress.state,
+      addressDetails.billingAddress.pincode,
+    ].filter(Boolean).join(", ");
+    const installationAddress = [
+      addressDetails.installationAddress.addressine1,
+      addressDetails.installationAddress.addressine2,
+      addressDetails.installationAddress.city,
+      addressDetails.installationAddress.state,
+      addressDetails.installationAddress.pincode,
+    ].filter(Boolean).join(", ");
+
     await createLog({
       userId: newUser._id,
       type: "User Created",
-      description: `New customer created: ${newUser.generalInformation.name}`,
+      description: [
+        `User created successfully: ${newUser.generalInformation.name}`,
+        `Email: ${newUser.generalInformation.email || "Not provided"}`,
+        `Phone: ${newUser.generalInformation.phone || "Not provided"}`,
+        `User ID: ${newUser.generalInformation.UserId || "Not provided"}`,
+        `Billing address: ${billingAddress || "Not provided"}`,
+        `Installation address: ${installationAddress || "Not provided"}`,
+        `Created by: ${createdByName}`,
+      ].join(". "),
       details: {
+        customerRecordId: newUser._id,
+        customerName: newUser.generalInformation.name,
         email: newUser.generalInformation.email,
         phone: newUser.generalInformation.phone,
-        userId: newUser.generalInformation.username,
+        userId: newUser.generalInformation.UserId,
+        username: newUser.generalInformation.username,
+        billingAddress: addressDetails.billingAddress,
+        permanentAddress: addressDetails.permanentAddress,
+        installationAddress: addressDetails.installationAddress,
+        packages: (packageInfomation || []).map((pkg) => pkg.packageName).filter(Boolean),
+        status: newUser.status,
+        createdByName,
+        createdByRole: req.user?.role || "Admin",
       },
       addedBy: {
         id: req.user?._id,
         role: req.user?.role || "Admin",
+        name: createdByName,
       },
-      ip: req.ip || "0.0.0.0",
+      ip: req.ip || req.headers["x-forwarded-for"],
+      targetName: newUser.generalInformation.name,
     });
 
     /** ------------------------------

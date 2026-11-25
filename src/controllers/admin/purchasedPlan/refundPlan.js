@@ -149,16 +149,31 @@ exports.refundPurchasedPlan = catchAsync(async (req, res, next) => {
       description: `Plan ${refundLabel} refunded`,
       details: {
         planId: plan._id,
+        customerId: endUser._id,
+        customerName: endUser.generalInformation?.name,
+        packageId: plan.packageId?._id,
+        packageName: plan.packageId?.name,
         refundAmount,
         usedDays,
         refundType: refundLabel,
-        creditedTo: refundWalletType
+        creditedTo: refundWalletType,
+        walletOwnerId: refundWalletDoc._id,
+        walletOwnerType: refundWalletType,
+        walletOpeningBalance: openingBalance,
+        walletClosingBalance: refundWalletDoc.walletBalance,
+        walletChange: refundAmount,
+        refundedById: requester._id,
+        refundedByRole: requester.role,
       },
-      ip: req.ip || "0.0.0.0",
+      ip: req.ip || req.headers["x-forwarded-for"],
       addedBy: {
         id: requester._id,
         role: requester.role
-      }
+      },
+      module: "purchased-plan",
+      targetType: "purchasedPlan",
+      targetId: plan._id,
+      targetName: plan.packageId?.name,
     });
 
     return successResponse(res, "Plan refunded successfully", {

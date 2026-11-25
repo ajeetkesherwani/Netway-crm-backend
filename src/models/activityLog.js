@@ -8,7 +8,8 @@ const ActivityLogSchema = new mongoose.Schema({
   ip: { type: String },
   addedBy: {
     id: { type: mongoose.Schema.Types.ObjectId, required: true }, 
-    role: { type: String, required: true }
+    role: { type: String, required: true },
+    name: { type: String }
   }
 }, { timestamps: true });
 

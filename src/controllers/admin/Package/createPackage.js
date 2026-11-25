@@ -186,6 +186,7 @@ const Setting = require("../../../models/setting");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 // ================= PLAYBOX CONFIG =================
 const PLAYBOX_API_KEY = "2ZsafDI6OV2IH5m18pqtS9k2C6Onnq5D82FcNsRh";
@@ -366,6 +367,19 @@ if (isOtt) {
   };
 
   const newPackage = await Package.create(packageData);
+
+  await logMonitoringActivity({
+    req,
+    action: "Package Created",
+    module: "package",
+    description: `Package created: ${newPackage.name}`,
+    targetId: newPackage._id,
+    targetName: newPackage.name,
+    targetType: "package",
+    details: {
+      package: newPackage.toObject(),
+    },
+  });
 
   return successResponse(res, "Package created successfully", newPackage);
 });

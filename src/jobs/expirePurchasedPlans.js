@@ -3,6 +3,7 @@ const PurchasedPlan = require("../models/purchasedPlan");
 const WalletHistory = require("../models/userWalletHistory");
 const { sendTemplateSMS } = require("../utils/smsService");
 const { sendWhatsappNotification } = require("../services/whatsappService");
+const logMonitoringActivity = require("../utils/logMonitoringActivity");
 
 const formatDate = (date) =>
   new Date(date).toLocaleDateString("en-IN");
@@ -21,8 +22,8 @@ const expirePurchasedPlans = async () => {
       status: "active",
       expiryDate: { $lte: threeDaysLater }
     })
-    .populate("userId", "walletBalance isAutoRecharge generalInformation.phone")
-    .populate("packageId", "validity basePrice offerPrice");
+    .populate("userId", "walletBalance isAutoRecharge generalInformation.phone generalInformation.name")
+    .populate("packageId", "name validity basePrice offerPrice");
 
     console.log(`[CRON] Found ${plans.length} active plans to check for expiry`);
     if (plans.length === 0) {
@@ -58,6 +59,24 @@ const expirePurchasedPlans = async () => {
         console.error(`[CRON] ❌ Invalid effective expiry for plan ${plan._id} → expiring`);
         plan.status = "expired";
         await plan.save();
+        await logMonitoringActivity({
+          action: "Purchased Plan Expired",
+          module: "purchased-plan",
+          description: `Plan ${pkg.name || plan.packageId._id} expired because its expiry date is invalid`,
+          targetId: user._id,
+          targetName: user.generalInformation?.name,
+          targetType: "user",
+          actor: { name: "Plan Expiry Job", role: "System" },
+          details: {
+            planId: plan._id,
+            customerId: user._id,
+            packageId: pkg._id,
+            packageName: pkg.name,
+            reason: "Invalid expiry date",
+            previousStatus: "active",
+            newStatus: "expired",
+          },
+        });
         continue;
       }
 
@@ -128,6 +147,23 @@ const expirePurchasedPlans = async () => {
           nextRenewal.status = "active";
           plan.isRenewed = true;
           await plan.save();
+          await logMonitoringActivity({
+            action: "Pending Plan Renewal Activated",
+            module: "purchased-plan",
+            description: `Pending renewal activated for ${pkg.name || plan._id}`,
+            targetId: user._id,
+            targetName: user.generalInformation?.name,
+            targetType: "user",
+            actor: { name: "Plan Expiry Job", role: "System" },
+            details: {
+              planId: plan._id,
+              renewalExpiryDate: nextRenewal.newExpiryDate,
+              customerId: user._id,
+              packageId: pkg._id,
+              packageName: pkg.name,
+              newStatus: plan.status,
+            },
+          });
           console.log(`[CRON] Activated pending renewal for plan ${plan._id}`);
           continue;
         }
@@ -209,15 +245,37 @@ const expirePurchasedPlans = async () => {
         const walletDeduction = Math.max(packagePrice, 0);
 
         if (walletDeduction > 0) {
+          const openingBalance = Number(user.walletBalance || 0);
           user.walletBalance = Number(user.walletBalance || 0) - walletDeduction;
           await user.save();
 
-          await WalletHistory.create({
+          const walletHistory = await WalletHistory.create({
             userId: user._id,
             amount: walletDeduction,
             type: "debit",
             remark: "Auto-recharge deduction",
             createdAt: now,
+          });
+
+          await logMonitoringActivity({
+            action: "Wallet Balance Deducted",
+            module: "wallet",
+            description: `Auto-recharge deducted ${walletDeduction} from ${user.generalInformation?.name || user._id}`,
+            targetId: user._id,
+            targetName: user.generalInformation?.name,
+            targetType: "user",
+            actor: { name: "Auto Recharge Job", role: "System" },
+            details: {
+              walletHistoryId: walletHistory._id,
+              customerId: user._id,
+              customerName: user.generalInformation?.name,
+              planId: plan._id,
+              packageId: pkg._id,
+              packageName: pkg.name,
+              amount: walletDeduction,
+              openingBalance,
+              closingBalance: user.walletBalance,
+            },
           });
 
           console.log(`[CRON] Wallet updated for user ${user._id}, amount deducted: ${walletDeduction}`);
@@ -238,6 +296,28 @@ const expirePurchasedPlans = async () => {
 
         await plan.save();
 
+        await logMonitoringActivity({
+          action: "Plan Auto-Renewed",
+          module: "purchased-plan",
+          description: `Plan ${pkg.name || plan._id} auto-renewed for ${user.generalInformation?.name || user._id}`,
+          targetId: user._id,
+          targetName: user.generalInformation?.name,
+          targetType: "user",
+          actor: { name: "Auto Recharge Job", role: "System" },
+          details: {
+            planId: plan._id,
+            customerId: user._id,
+            customerName: user.generalInformation?.name,
+            packageId: pkg._id,
+            packageName: pkg.name,
+            amountPaid: packagePrice,
+            walletDeduction,
+            previousExpiryDate: effectiveExpiry,
+            newExpiryDate,
+            walletBalance: user.walletBalance,
+          },
+        });
+
         console.log(
           `[CRON] ✅ Auto-renewed | Plan ${plan._id} | User ${user._id} | ` +
           `New expiry: ${newExpiryDate.toISOString()}`
@@ -248,6 +328,24 @@ const expirePurchasedPlans = async () => {
       // Expire the plan if no renewals or auto-recharge
       plan.status = "expired";
       await plan.save();
+      await logMonitoringActivity({
+        action: "Purchased Plan Expired",
+        module: "purchased-plan",
+        description: `Plan ${pkg.name || plan._id} expired for ${user.generalInformation?.name || user._id}`,
+        targetId: user._id,
+        targetName: user.generalInformation?.name,
+        targetType: "user",
+        actor: { name: "Plan Expiry Job", role: "System" },
+        details: {
+          planId: plan._id,
+          customerId: user._id,
+          packageId: pkg._id,
+          packageName: pkg.name,
+          previousStatus: "active",
+          newStatus: "expired",
+          expiryDate: effectiveExpiry,
+        },
+      });
       console.log(`[CRON] Expired plan ${plan._id}`);
 
       // Send WhatsApp notification for expired plan

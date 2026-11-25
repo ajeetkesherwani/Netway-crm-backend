@@ -3,6 +3,7 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const xlsx = require("xlsx");
 const fs = require("fs");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.bulkUploadHardware = catchAsync(async (req, res, next) => {
   if (!req.files || !req.files.file || req.files.file.length === 0) {
@@ -29,6 +30,22 @@ exports.bulkUploadHardware = catchAsync(async (req, res, next) => {
     }
 
     const result = await Hardware.insertMany(hardwares);
+
+    await logMonitoringActivity({
+      req,
+      action: "Hardware Bulk Uploaded",
+      module: "hardware",
+      description: `${result.length} hardware items uploaded`,
+      targetType: "hardware",
+      details: {
+        count: result.length,
+        hardware: result.map((item) => ({
+          id: item._id,
+          name: item.hardwareName,
+          type: item.hardwareType,
+        })),
+      },
+    });
 
     // Optional: cleanup the uploaded file
     fs.unlinkSync(filePath);

@@ -6,6 +6,7 @@ const Vendor = require("../../../models/vendor");
 const Driver = require("../../../models/driver");
 const VendorWallet = require("../../../models/vendorWalletHistory");
 const DriverWalletHistory = require("../../../models/driverWalletHistory");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 
 // vendor commission calculation function
@@ -135,6 +136,7 @@ exports.deliveryPhotoUpload = catchAsync(async (req, res, next) => {
   if (!vendor) return next(new AppError("Vendor not found", 404));
 
   const commission = vendor.commission || 0;
+  const vendorOpeningBalance = Number(vendor.wallet_balance || 0);
 
   const { vendorEarning, commissionAmount } = calculateVendorEarning({
     totalAmount: subTotal,
@@ -153,6 +155,33 @@ exports.deliveryPhotoUpload = catchAsync(async (req, res, next) => {
     balance_after_transaction: vendor.wallet_balance
   });
 
+  await logMonitoringActivity({
+    req,
+    actor: {
+      _id: req.driver?._id,
+      name: req.driver?.name || req.driver?.driverName,
+      role: "Driver",
+    },
+    action: "Vendor Wallet Credited",
+    module: "wallet",
+    description: `Delivery earnings credited to vendor for order ${subOrder._id}`,
+    targetId: vendorId,
+    targetName: vendor.vendorName,
+    targetType: "vendor",
+    details: {
+      walletHistoryId: vendor_wallet_history._id,
+      vendorId,
+      orderId: subOrder._id,
+      amount: vendorEarning,
+      openingBalance: vendorOpeningBalance,
+      closingBalance: vendor_wallet_history.balance_after_transaction,
+      commission: commissionAmount,
+      totalAmount: subTotal,
+      performedById: req.driver?._id,
+      performedByRole: "Driver",
+    },
+  });
+
 
   //driver wallet_history
 
@@ -161,6 +190,7 @@ exports.deliveryPhotoUpload = catchAsync(async (req, res, next) => {
   const driver = await Driver.findById(driverId);
   if (!driver) return next(new AppError("Driver not found", 404));
 
+  const driverOpeningBalance = Number(driver.walletBalance || 0);
   const driverEarning = deliveryCharge;
   const updatedBalance = (driver.walletBalance || 0) + driverEarning;
 
@@ -174,6 +204,31 @@ exports.deliveryPhotoUpload = catchAsync(async (req, res, next) => {
     reason: "order_payment",
     totalAmount: subTotal,
     balance_after_transaction: updatedBalance
+  });
+
+  await logMonitoringActivity({
+    req,
+    actor: {
+      _id: req.driver?._id,
+      name: req.driver?.name || req.driver?.driverName,
+      role: "Driver",
+    },
+    action: "Driver Wallet Credited",
+    module: "wallet",
+    description: `Delivery earnings credited to driver for order ${subOrder._id}`,
+    targetId: driverId,
+    targetName: driver.name || driver.driverName,
+    targetType: "driver",
+    details: {
+      walletHistoryId: driver_wallet_history._id,
+      driverId,
+      orderId: subOrder._id,
+      amount: driverEarning,
+      openingBalance: driverOpeningBalance,
+      closingBalance: driver_wallet_history.balance_after_transaction,
+      performedById: req.driver?._id,
+      performedByRole: "Driver",
+    },
   });
 
   successResponse(res, "subOrder status updated successfully", {

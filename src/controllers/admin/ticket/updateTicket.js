@@ -8,6 +8,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const { sendWhatsappNotification } = require("../../../services/whatsappService");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.updateTicket = catchAsync(async (req, res, next) => {
   const { ticketId } = req.params;
@@ -35,6 +36,15 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
   
     const userRole = req.user.role; // "Admin" | "Reseller" | "Lco"
     const updaterId = req.user._id;
+    const previousTicket = {
+      status: ticket.status,
+      severity: ticket.severity,
+      isChargeable: ticket.isChargeable,
+      price: ticket.price,
+      callDescription: ticket.callDescription,
+      assignToId: ticket.assignToId?._id || ticket.assignToId,
+      serverType: ticket.serverType,
+    };
     const assignToModel = 'Staff'; // Default, may change based on role
     const fileI = req.files && req.files['fileI'] ? req.files['fileI'][0].path : ticket.fileI;
     const fileII = req.files && req.files['fileII'] ? req.files['fileII'][0].path : ticket.fileII;
@@ -132,6 +142,36 @@ exports.updateTicket = catchAsync(async (req, res, next) => {
   
     await ticket.save();
   
+    await createLog({
+      userId: ticket.userId?._id || ticket.userId,
+      type: assignToId ? "Ticket Reassigned" : "Ticket Updated",
+      description: `Ticket ${ticket.ticketNumber} ${assignToId ? "reassigned" : "updated"} for ${ticket.userId?.generalInformation?.name || "customer"}`,
+      details: {
+        ticketId: ticket._id,
+        ticketNumber: ticket.ticketNumber,
+        customerName: ticket.userId?.generalInformation?.name,
+        updatedById: updaterId,
+        updatedByRole: userRole,
+        before: previousTicket,
+        after: {
+          status: ticket.status,
+          severity: ticket.severity,
+          isChargeable: ticket.isChargeable,
+          price: ticket.price,
+          callDescription: ticket.callDescription,
+          assignToId: ticket.assignToId,
+          assignToModel: ticket.assignToModel,
+          serverType: ticket.serverType,
+        },
+      },
+      addedBy: { id: updaterId, role: userRole },
+      ip: req.ip || req.headers["x-forwarded-for"],
+      module: "ticket",
+      targetType: "ticket",
+      targetId: ticket._id,
+      targetName: ticket.ticketNumber,
+    });
+
     // ✅ Log ticket activity
     await logTicketActivity({
       ticketId,

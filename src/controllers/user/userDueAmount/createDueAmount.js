@@ -3,6 +3,7 @@ const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const { createLog } = require("../../../utils/userLogActivity");
 
 const generateReceiptNo = () => Math.floor(100000 + Math.random() * 900000).toString();
  
@@ -25,6 +26,7 @@ exports.createUserDueAmountPayment = catchAsync(async (req, res, next) => {
   }
  
   // Current due from walletBalance (negative value)
+  const openingBalance = Number(user.walletBalance || 0);
   const currentDue = user.walletBalance < 0 ? -user.walletBalance : 0;
   console.log("currentDue",  typeof(currentDue), currentDue);
  
@@ -51,6 +53,34 @@ exports.createUserDueAmountPayment = catchAsync(async (req, res, next) => {
     modeOfPayment: modeOfPayment || 'Online',
     receiptNo,
     status: "Paid"
+  });
+
+  await createLog({
+    userId: user._id,
+    type: "Due Balance Payment",
+    description: `Due payment of ${amountNum} recorded for ${user.generalInformation?.name || userId}`,
+    details: {
+      paymentId: dueRecord._id,
+      receiptNo,
+      customerId: user._id,
+      customerName: user.generalInformation?.name,
+      amount: amountNum,
+      modeOfPayment: modeOfPayment || "Online",
+      openingBalance,
+      closingBalance: user.walletBalance,
+      paidById: req.user._id,
+      paidByRole: req.user.role || "User",
+    },
+    addedBy: {
+      id: req.user._id,
+      role: req.user.role || "User",
+      name: user.generalInformation?.name,
+    },
+    ip: req.ip || req.headers["x-forwarded-for"],
+    module: "wallet",
+    targetType: "userWallet",
+    targetId: user._id,
+    targetName: user.generalInformation?.name,
   });
 
   console.log("dueRecord", dueRecord);

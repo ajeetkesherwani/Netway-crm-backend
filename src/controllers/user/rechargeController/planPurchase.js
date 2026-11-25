@@ -117,6 +117,7 @@ const PlanPayment = require("../../../models/planPayment");
 
 const { successResponse } = require("../../../utils/responseHandler");
 const { createHistory } = require("../../../utils/userPlanHistory");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.planPurchase = catchAsync(async (req, res, next) => {
     const userId = req.user._id;
@@ -370,6 +371,38 @@ exports.planPurchase = catchAsync(async (req, res, next) => {
         "",
         ""
     );
+
+    const activityType = historyType === "renewal" ? "Plan Renewed" : "Plan Purchased";
+    const packageName = matchedPackage.packageName || matchedPackage.name;
+    await createLog({
+        userId,
+        type: activityType,
+        description: `${activityType}: ${packageName || packageId}`,
+        details: {
+            planId: purchasedPlan._id,
+            customerId: userId,
+            customerName: user.generalInformation?.name,
+            packageId,
+            packageName,
+            amountPaid: amountPaid,
+            paymentMethod: "Online",
+            transactionId,
+            planStatus: purchasedPlan.status,
+            expiryDate: purchasedPlan.expiryDate,
+            performedById: userId,
+            performedByRole: "User",
+        },
+        addedBy: {
+            id: userId,
+            role: "User",
+            name: user.generalInformation?.name,
+        },
+        ip: req.ip || req.headers["x-forwarded-for"],
+        module: "purchased-plan",
+        targetType: "purchasedPlan",
+        targetId: purchasedPlan._id,
+        targetName: packageName,
+    });
 
     // -----------------------------------------
     // 13. Final Response

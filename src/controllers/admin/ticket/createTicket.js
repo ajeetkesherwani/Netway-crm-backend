@@ -8,6 +8,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const User = require("../../../models/user");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 const { sendWhatsappNotification } = require("../../../services/whatsappService");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.createTicket = catchAsync(async (req, res, next) => {
   const {
@@ -142,6 +143,31 @@ exports.createTicket = catchAsync(async (req, res, next) => {
     resellerId,
     zoneId,
     subZoneId
+  });
+
+  await createLog({
+    userId: user._id,
+    type: "Ticket Created",
+    description: `Ticket ${ticketNumber} created for ${personName}`,
+    details: {
+      ticketId: newTicket._id,
+      ticketNumber,
+      customerName: personName,
+      customerId: user._id,
+      createdById: creatorId,
+      createdByRole: userRole,
+      status: newTicket.status,
+      severity: newTicket.severity,
+      category,
+      callDescription,
+      assignedToId: finalAssignToId,
+    },
+    addedBy: { id: creatorId, role: userRole },
+    ip: req.ip || req.headers["x-forwarded-for"],
+    module: "ticket",
+    targetType: "ticket",
+    targetId: newTicket._id,
+    targetName: ticketNumber,
   });
 
   // ✅ Step 4: Return complete ticket info

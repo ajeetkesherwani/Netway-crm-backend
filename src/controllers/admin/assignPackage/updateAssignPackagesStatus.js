@@ -2,6 +2,7 @@ const AssignPackage = require("../../../models/assignPackage");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.updateAssignPackageStatus = catchAsync(async (req, res, next) => {
     const { packageItemId } = req.params;
@@ -18,9 +19,32 @@ exports.updateAssignPackageStatus = catchAsync(async (req, res, next) => {
     const pkg = assignment.packages.id(packageItemId);
     if (!pkg) return next(new AppError("Package not found", 404));
 
+    const previousStatus = pkg.status;
     pkg.status = status;
 
     await assignment.save();
+
+    await logMonitoringActivity({
+        req,
+        action: "Assigned Package Status Updated",
+        module: "package-assignment",
+        description: `Package ${pkg.name || pkg.packageId} status changed from ${previousStatus} to ${pkg.status}`,
+        targetId: assignment.assignToId,
+        targetName: `${assignment.assignTo} ${assignment.assignToId}`,
+        targetType: assignment.assignTo,
+        details: {
+            assignmentId: assignment._id,
+            packageItemId: pkg._id,
+            packageId: pkg.packageId,
+            packageName: pkg.name,
+            assignTo: assignment.assignTo,
+            assignToId: assignment.assignToId,
+            previousStatus,
+            newStatus: pkg.status,
+            updatedById: req.user._id,
+            updatedByRole: req.user.role,
+        },
+    });
 
     return successResponse(res, "Assign package status updated successfully", pkg);
 });

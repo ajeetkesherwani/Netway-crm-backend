@@ -2,6 +2,7 @@ const Retailer = require("../../../models/retailer");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 const createResellerWalletHistory = require("../../../utils/createResellerWalletHistory");
 const { sendTemplateSMS } = require("../../../utils/smsService");
 
@@ -121,6 +122,24 @@ exports.createRetailer = catchAsync(async (req, res, next) => {
         closingBalance: balance || 0,
         remark: "Initial wallet balance for new retailer"
     });
+
+    if (Number(balance || 0) > 0) {
+        await logMonitoringActivity({
+            req,
+            action: "Reseller Initial Wallet Credited",
+            module: "wallet",
+            description: `Initial wallet balance of ${Number(balance)} added for reseller ${retailer.resellerName}`,
+            targetId: retailer._id,
+            targetName: retailer.resellerName,
+            targetType: "reseller",
+            details: {
+                amount: Number(balance),
+                openingBalance: 0,
+                closingBalance: retailer.walletBalance,
+                remark: "Initial wallet balance for new retailer",
+            },
+        });
+    }
 
     await sendTemplateSMS(
         mobileNo,

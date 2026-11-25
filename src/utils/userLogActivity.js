@@ -1,30 +1,52 @@
 const ActivityLog = require("../models/activityLog");
 const { recordMonitoringLog } = require("../services/monitoringLogService");
+const { getRequestContext } = require("../middleware/requestContext");
 
-exports.createLog = async ({ userId, type, description, details, addedBy, ip }) => {
+exports.createLog = async ({
+  userId,
+  type,
+  description,
+  details,
+  addedBy,
+  ip,
+  module = "business",
+  targetType = "user",
+  targetId = userId,
+  targetName,
+}) => {
   try {
+    const request = getRequestContext()?.req;
+    const requestUser = request?.user;
+    const logIp = ip || request?.ip || request?.headers?.["x-forwarded-for"];
+    const actor = addedBy
+      ? { ...addedBy, name: addedBy.name || requestUser?.name }
+      : undefined;
+
     await ActivityLog.create({
       userId,
       type,
       description,
       details,
-      ip,
-      addedBy
+      ip: logIp,
+      addedBy: actor
     });
     await recordMonitoringLog({
       type: "activity",
+      isBusinessActivity: true,
       action: type,
-      module: "business",
+      module,
       description,
-      actor: addedBy
+      actor: actor
         ? {
-            id: addedBy.id,
-            role: addedBy.role,
+            id: actor.id,
+            name: actor.name,
+            role: actor.role,
           }
         : undefined,
-      targetId: userId,
-      targetType: "user",
-      ip,
+      targetId,
+      targetName,
+      targetType,
+      ip: logIp,
       status: "SUCCESS",
       details,
     });

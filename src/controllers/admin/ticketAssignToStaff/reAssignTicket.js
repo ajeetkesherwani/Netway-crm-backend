@@ -3,6 +3,7 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.reAssignTicket = catchAsync(async (req, res, next) => {
     const { ticketId, assignToId } = req.body;
@@ -12,6 +13,8 @@ exports.reAssignTicket = catchAsync(async (req, res, next) => {
 
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return next(new AppError("Ticket not found", 404));
+    const previousAssignee = ticket.assignToId;
+    const previousStatus = ticket.status;
 
     // If already assigned, push to reassign history
     if (ticket.assignToId) {
@@ -31,6 +34,27 @@ exports.reAssignTicket = catchAsync(async (req, res, next) => {
         ticketId,
         activityType: 2, // Reassign
         performedBy: req.user._id,
+    });
+
+    await createLog({
+        userId: ticket.userId,
+        type: "Ticket Reassigned",
+        description: `Ticket ${ticket.ticketNumber} reassigned`,
+        details: {
+            ticketId: ticket._id,
+            ticketNumber: ticket.ticketNumber,
+            customerName: ticket.personName,
+            previousAssignee,
+            assignedToId,
+            previousStatus,
+            newStatus: ticket.status,
+        },
+        addedBy: { id: req.user._id, role: req.user.role || "Admin" },
+        ip: req.ip || req.headers["x-forwarded-for"],
+        module: "ticket",
+        targetType: "ticket",
+        targetId: ticket._id,
+        targetName: ticket.ticketNumber,
     });
 
     successResponse(res, "Ticket reassigned successfully", ticket);

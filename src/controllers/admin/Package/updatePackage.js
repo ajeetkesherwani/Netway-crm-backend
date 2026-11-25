@@ -213,6 +213,7 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
   if (!packageToUpdate) {
     return next(new AppError("Package not found", 404));
   }
+  const previousPackage = packageToUpdate.toObject();
 
   const {
     name,
@@ -407,6 +408,15 @@ exports.updatePackage = catchAsync(async (req, res, next) => {
     createdByRole: req.user.role,
     action: "Update Package successfully",
     description: `Updated package ${packageToUpdate.name}`,
+    module: "package",
+    targetId: packageToUpdate._id,
+    targetName: packageToUpdate.name,
+    targetType: "package",
+    details: {
+      before: previousPackage,
+      after: packageToUpdate.toObject(),
+    },
+    ip: req.ip || req.headers["x-forwarded-for"],
   });
 
   console.log("===== UPDATE PACKAGE SUCCESS =====");

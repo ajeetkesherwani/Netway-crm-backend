@@ -22,6 +22,14 @@ const StockCategorySchema = new mongoose.Schema(
       required: [true, "Quantity is required"],
       default: 0,
     },
+    availableQuantity: {
+      type: Number,
+      min: 0,
+    },
+    assignedQuantity: {
+      type: Number,
+      min: 0,
+    },
     stockAlertQuantity: {
       type: Number,
       default: 0,

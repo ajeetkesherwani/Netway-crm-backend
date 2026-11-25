@@ -23,6 +23,7 @@ exports.createStockCategory = catchAsync(async (req, res, next) => {
     serialNo,
     macAddress,
     quantity,
+    availableQuantity: quantity,
     stockAlertQuantity,
     description,
   });

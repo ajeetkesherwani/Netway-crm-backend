@@ -28,7 +28,12 @@ exports.bulkUploadStockCategory = catchAsync(async (req, res, next) => {
       }
     }
 
-    const result = await StockCategory.insertMany(stockCategories);
+    const result = await StockCategory.insertMany(
+      stockCategories.map((item) => ({
+        ...item,
+        availableQuantity: item.quantity,
+      }))
+    );
 
     // Optional: cleanup the uploaded file
     fs.unlinkSync(filePath);

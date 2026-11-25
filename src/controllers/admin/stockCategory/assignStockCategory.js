@@ -1,30 +1,61 @@
 const StockCategory = require("../../../models/stockCategory");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
+const normalizeStockQuantities = require("../../../utils/stockQuantity");
 
-exports.assignToEngineer = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const { staffId, comment } = req.body;
+const allocateStock = async (id, quantity, assignment) => {
+  const currentStock = await StockCategory.findById(id);
 
-  if (!staffId) {
-    return next(new AppError("Engineer/Staff ID is required for assignment", 400));
+  if (!currentStock) {
+    throw new AppError("No stock category found with that ID", 404);
   }
 
-  const stockCategory = await StockCategory.findByIdAndUpdate(
-    id,
+  if (normalizeStockQuantities(currentStock)) {
+    await currentStock.save();
+  }
+
+  const allocatedQuantity =
+    quantity === undefined ? currentStock.availableQuantity : quantity;
+
+  if (!Number.isInteger(allocatedQuantity) || allocatedQuantity <= 0) {
+    throw new AppError("Quantity must be a positive whole number", 400);
+  }
+
+  const stockCategory = await StockCategory.findOneAndUpdate(
+    { _id: id, availableQuantity: { $gte: allocatedQuantity } },
     {
-      assignedToEngineer: staffId,
-      assignedToUser: null, // Reset user assignment if it had one
-      assignComment: comment || "",
-      assignDate: new Date(),
-      status: "Assigned to Engineer",
+      $inc: { availableQuantity: -allocatedQuantity },
+      $set: { ...assignment, assignedQuantity: allocatedQuantity },
     },
     { new: true, runValidators: true }
   );
 
   if (!stockCategory) {
-    return next(new AppError("No stock category found with that ID", 404));
+    throw new AppError("Insufficient available stock quantity", 400);
   }
+
+  return stockCategory;
+};
+
+exports.assignToEngineer = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { staffId, comment, quantity } = req.body;
+
+  if (!staffId) {
+    return next(new AppError("Engineer/Staff ID is required for assignment", 400));
+  }
+
+  const stockCategory = await allocateStock(
+    id,
+    quantity,
+    {
+      assignedToEngineer: staffId,
+      assignedToUser: null,
+      assignComment: comment || "",
+      assignDate: new Date(),
+      status: "Assigned to Engineer",
+    }
+  );
 
   res.status(200).json({
     status: "success",
@@ -37,27 +68,23 @@ exports.assignToEngineer = catchAsync(async (req, res, next) => {
 
 exports.assignToUser = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const { userId, comment } = req.body;
+  const { userId, comment, quantity } = req.body;
 
   if (!userId) {
     return next(new AppError("User ID is required for assignment", 400));
   }
 
-  const stockCategory = await StockCategory.findByIdAndUpdate(
+  const stockCategory = await allocateStock(
     id,
+    quantity,
     {
       assignedToUser: userId,
-      assignedToEngineer: null, // Reset engineer assignment if it had one
+      assignedToEngineer: null,
       assignComment: comment || "",
       assignDate: new Date(),
       status: "Assigned to User",
-    },
-    { new: true, runValidators: true }
+    }
   );
-
-  if (!stockCategory) {
-    return next(new AppError("No stock category found with that ID", 404));
-  }
 
   res.status(200).json({
     status: "success",

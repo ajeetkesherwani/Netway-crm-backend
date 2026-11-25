@@ -11,7 +11,7 @@ const recordMonitoringLog = async (entry) => {
   const actorRole =
     entry.actorRole || actor.roleName || actor.role || actor.actorRole;
 
-  return MonitoringLog.create({
+  const log = await MonitoringLog.create({
     type: entry.type,
     action: entry.action,
     module: entry.module,
@@ -39,6 +39,12 @@ const recordMonitoringLog = async (entry) => {
       : undefined,
     details: sanitizeLogData(entry.details),
   });
+
+  if (entry.isBusinessActivity && req) {
+    req.hasBusinessActivityLog = true;
+  }
+
+  return log;
 };
 
 module.exports = { recordMonitoringLog };

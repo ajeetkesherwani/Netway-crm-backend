@@ -5,6 +5,7 @@ const { successResponse } = require("../../../utils/responseHandler");
 const Ticket = require("../../../models/ticket");
 const User = require("../../../models/user");
 const { sendTemplateSMS } = require("../../../utils/smsService");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.createTicketReply = catchAsync(async (req, res, next) => {
     const { ticket, user, description } = req.body;
@@ -28,6 +29,29 @@ exports.createTicketReply = catchAsync(async (req, res, next) => {
     });
 
     await tReply.save();
+
+    const ticketDataForLog = await Ticket.findById(ticket).select("userId ticketNumber personName");
+    if (ticketDataForLog) {
+        await createLog({
+            userId: ticketDataForLog.userId,
+            type: "Ticket Reply Added",
+            description: `Staff replied to ticket ${ticketDataForLog.ticketNumber}`,
+            details: {
+                ticketId: ticketDataForLog._id,
+                ticketNumber: ticketDataForLog.ticketNumber,
+                customerName: ticketDataForLog.personName,
+                replyId: tReply._id,
+                createdById,
+                createdByRole: createdBy,
+            },
+            addedBy: { id: createdById, role: createdBy },
+            ip: req.ip || req.headers["x-forwarded-for"],
+            module: "ticket",
+            targetType: "ticket",
+            targetId: ticketDataForLog._id,
+            targetName: ticketDataForLog.ticketNumber,
+        });
+    }
 
     
     // ---------------- SEND SMS ---------------- //

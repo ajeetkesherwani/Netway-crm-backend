@@ -4,6 +4,7 @@ const LcoWalletHistory = require("../../../models/lcoWalletHistory");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.reverseLcoWalletTransfer = catchAsync(async (req, res, next) => {
   const { lcoId, amount, transferDate, remark } = req.body;
@@ -59,6 +60,29 @@ exports.reverseLcoWalletTransfer = catchAsync(async (req, res, next) => {
     createdById: req.user._id,
     openingBalance: lcoOpening,
     closingBalance: lco.walletBalance
+  });
+
+  await logMonitoringActivity({
+    req,
+    action: "LCO Wallet Transfer Reversed",
+    module: "wallet",
+    description: `${amount} reversed from LCO ${lco.lcoName} to reseller ${reseller.resellerName}`,
+    targetId: lco._id,
+    targetName: lco.lcoName,
+    targetType: "lco",
+    details: {
+      walletHistoryId: walletHistory._id,
+      amount: Number(amount),
+      lcoId: lco._id,
+      lcoName: lco.lcoName,
+      lcoOpeningBalance: lcoOpening,
+      lcoClosingBalance: lco.walletBalance,
+      resellerId: reseller._id,
+      resellerName: reseller.resellerName,
+      resellerOpeningBalance: resellerOpening,
+      resellerClosingBalance: reseller.walletBalance,
+      remark: remark || "Wallet reversal",
+    },
   });
 
   successResponse(res, "Wallet reversal successful", {

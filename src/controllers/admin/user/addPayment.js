@@ -3,6 +3,7 @@ const AddUserWallet = require("../../../models/AddUserWallet");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { sendWhatsappNotification } = require("../../../services/whatsappService");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
@@ -25,6 +26,7 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
   }
 
   const currentBalance = Number(user.walletBalance || 0);
+  const currentCreditBalance = Number(user.creditBalance || 0);
 
   let paidAmount = 0; 
 
@@ -45,6 +47,19 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
 
   //   LOGIC 
   const newWalletBalance = currentBalance + paidAmount;
+  const customerDisplayName = user.generalInformation?.name || userId;
+  const customerEmail = user.generalInformation?.email || "Not provided";
+  const customerPhone = user.generalInformation?.phone || "Not provided";
+  const billingAddress = user.addressDetails?.billingAddress || {};
+  const billingAddressText = [
+    billingAddress.addressine1,
+    billingAddress.addressine2,
+    billingAddress.city,
+    billingAddress.state,
+    billingAddress.pincode,
+  ].filter(Boolean).join(", ");
+  const recordedByName =
+    req.user?.name || req.user?.adminName || req.user?.role || "Unknown";
 
   // CREDIT BALANCE RULE
   const creditBalance = newWalletBalance > 0 ? newWalletBalance : 0;
@@ -73,6 +88,54 @@ exports.addUserWalletPayment = catchAsync(async (req, res, next) => {
     comments,
     imageProof,
     sms: sms === true || sms === "true",
+  });
+
+  await createLog({
+    userId: user._id,
+    type: "Wallet Payment Added",
+    description: [
+      `Wallet payment credited successfully for ${customerDisplayName}`,
+      `Email: ${customerEmail}`,
+      `Phone: ${customerPhone}`,
+      `Billing address: ${billingAddressText || "Not provided"}`,
+      `Amount: ${paidAmount}`,
+      `Previous balance: ${currentBalance}`,
+      `New balance: ${newWalletBalance}`,
+      `Payment mode: ${paymentMode}`,
+      `Recorded by: ${recordedByName}`,
+    ].join(". "),
+    details: {
+      paymentId: payment._id,
+      customerId: user._id,
+      customerName: customerDisplayName,
+      customerEmail,
+      customerPhone,
+      billingAddress,
+      amountPaid: paidAmount,
+      direction: "credit",
+      balanceChange: newWalletBalance - currentBalance,
+      paymentMode,
+      transactionNo,
+      previousWalletBalance: currentBalance,
+      newWalletBalance,
+      previousCreditBalance: currentCreditBalance,
+      creditBalance,
+      newCreditBalance: creditBalance,
+      fullyPaid: fullPaid === true || fullPaid === "true",
+      recordedById: req.user._id,
+      recordedByRole: req.user.role,
+      recordedByName,
+    },
+    addedBy: {
+      id: req.user._id,
+      role: req.user.role || "Admin",
+      name: recordedByName,
+    },
+    ip: req.ip || req.headers["x-forwarded-for"],
+    module: "wallet",
+    targetType: "walletPayment",
+    targetId: payment._id,
+    targetName: user.generalInformation?.name,
   });
 
   // --- Send WhatsApp Notification ---

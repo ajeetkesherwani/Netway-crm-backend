@@ -2,6 +2,7 @@ const AssignPackage = require("../../../models/assignPackage");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.assignPackageToReseller = catchAsync(async (req, res, next) => {
     const { assignTo, assignToId, package: packageArray } = req.body;
@@ -28,6 +29,13 @@ exports.assignPackageToReseller = catchAsync(async (req, res, next) => {
     let assignment = await AssignPackage.findOne({ assignTo, assignToId });
 
     if (assignment) {
+        const previousPackages = assignment.packages.map((pkg) => ({
+            packageId: pkg.packageId,
+            name: pkg.name,
+            price: pkg.price,
+            status: pkg.status,
+        }));
+
         // Merge or update packages
         packageArray.forEach(newPkg => {
             const existingPkgIndex = assignment.packages.findIndex(
@@ -51,6 +59,28 @@ exports.assignPackageToReseller = catchAsync(async (req, res, next) => {
        
         await assignment.save();
 
+        await logMonitoringActivity({
+            req,
+            action: "Package Assignment Updated",
+            module: "package-assignment",
+            description: `Assigned packages updated for ${assignTo} ${assignToId}`,
+            targetId: assignToId,
+            targetName: `${assignTo} ${assignToId}`,
+            targetType: assignTo,
+            details: {
+                assignmentId: assignment._id,
+                packagesBefore: previousPackages,
+                packagesAfter: assignment.packages.map((pkg) => ({
+                    packageId: pkg.packageId,
+                    name: pkg.name,
+                    price: pkg.price,
+                    status: pkg.status,
+                })),
+                updatedById: createdById,
+                updatedByRole: createdBy,
+            },
+        });
+
         return successResponse(res, "Package assignment updated successfully", assignment);
     }
 
@@ -64,6 +94,27 @@ exports.assignPackageToReseller = catchAsync(async (req, res, next) => {
     });
 
     await newAssignment.save();
+
+    await logMonitoringActivity({
+        req,
+        action: "Package Assigned",
+        module: "package-assignment",
+        description: `Packages assigned to ${assignTo} ${assignToId}`,
+        targetId: assignToId,
+        targetName: `${assignTo} ${assignToId}`,
+        targetType: assignTo,
+        details: {
+            assignmentId: newAssignment._id,
+            packages: newAssignment.packages.map((pkg) => ({
+                packageId: pkg.packageId,
+                name: pkg.name,
+                price: pkg.price,
+                status: pkg.status,
+            })),
+            assignedById: createdById,
+            assignedByRole: createdBy,
+        },
+    });
 
     return successResponse(res, "Package assigned successfully", newAssignment);
 });

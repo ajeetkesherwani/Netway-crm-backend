@@ -11,6 +11,7 @@ const {
   getPlanPrice,
   activatePaidPlan,
 } = require("../../../services/planPurchase");
+const { createLog: createUserActivityLog } = require("../../../utils/userLogActivity");
 
 const WebhookLog = require("../../../models/webhookLog");
 
@@ -204,6 +205,29 @@ const reconcilePaymentWithCCAvenue = async (payment, config, callbackTrackingId)
         ...(isFinalFailure ? {} : { $unset: { processedAt: "" } }),
       }
     );
+    if (isFinalFailure && payment.status !== "Failed") {
+      await createUserActivityLog({
+        userId: payment.userId,
+        type: "Plan Payment Failed",
+        description: `Plan payment ${payment.orderId} failed`,
+        details: {
+          paymentId: payment._id,
+          customerId: payment.userId,
+          packageId: payment.packageId,
+          amount: payment.amount,
+          orderId: payment.orderId,
+          gatewayOrderStatus: gatewayStatus,
+          paymentStatus: "Failed",
+          performedById: payment.userId,
+          performedByRole: "User",
+        },
+        addedBy: { id: payment.userId, role: "User" },
+        module: "purchased-plan",
+        targetType: "planPayment",
+        targetId: payment._id,
+        targetName: payment.orderId,
+      });
+    }
     const latestPayment = await PlanPayment.findById(payment._id).lean();
     return {
       orderId: payment.orderId,
@@ -259,6 +283,35 @@ const reconcilePaymentWithCCAvenue = async (payment, config, callbackTrackingId)
     claimedPayment.purchasedPlanId = purchasedPlan._id;
     claimedPayment.processedAt = new Date();
     await claimedPayment.save();
+
+    const isRenewal = purchasedPlan.renewals.some(
+      (renewal) => renewal.transactionId === payment.orderId
+    );
+    const activityType = isRenewal ? "Plan Renewed" : "Plan Purchased";
+    await createUserActivityLog({
+      userId: payment.userId,
+      type: activityType,
+      description: `${activityType}: ${plan.name}`,
+      details: {
+        planId: purchasedPlan._id,
+        customerId: payment.userId,
+        packageId: payment.packageId,
+        packageName: plan.name,
+        amountPaid: payment.amount,
+        paymentMethod: "Online",
+        transactionId: payment.orderId,
+        gatewayTrackingId: claimedPayment.gatewayTrackingId,
+        planStatus: purchasedPlan.status,
+        expiryDate: purchasedPlan.expiryDate,
+        performedById: payment.userId,
+        performedByRole: "User",
+      },
+      addedBy: { id: payment.userId, role: "User" },
+      module: "purchased-plan",
+      targetType: "purchasedPlan",
+      targetId: purchasedPlan._id,
+      targetName: plan.name,
+    });
 
     return {
       orderId: payment.orderId,
@@ -351,6 +404,31 @@ exports.createPlanPayment = catchAsync(async (req, res, next) => {
     },
     error: null,
     ip: clientIp,
+  });
+
+  await createUserActivityLog({
+    userId: user._id,
+    type: "Plan Payment Initiated",
+    description: `Plan payment initiated for ${matchedPackage.name}`,
+    details: {
+      paymentId: payment._id,
+      customerId: user._id,
+      customerName: general.name,
+      packageId,
+      packageName: matchedPackage.name,
+      amount,
+      currency: "INR",
+      orderId,
+      paymentStatus: payment.status,
+      performedById: user._id,
+      performedByRole: "User",
+    },
+    addedBy: { id: user._id, role: "User", name: general.name },
+    ip: clientIp,
+    module: "purchased-plan",
+    targetType: "planPayment",
+    targetId: payment._id,
+    targetName: matchedPackage.name,
   });
 
   const gatewayRequest = new URLSearchParams({

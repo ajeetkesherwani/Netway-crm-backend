@@ -2,6 +2,7 @@ const Hardware = require("../../../models/hardware");
 const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const { successResponse } = require("../../../utils/responseHandler");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.assignHardwareToUser = (async (req, res, next) => {
 
@@ -25,6 +26,30 @@ exports.assignHardwareToUser = (async (req, res, next) => {
         user.assignedHardware.push(hardware._id);
         await user.save();
     }
+
+    await createLog({
+        userId: user._id,
+        type: "Hardware Assigned",
+        description: `Hardware ${hardware.hardwareName} assigned to ${user.generalInformation?.name || userId}`,
+        details: {
+            customerId: user._id,
+            customerName: user.generalInformation?.name,
+            hardwareId: hardware._id,
+            hardwareName: hardware.hardwareName,
+            hardwareType: hardware.hardwareType,
+            brand: hardware.brand,
+            model: hardware.model,
+            serialNumber: hardware.serialNumber,
+            assignedById: req.user._id,
+            assignedByRole: req.user.role,
+        },
+        addedBy: { id: req.user._id, role: req.user.role || "Admin" },
+        ip: req.ip || req.headers["x-forwarded-for"],
+        module: "hardware",
+        targetType: "hardware",
+        targetId: hardware._id,
+        targetName: hardware.hardwareName,
+    });
 
     successResponse(res, "Hardware assigned successfully", {
         user: {

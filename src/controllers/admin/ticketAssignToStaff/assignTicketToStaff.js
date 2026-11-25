@@ -4,6 +4,7 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const logTicketActivity = require("../../../utils/logTicketActivity");
+const { createLog } = require("../../../utils/userLogActivity");
 
 // Assign ticket
 exports.assignTicket = catchAsync(async (req, res, next) => {
@@ -33,6 +34,26 @@ exports.assignTicket = catchAsync(async (req, res, next) => {
         ticketId,
         activityType: 0, // Reassign
         performedBy: req.user._id
+    });
+
+    await createLog({
+        userId: ticket.userId,
+        type: "Ticket Assigned",
+        description: `Ticket ${ticket.ticketNumber} assigned to staff`,
+        details: {
+            ticketId: ticket._id,
+            ticketNumber: ticket.ticketNumber,
+            customerName: ticket.personName,
+            assignedToId,
+            previousStatus: "Open",
+            newStatus: ticket.status,
+        },
+        addedBy: { id: req.user._id, role: req.user.role || "Admin" },
+        ip: req.ip || req.headers["x-forwarded-for"],
+        module: "ticket",
+        targetType: "ticket",
+        targetId: ticket._id,
+        targetName: ticket.ticketNumber,
     });
 
     // Populate staff 

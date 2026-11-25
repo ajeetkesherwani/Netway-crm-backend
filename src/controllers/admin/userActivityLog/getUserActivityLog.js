@@ -1,7 +1,7 @@
 const ActivityLog = require("../../../models/activityLog");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
-const { successResponse } = require("../../../utils/successResponse");
+const { successResponse } = require("../../../utils/responseHandler");
 
 exports.getUserActivityLog = catchAsync(async (req, res, next) => {
     const { userId } = req.params;      

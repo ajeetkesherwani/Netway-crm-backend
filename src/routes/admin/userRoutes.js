@@ -16,6 +16,7 @@ const {
 const { updateUser } = require("../../controllers/admin/user/updateUser");
 
 const { deleteUser } = require("../../controllers/admin/user/deleteUser");
+const { getUserActivityLog } = require("../../controllers/admin/userActivityLog/getUserActivityLog");
 
 const {
   getZiggtvDetails,
@@ -63,6 +64,7 @@ router.post(
 );
 
 router.get("/list", adminAuthenticate, getUserList);
+router.get("/activity/:userId", adminAuthenticate, getUserActivityLog);
 router.get("/:id", adminAuthenticate, getUserDetails);
 router.get("/fullDetails/:userId", adminAuthenticate, getUserFullDetails);
 router.patch(

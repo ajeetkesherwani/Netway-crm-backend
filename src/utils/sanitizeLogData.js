@@ -1,5 +1,5 @@
 const sensitiveKeyPattern =
-  /password|passwd|otp|token|secret|authorization|api.?key|access.?code|working.?key/i;
+  /password|passwd|pwd|otp|token|secret|authorization|api.?key|access.?code|working.?key|enc.?resp|enc.?request|signature|card.?number|cvv|cvc/i;
 
 const sanitizeMessage = (message, isAuthentication = false) => {
   if (!message) return "";
@@ -36,6 +36,9 @@ const sanitizeLogData = (value, depth = 0) => {
   if (typeof value === "string") return sanitizeMessage(value).slice(0, 2000);
   if (typeof value !== "object") return value;
   if (value instanceof Date) return value;
+  if (value._bsontype === "ObjectId" && typeof value.toHexString === "function") {
+    return value.toHexString();
+  }
   if (Array.isArray(value)) {
     return value.slice(0, 100).map((item) => sanitizeLogData(item, depth + 1));
   }

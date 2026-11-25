@@ -3,6 +3,7 @@ const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const bcrypt = require("bcrypt");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 function generateShopId(shopName) {
   const shopPrefix = shopName.slice(0, 5).toUpperCase().padEnd(5, "A");
@@ -121,6 +122,24 @@ exports.signUp = catchAsync(async (req, res, next) => {
     vendor.digitalSignature = digitalSignature;
     vendor.agreementAccepted = true;
     await vendor.save();
+
+    if (Number(wallet_balance || 0) > 0) {
+      await logMonitoringActivity({
+        req,
+        actor: { _id: vendor._id, name: vendor.shopName, role: "Vendor" },
+        action: "Vendor Initial Wallet Credited",
+        module: "wallet",
+        description: `Initial wallet balance of ${Number(wallet_balance)} added for vendor ${vendor.shopName}`,
+        targetId: vendor._id,
+        targetName: vendor.shopName,
+        targetType: "vendor",
+        details: {
+          amount: Number(wallet_balance),
+          openingBalance: 0,
+          closingBalance: vendor.wallet_balance,
+        },
+      });
+    }
 
     return successResponse(res, "Vendor registered successfully.", vendor, 201);
   } catch (err) {

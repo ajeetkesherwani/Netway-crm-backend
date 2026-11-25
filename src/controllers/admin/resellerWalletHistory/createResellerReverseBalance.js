@@ -3,6 +3,7 @@ const Reseller = require("../../../models/retailer");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
 
@@ -55,6 +56,24 @@ exports.createResellerReverseBalance = catchAsync(async (req, res, next) => {
 
 
     await reseller.save();
+
+    await logMonitoringActivity({
+        req,
+        action: "Reseller Wallet Debited",
+        module: "wallet",
+        description: `Wallet debited by ${amount} for reseller ${reseller.resellerName || resellerId}`,
+        targetId: reseller._id,
+        targetName: reseller.resellerName,
+        targetType: "reseller",
+        details: {
+            walletHistoryId: walletHistory._id,
+            amount: Number(amount),
+            mode,
+            openingBalance,
+            closingBalance,
+            remark,
+        },
+    });
 
     successResponse(res, "Wallet updated successfully", {
         walletHistory,

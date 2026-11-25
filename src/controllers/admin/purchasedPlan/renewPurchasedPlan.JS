@@ -297,13 +297,29 @@ await UserWalletHistory.create({
     description: `Plan renewed: ${selectedPackage.name}`,
     details: {
       planId: plan._id,
-      amountPaid
+      customerId: plan.userId,
+      customerName: user.generalInformation?.name,
+      packageId: selectedPackage._id,
+      packageName: selectedPackage.name,
+      amountPaid,
+      paymentMethod,
+      walletOpeningBalance: openingBalance,
+      walletClosingBalance: closingBalance,
+      walletChange: closingBalance - openingBalance,
+      previousExpiryDate: previousExpiry,
+      newExpiryDate: newExpiry,
+      renewedById: purchaser._id,
+      renewedByRole: purchaser.role,
     },
-    ip: req.ip || "0.0.0.0",
+    ip: req.ip || req.headers["x-forwarded-for"],
     addedBy: {
       id: purchaser._id,
       role: purchaser.role
-    }
+    },
+    module: "purchased-plan",
+    targetId: plan._id,
+    targetName: selectedPackage.name,
+    targetType: "purchasedPlan",
   });
 
   try {

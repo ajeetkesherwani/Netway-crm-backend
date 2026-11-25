@@ -4,6 +4,7 @@ const LcoWalletHistory = require("../../../models/lcoWalletHistory");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.transferToLco = catchAsync(async (req, res, next) => {
     const { lcoId, amount, transferDate, remark } = req.body;
@@ -31,6 +32,7 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
 
     // Capture LCO opening balance before transfer
     const openingBalance = lco.walletBalance || 0;
+    const resellerOpeningBalance = reseller.walletBalance || 0;
 
     // Check reseller wallet balance (unless admin)
     if (reseller.walletBalance < amount) {
@@ -59,6 +61,30 @@ exports.transferToLco = catchAsync(async (req, res, next) => {
         createdById: req.user._id,
         openingBalance,
         closingBalance
+    });
+
+    await logMonitoringActivity({
+        req,
+        action: "Balance Transferred To LCO",
+        module: "wallet",
+        description: `${amount} transferred from reseller ${reseller.resellerName} to LCO ${lco.lcoName}`,
+        targetId: lco._id,
+        targetName: lco.lcoName,
+        targetType: "lco",
+        details: {
+            walletHistoryId: walletHistory._id,
+            amount: Number(amount),
+            mode: "Cash",
+            resellerId: reseller._id,
+            resellerName: reseller.resellerName,
+            resellerOpeningBalance,
+            resellerClosingBalance: reseller.walletBalance,
+            lcoId: lco._id,
+            lcoName: lco.lcoName,
+            lcoOpeningBalance: openingBalance,
+            lcoClosingBalance: closingBalance,
+            remark: remark || "",
+        },
     });
 
     successResponse(res, "Wallet created successfully", {

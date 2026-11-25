@@ -3,6 +3,7 @@ const User = require("../../../models/user");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.createUserTicket = catchAsync(async (req, res, next) => {
   
@@ -31,6 +32,28 @@ exports.createUserTicket = catchAsync(async (req, res, next) => {
     callDescription,
     createdById: userId,
     createdByType: "User",
+  });
+
+  await createLog({
+    userId,
+    type: "Ticket Created",
+    description: `Ticket ${ticketNumber} created by customer ${user.generalInformation?.name || userId}`,
+    details: {
+      ticketId: ticket._id,
+      ticketNumber,
+      customerName: user.generalInformation?.name,
+      createdById: userId,
+      createdByRole: "User",
+      status: ticket.status,
+      category,
+      callDescription,
+    },
+    addedBy: { id: userId, role: "User" },
+    ip: req.ip || req.headers["x-forwarded-for"],
+    module: "ticket",
+    targetType: "ticket",
+    targetId: ticket._id,
+    targetName: ticketNumber,
   });
 
   return successResponse(res, "Ticket created successfully", ticket);

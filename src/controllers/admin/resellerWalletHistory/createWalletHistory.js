@@ -68,6 +68,7 @@ const Reseller = require("../../../models/retailer");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
 exports.createResellerWallet = catchAsync(async (req, res, next) => {
 
@@ -86,13 +87,14 @@ exports.createResellerWallet = catchAsync(async (req, res, next) => {
     if (!mode) return next(new AppError("mode is required", 400));
 
     // Fetch reseller (ONLY to read balances)
-    const reseller = await Reseller.findById(resellerId).select("walletBalance creditBalance");
+    const reseller = await Reseller.findById(resellerId).select("resellerName walletBalance creditBalance");
     if (!reseller) {
         return next(new AppError("Reseller not found", 404));
     }
 
     // Capture opening balance
     const openingBalance = reseller.walletBalance || 0;
+    const openingCreditBalance = reseller.creditBalance || 0;
 
     // Prepare wallet update
     const updateQuery = {
@@ -126,6 +128,26 @@ exports.createResellerWallet = catchAsync(async (req, res, next) => {
         createdById: req.user._id,
         openingBalance,
         closingBalance
+    });
+
+    await logMonitoringActivity({
+        req,
+        action: "Reseller Wallet Credited",
+        module: "wallet",
+        description: `Wallet credited by ${amount} for reseller ${updatedReseller.resellerName || resellerId}`,
+        targetId: resellerId,
+        targetName: updatedReseller.resellerName,
+        targetType: "reseller",
+        details: {
+            walletHistoryId: walletHistory._id,
+            amount: Number(amount),
+            mode,
+            openingBalance,
+            closingBalance,
+            openingCreditBalance,
+            closingCreditBalance: updatedReseller.creditBalance || 0,
+            remark,
+        },
     });
 
     successResponse(res, "Wallet created successfully", {

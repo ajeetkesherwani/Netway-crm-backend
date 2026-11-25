@@ -31,6 +31,15 @@ const getMonitoringLogs = catchAsync(async (req, res, next) => {
   }
 
   const query = filter === "audit" ? { action: "LOGIN" } : { type: filter };
+  if (filter === "activity") {
+    query.$and = [
+      {
+        path: {
+          $not: /\/api\/admin\/auth\/(?:login|verify-otp)(?:\/|$)/i,
+        },
+      },
+    ];
+  }
   const from = req.query.from ? new Date(req.query.from) : null;
   const to = req.query.to ? new Date(req.query.to) : null;
   if (
@@ -93,22 +102,74 @@ const getMonitoringLogs = catchAsync(async (req, res, next) => {
     }
   }
 
-  const LogModel = filter === "audit" ? Logs : MonitoringLog;
-  const recordsQuery = LogModel.find(query)
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit);
-  if (filter === "audit") {
-    recordsQuery.populate({
-      path: "createdById",
-      select: "name title staffName resellerName lcoName adminName email",
-    });
-  }
+  let total;
+  let records;
+  if (filter === "activity") {
+    const [result] = await MonitoringLog.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: MonitoringLog.collection.name,
+          let: { requestId: "$requestId" },
+          pipeline: [
+            {
+              $match: {
+                type: "activity",
+                action: { $not: /^(POST|PUT|PATCH|DELETE) / },
+                $expr: {
+                  $and: [
+                    { $ne: ["$$requestId", null] },
+                    { $eq: ["$requestId", "$$requestId"] },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+            { $project: { _id: 1 } },
+          ],
+          as: "businessActivity",
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { action: { $not: /^(POST|PUT|PATCH|DELETE) / } },
+            { businessActivity: { $size: 0 } },
+          ],
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: (page - 1) * limit },
+            { $limit: limit },
+            { $project: { businessActivity: 0 } },
+          ],
+          total: [{ $count: "count" }],
+        },
+      },
+    ]);
+    records = result?.data || [];
+    total = result?.total?.[0]?.count || 0;
+  } else {
+    const LogModel = filter === "audit" ? Logs : MonitoringLog;
+    const recordsQuery = LogModel.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    if (filter === "audit") {
+      recordsQuery.populate({
+        path: "createdById",
+        select: "name title staffName resellerName lcoName adminName email",
+      });
+    }
 
-  const [total, records] = await Promise.all([
-    LogModel.countDocuments(query),
-    recordsQuery.lean(),
-  ]);
+    [total, records] = await Promise.all([
+      LogModel.countDocuments(query),
+      recordsQuery.lean(),
+    ]);
+  }
 
   const data = records.map((record) => {
     const safeRecord = { ...record };

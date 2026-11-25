@@ -282,15 +282,33 @@ try {
     type: "Plan Purchased",
     description: `Plan purchased: ${selectedPackage.name}`,
     details: {
+      purchaseId: newPurchase._id,
+      userId,
+      customerName: targetUser.generalInformation?.name,
       packageId: selectedPackage._id,
       packageName: selectedPackage.name,
-      amountPaid: amountPaid
+      amountPaid: amountPaid,
+      planAmount: packagePrice,
+      recordedPaymentAmount: newPurchase.paymentDetails?.amount || 0,
+      paymentMethod,
+      paymentReceived: Boolean(isPaymentReceived),
+      startDate: start,
+      expiryDate: expiry,
+      walletOpeningBalance: walletBeforePayment,
+      walletClosingBalance: walletAfterPayment,
+      walletChange: walletAfterPayment - walletBeforePayment,
+      purchasedById: purchaser._id,
+      purchasedByRole: purchaser.role,
     },
-    ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
+    ip: req.ip || req.headers["x-forwarded-for"],
     addedBy: {
       id: purchaser._id,
       role: purchaser.role || "Admin",
-    }
+    },
+    module: "purchased-plan",
+    targetType: "purchasedPlan",
+    targetId: newPurchase._id,
+    targetName: selectedPackage.name,
   });
 
   // ---------------- Manage User Wallet (FINAL & CORRECT) ---------------- //

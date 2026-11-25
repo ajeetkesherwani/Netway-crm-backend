@@ -46,19 +46,48 @@ exports.updateUserStatus = catchAsync(async (req, res, next) => {
 
 
     //--- Log Activity ---
+    const customerName = user.generalInformation?.name || user._id.toString();
+    const customerEmail = user.generalInformation?.email || "Not provided";
+    const customerPhone = user.generalInformation?.phone || "Not provided";
+    const billingAddress = user.addressDetails?.billingAddress || {};
+    const billingAddressText = [
+        billingAddress.addressine1,
+        billingAddress.addressine2,
+        billingAddress.city,
+        billingAddress.state,
+        billingAddress.pincode,
+    ].filter(Boolean).join(", ");
+    const updatedByName =
+        req.user?.name || req.user?.adminName || req.user?.role || "Unknown";
+
     await createLog({
         userId: user._id,
         type: "User Status Updated",
-        description: `User status changed from ${oldStatus} to ${user.status}`,
+        description: [
+            `User status updated successfully for ${customerName}`,
+            `Email: ${customerEmail}`,
+            `Phone: ${customerPhone}`,
+            `Billing address: ${billingAddressText || "Not provided"}`,
+            `Status changed from ${oldStatus} to ${user.status}`,
+            `Updated by: ${updatedByName}`,
+        ].join(". "),
         details: {
+            customerName,
+            customerEmail,
+            customerPhone,
+            billingAddress,
             oldStatus,
-            newStatus: user.status
+            newStatus: user.status,
+            updatedByName,
+            updatedByRole: req.user?.role || "Admin",
         },
         ip: req.ip || req.headers["x-forwarded-for"] || "0.0.0.0",
         addedBy: {
             id: req.user._id,
-            role: req.user.role || "Admin"
-        }
+            role: req.user.role || "Admin",
+            name: updatedByName,
+        },
+        targetName: user.generalInformation?.name,
     });
 
 

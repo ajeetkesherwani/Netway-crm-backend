@@ -327,6 +327,7 @@ const UserPackage = require("../../../models/userPackage");
 const Package = require("../../../models/package");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
+const { createLog } = require("../../../utils/userLogActivity");
 
 exports.updateUser = catchAsync(async (req, res, next) => {
 
@@ -340,6 +341,14 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   if (!user)
     return next(new AppError("User not found", 404));
 
+  const previousDetails = {
+    name: user.generalInformation?.name,
+    username: user.generalInformation?.username,
+    email: user.generalInformation?.email,
+    phone: user.generalInformation?.phone,
+    status: user.status,
+    packages: (Array.isArray(user.packageInfomation) ? user.packageInfomation : []).map((pkg) => pkg.packageName),
+  };
 
   /* =========================================================
      PARSE REQUEST BODY
@@ -882,6 +891,45 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
   await user.save({ validateModifiedOnly: true });
 
+  const updatedFields = [
+    ...Object.keys(parsedCustomer)
+      .filter((key) => !/password|token|secret|aadhar|adhar|pan/i.test(key))
+      .map((key) => `customer.${key}`),
+    ...Object.entries(parsedAddresses).flatMap(([section, values]) =>
+      Object.keys(values || {}).map((key) => `addresses.${section}.${key}`)
+    ),
+    ...Object.keys(parsedAdditional)
+      .filter((key) => !/password|token|secret|aadhar|adhar|pan/i.test(key))
+      .map((key) => `additional.${key}`),
+    ...(area !== undefined ? ["area"] : []),
+    ...(subZone !== undefined ? ["subZone"] : []),
+    ...(shouldUpdateDocuments ? ["documents"] : []),
+  ];
+
+  await createLog({
+    userId: user._id,
+    type: "User Updated",
+    description: `User ${user.generalInformation?.name || user.generalInformation?.username || userId} updated successfully`,
+    details: {
+      customerName: user.generalInformation?.name,
+      updatedFields,
+      before: previousDetails,
+      after: {
+        name: user.generalInformation?.name,
+        username: user.generalInformation?.username,
+        email: user.generalInformation?.email,
+        phone: user.generalInformation?.phone,
+        status: user.status,
+        packages: (Array.isArray(user.packageInfomation) ? user.packageInfomation : []).map((pkg) => pkg.packageName),
+      },
+    },
+    addedBy: {
+      id: req.user._id,
+      role: req.user.role || "Admin",
+    },
+    ip: req.ip || req.headers["x-forwarded-for"],
+    targetName: user.generalInformation?.name,
+  });
 
   return res.status(200).json({
 

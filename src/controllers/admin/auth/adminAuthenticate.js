@@ -125,7 +125,7 @@ exports.adminAuthenticate = catchAsync(async (req, res, next) => {
     user = await Lco.findById(userId);
     role = "Lco";
   } else if (accountType === "staff" || !accountType) {
-    user = await Staff.findById(userId);
+    user = await Staff.findById(userId).populate("role");
     role = "Staff";
   }
 

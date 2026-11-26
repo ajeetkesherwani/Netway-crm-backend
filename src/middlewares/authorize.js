@@ -87,7 +87,9 @@ exports.authorize = (moduleName, action) => {
       // ========================================
       // ✅ 3. Admin / Other Role (Role Schema)
       // ========================================
-      const roleDoc = await Role.findOne({ roleName: user.role });
+      const roleDoc = await Role.findOne({
+        roleName: user.roleName || user.role,
+      });
       if (!roleDoc) {
         return next(new AppError("Role not found", 403));
       }

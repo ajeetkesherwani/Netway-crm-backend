@@ -144,6 +144,7 @@ const catchAsync = require("../../../utils/catchAsync");
 const createToken = require("../../../utils/createToken");
 const ResellerConfig = require("../../../models/resellerConfig");
 const createLoginAuditLog = require("../../../utils/loginAuditLog");
+const { sendTemplateSMS } = require("../../../utils/smsService");
 
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password, employeeUserName, userName, logId } = req.body;
@@ -490,6 +491,13 @@ exports.login = catchAsync(async (req, res, next) => {
       console.log(`[Login] OTP sent to ${mobile}`);
     } catch (error) {
       console.error("[Login] Failed to send OTP to WhatsApp:", error.message);
+    }
+
+    const smsResponse = await sendTemplateSMS(String(mobile), "ERP login OTP", {
+      otp: otpCode,
+    });
+    if (smsResponse !== undefined && smsResponse !== null) {
+      otpSent = true;
     }
   }
 

@@ -247,7 +247,16 @@ exports.getOttPackageList = catchAsync(async (req, res, next) => {
 
   if (!setting || !setting.playBoxToken || isTokenExpired(setting.playBoxToken)) {
     console.log("[PACKS] Token missing/expired → generating new");
-    token = await generatePlayboxToken();
+    try {
+      token = await generatePlayboxToken();
+    } catch (error) {
+      const statusCode = error?.response?.status || 502;
+      const message =
+        statusCode === 403
+          ? "PlayBox denied token generation. Check the API credentials and partner access."
+          : "Could not generate a PlayBox access token.";
+      return next(new AppError(message, statusCode));
+    }
   } else {
     console.log("[PACKS] Using token from DB");
     token = setting.playBoxToken;
@@ -272,20 +281,41 @@ exports.getOttPackageList = catchAsync(async (req, res, next) => {
     console.error("Status:", err?.response?.status);
     console.error("Response:", err?.response?.data);
 
-    // 🔥 FIX: PlayBox sends 400 for invalid token
-    if ([400, 401].includes(err?.response?.status)) {
+    if ([400, 401, 403].includes(err?.response?.status)) {
       console.log("[PACKS] Token invalid → regenerating");
 
-      token = await generatePlayboxToken();
+      try {
+        token = await generatePlayboxToken();
+      } catch (tokenError) {
+        const statusCode = tokenError?.response?.status || 502;
+        const message =
+          statusCode === 403
+            ? "PlayBox denied token generation. Check the API credentials and partner access."
+            : "Could not generate a PlayBox access token.";
+        return next(new AppError(message, statusCode));
+      }
 
-      response = await axios.get(url, {
-        headers: {
-          "x-api-key": PLAYBOX_API_KEY,
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 10000,
-      });
+      try {
+        response = await axios.get(url, {
+          headers: {
+            "x-api-key": PLAYBOX_API_KEY,
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 10000,
+        });
+      } catch (retryError) {
+        console.error("[PACKS] Request failed after token refresh");
+        console.error("Status:", retryError?.response?.status);
+        console.error("Response:", retryError?.response?.data);
+
+        const statusCode = retryError?.response?.status || 502;
+        const message =
+          statusCode === 403
+            ? "PlayBox still denies access after refreshing the token. Check API credentials, partner access, and package permissions."
+            : "Could not fetch OTT packages from PlayBox after refreshing the token.";
+        return next(new AppError(message, statusCode));
+      }
     } else {
       throw err;
     }

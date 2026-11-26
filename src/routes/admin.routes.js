@@ -56,6 +56,8 @@ router.use("/attendance", require("./admin/attendanceRoutes"));
 router.use("/expensesCategory", require("./admin/expensesCategoryRoutes"));
 router.use("/expense", require("./admin/expenseRoutes"));
 router.use("/lead", require("./admin/leadRoutes"));
+router.use("/leadStage", require("./admin/leadStageRoutes"));
 router.use("/stockProductCategory", require("./admin/stockProductCategoryRoutes"));
+router.use("/paymentmode", require("./admin/paymentmodesectionRoutes"));
 
 module.exports = router;

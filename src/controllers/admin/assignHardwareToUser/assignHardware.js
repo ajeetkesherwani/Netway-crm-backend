@@ -1,28 +1,92 @@
 const Hardware = require("../../../models/hardware");
 const User = require("../../../models/user");
+const Staff = require("../../../models/Staff");
 const AppError = require("../../../utils/AppError");
+const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
 const { createLog } = require("../../../utils/userLogActivity");
+const logMonitoringActivity = require("../../../utils/logMonitoringActivity");
 
-exports.assignHardwareToUser = (async (req, res, next) => {
+exports.assignHardwareToUser = catchAsync(async (req, res, next) => {
+    const { userId, staffId, hardwareId } = req.body;
 
-    const { userId, hardwareId } = req.body;
-    console.log(req.body, "req.body")
-
-    if (!userId || !hardwareId) return next(new AppError("userId & hardwareId are required", 400));
-
-    const user = await User.findById(userId);
-    if (!user) return next(new AppError("user not found", 404));
+    if (!hardwareId || Boolean(userId) === Boolean(staffId)) {
+        return next(new AppError("hardwareId and exactly one of userId or staffId are required", 400));
+    }
 
     const hardware = await Hardware.findById(hardwareId);
     if (!hardware) return next(new AppError("hardwareId not found", 404));
 
-    // Assign hardware to user
+    if (staffId) {
+        const staff = await Staff.findById(staffId);
+        if (!staff) return next(new AppError("Staff not found", 404));
+
+        const previousUserId = hardware.assignedTo;
+        hardware.assignedTo = null;
+        hardware.assignedToStaff = staff._id;
+        await hardware.save();
+
+        if (previousUserId) {
+            await User.updateOne(
+                { _id: previousUserId },
+                { $pull: { assignedHardware: hardware._id } }
+            );
+        }
+
+        await logMonitoringActivity({
+            req,
+            action: "Hardware Assigned",
+            module: "hardware",
+            description: `Hardware ${hardware.hardwareName} assigned to ${staff.staffName || staff.name}`,
+            targetId: hardware._id,
+            targetName: hardware.hardwareName,
+            targetType: "hardware",
+            details: {
+                staffId: staff._id,
+                staffName: staff.staffName || staff.name,
+                hardwareId: hardware._id,
+                hardwareName: hardware.hardwareName,
+                hardwareType: hardware.hardwareType,
+                brand: hardware.brand,
+                model: hardware.model,
+                serialNumber: hardware.serialNumber,
+            },
+        });
+
+        return successResponse(res, "Hardware assigned successfully", {
+            staff: {
+                id: staff._id,
+                name: staff.staffName || staff.name,
+            },
+            hardware: {
+                id: hardware._id,
+                hardwareName: hardware.hardwareName,
+                assignedTo: hardware.assignedTo,
+                assignedToStaff: hardware.assignedToStaff,
+            },
+        });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return next(new AppError("user not found", 404));
+
+    const previousUserId =
+        hardware.assignedTo &&
+        String(hardware.assignedTo) !== String(user._id)
+            ? hardware.assignedTo
+            : null;
     hardware.assignedTo = user._id;
+    hardware.assignedToStaff = null;
     await hardware.save();
 
-    // Push hardware into user's assigned list (avoid duplicates)
-    if (!user.assignedHardware.includes(hardware._id)) {
+    if (previousUserId) {
+        await User.updateOne(
+            { _id: previousUserId },
+            { $pull: { assignedHardware: hardware._id } }
+        );
+    }
+
+    if (!user.assignedHardware.some((id) => String(id) === String(hardware._id))) {
         user.assignedHardware.push(hardware._id);
         await user.save();
     }
@@ -51,17 +115,17 @@ exports.assignHardwareToUser = (async (req, res, next) => {
         targetName: hardware.hardwareName,
     });
 
-    successResponse(res, "Hardware assigned successfully", {
+    return successResponse(res, "Hardware assigned successfully", {
         user: {
             id: user._id,
             name: user.name,
-            assignedHardware: user.assignedHardware
+            assignedHardware: user.assignedHardware,
         },
         hardware: {
             id: hardware._id,
             hardwareName: hardware.hardwareName,
-            assignedTo: hardware.assignedTo
-        }
+            assignedTo: hardware.assignedTo,
+            assignedToStaff: hardware.assignedToStaff,
+        },
     });
-
-})
+});

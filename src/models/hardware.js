@@ -21,6 +21,11 @@ const hardwareSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
+    assignedToStaff: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Staff",
+        default: null,
+    },
 }, { timestamps: true });
 
 const Hardware = mongoose.model("Hardware", hardwareSchema);

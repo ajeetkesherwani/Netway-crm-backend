@@ -28,18 +28,7 @@ exports.updateUserStatus = catchAsync(async (req, res, next) => {
     if (!user) return next(new AppError("User not found", 404));
     console.log(user, "User");
 
-    // 3️⃣ Permission Check
-
-    if (req.user.role !== "Admin") {
-        if (
-            !user.generalInformation.createdBy ||
-            user.generalInformation.createdBy.id.toString() !== req.user._id.toString()
-        ) {
-            return next(new AppError("You are not authorized to update this user", 403));
-        }
-    }
-
-    // 4️⃣ Update status
+    // 3️⃣ Update status
     const oldStatus = user.status;
     user.status = status;
     await user.save();

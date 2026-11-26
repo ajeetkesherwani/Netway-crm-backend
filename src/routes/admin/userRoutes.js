@@ -54,26 +54,35 @@ const {
 const {
   renewPurchasedPlan
 } = require("../../controllers/admin/user/renewPlanList");
+const { authorize } = require("../../middlewares/authorize");
+
+const authorizeStaffPermission = (action) => (req, res, next) => {
+  const isStaff = req.user?.accountType === "staff" || req.user?.role === "Staff";
+  if (!isStaff) return next();
+  return authorize("customer", action)(req, res, next);
+};
 
 // router.post('/create', adminAuthenticate, fileUpload.array("documents", 10), createUser);
 router.post(
   "/create",
   adminAuthenticate,
+  authorizeStaffPermission("Create"),
   fileUploader("user_documents", [{ name: "documents", maxCount: 50 }]),
   createUser
 );
 
-router.get("/list", adminAuthenticate, getUserList);
+router.get("/list", adminAuthenticate, authorizeStaffPermission("Listing"), getUserList);
 router.get("/activity/:userId", adminAuthenticate, getUserActivityLog);
-router.get("/:id", adminAuthenticate, getUserDetails);
+router.get("/:id", adminAuthenticate, authorizeStaffPermission("View"), getUserDetails);
 router.get("/fullDetails/:userId", adminAuthenticate, getUserFullDetails);
 router.patch(
   "/update/:userId",
   adminAuthenticate,
+  authorizeStaffPermission("Edit"),
   fileUploader("user_documents", [{ name: "documents", maxCount: 50 }]),
   updateUser
 );
-router.delete("/delete/:userId", adminAuthenticate, deleteUser);
+router.delete("/delete/:userId", adminAuthenticate, authorizeStaffPermission("Delete"), deleteUser);
 router.get("/currentPlan/:userId", adminAuthenticate, getCurrentPlan);
 router.get("/purchedPlan/list/:userId", adminAuthenticate, getPurchasedPlanList);
 router.get("/renewPlan/list/:userId", adminAuthenticate, renewPurchasedPlan);

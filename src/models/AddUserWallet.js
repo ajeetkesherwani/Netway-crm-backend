@@ -26,7 +26,6 @@ const AddUserWalletSchema = new mongoose.Schema(
     },
     paymentMode: {
       type: String,
-      enum: ['Cash', 'Card', 'UPI', 'BankTransfer', 'Cheque', 'Other'], // you can modify as needed
       default: "Cash",
       required: true    
     },

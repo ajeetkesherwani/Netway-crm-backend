@@ -24,6 +24,7 @@ router.use("/zone", require("./admin/ZoneRoutes"));
 router.use("/subZone", require("./admin/subZoneRoutes"));
 router.use("/category", require("./admin/categoryRoutes"));
 router.use("/common", require("./admin/commonRoutes"));
+router.use("/third-party-api", require("./admin/thirdPartyApiRoutes"));
 router.use("/ticketReply", require("./admin/ticketReplyRoutes"));
 router.use("/timeLine", require("./admin/timeLineRoutes"));
 router.use("/resellerConfig", require("./admin/resellerConfigRoutes"));

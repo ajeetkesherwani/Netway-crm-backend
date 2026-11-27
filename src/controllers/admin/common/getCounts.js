@@ -101,7 +101,7 @@ exports.getCountSummary = catchAsync(async (req, res) => {
                 0
               ]
             },
-            "uploaded",
+            "uploaded",        
             "notUploaded"
           ]
         }

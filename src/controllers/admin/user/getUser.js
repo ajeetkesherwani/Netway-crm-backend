@@ -1,8 +1,14 @@
 const { default: mongoose } = require("mongoose");
 const User = require("../../../models/user");
+const ActivityLog = require("../../../models/activityLog");
+const PurchasedPlan = require("../../../models/purchasedPlan");
 const AppError = require("../../../utils/AppError");
 const catchAsync = require("../../../utils/catchAsync");
 const { successResponse } = require("../../../utils/responseHandler");
+const {
+  getDashboardDateRanges,
+  getLatestPlanPerUserPipeline,
+} = require("../../../utils/dashboardActivity");
 // const sendEmail = require("../../../utils/sendEmail");
 
 exports.getUserList = catchAsync(async (req, res, next) => {
@@ -21,9 +27,80 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     connectionType,
     installationBy,
     serverType,
+    dashboardActivity,
+    dashboardPeriod,
   } = req.query;
 
   const query = {};
+  if (dashboardActivity || dashboardPeriod) {
+    const activityTypes = ["registered", "inactive", "suspended", "expired", "deleted"];
+    const periodRange = getDashboardDateRanges()[dashboardPeriod];
+    if (!activityTypes.includes(dashboardActivity) || !periodRange) {
+      return next(new AppError("Invalid dashboard activity filter", 400));
+    }
+
+    const end =
+      dashboardActivity === "expired"
+        ? new Date(Math.min(periodRange.end.getTime(), Date.now()))
+        : periodRange.end;
+    const dateRange = { $gte: periodRange.start, $lt: end };
+
+    if (dashboardActivity === "deleted") {
+      const logQuery = {
+        type: "User Deleted",
+        createdAt: dateRange,
+      };
+      if (searchQuery && searchQuery.trim()) {
+        const safeSearch = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        logQuery.$or = [
+          { "details.customerName": { $regex: safeSearch, $options: "i" } },
+          { "details.username": { $regex: safeSearch, $options: "i" } },
+          { "details.userId": { $regex: safeSearch, $options: "i" } },
+        ];
+      }
+
+      const deletedLogs = await ActivityLog.find(logQuery)
+        .sort({ createdAt: -1 })
+        .lean();
+      const deletedUsers = deletedLogs.map((log) => ({
+        _id: log._id,
+        generalInformation: {
+          name:
+            log.details?.customerName ||
+            log.details?.username ||
+            "Deleted user",
+          username: log.details?.username || "",
+          UserId: log.details?.userId || "",
+        },
+        status: "Deleted",
+        createdAt: log.createdAt,
+      }));
+      return successResponse(res, "Deleted users fetched successfully", deletedUsers);
+    }
+
+    if (dashboardActivity === "registered") {
+      query.createdAt = dateRange;
+    } else if (dashboardActivity === "inactive") {
+      query.status = "Inactive";
+      query.updatedAt = dateRange;
+    } else if (dashboardActivity === "suspended") {
+      query.status = "Suspend";
+      query.updatedAt = dateRange;
+    } else if (dashboardActivity === "expired") {
+      const latestExpiredPlans = await PurchasedPlan.aggregate([
+        ...getLatestPlanPerUserPipeline(),
+        {
+          $match: {
+            status: { $in: ["active", "expired"] },
+            expiryDate: dateRange,
+          },
+        },
+        { $project: { _id: 0, userId: "$_id" } },
+      ]);
+      query._id = { $in: latestExpiredPlans.map((plan) => plan.userId) };
+    }
+  }
+
   if (searchQuery && searchQuery.trim()) {
     const safeSearch = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -48,11 +125,15 @@ exports.getUserList = catchAsync(async (req, res, next) => {
   }
 
   if (ekyc) {
-    query["additionalInformation.ekyc"] = ekyc;
+    query["additionalInformation.ekyc"] =
+      ekyc === "no" ? { $ne: "yes" } : ekyc;
   }
 
   if (serviceOpted) {
-    query["generalInformation.serviceOpted"] = serviceOpted;
+    query["generalInformation.serviceOpted"] =
+      serviceOpted === "corporate"
+        ? { $in: ["corporate", "coporate"] }
+        : serviceOpted;
   }
 
   if (connectionType) {
@@ -103,19 +184,18 @@ exports.getUserList = catchAsync(async (req, res, next) => {
     query.document = {
       $elemMatch: {
         documentType: "Caf Form",
-        documentImage: { $exists: true, $ne: [] },
+        documentImage: { $type: "array", $ne: [] },
       },
     };
   }
 
   if (cafUploaded === "no") {
-    query.$or = [
-      { document: { $not: { $elemMatch: { documentType: "Caf Form" } } } },
+    query.$nor = [
       {
         document: {
           $elemMatch: {
             documentType: "Caf Form",
-            documentImage: { $size: 0 },
+            documentImage: { $type: "array", $ne: [] },
           },
         },
       },

@@ -52,6 +52,11 @@ const {
     getLatestPurchasedPlans
 } = require("../../controllers/admin/dashboard/getLetestPurchesedPlan");
 
+const {
+    getRenewalCalendar,
+    getRenewalCalendarUsers
+} = require("../../controllers/admin/dashboard/renewalCalendar");
+
 const router = express.Router();
 
 router.get("/register/userList", adminAuthenticate, getRegisterUsersCountByFilter);
@@ -72,6 +77,9 @@ router.get("/renewal/userList/details", adminAuthenticate, getRenewedUsersDetail
 router.get("/allType/userList", adminAuthenticate, getUserByStatus);
 
 router.get("/recent/plan/list", adminAuthenticate, getLatestPurchasedPlans);
+
+router.get("/renewal-calendar", adminAuthenticate, getRenewalCalendar);
+router.get("/renewal-calendar/users", adminAuthenticate, getRenewalCalendarUsers);
 
 
 
